@@ -1,0 +1,28 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Login do Cliente</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>Login do Cliente</h2>
+  <input type="email" id="email" placeholder="Seu e-mail"><br>
+  <input type="password" id="senha" placeholder="Sua senha"><br>
+  <button onclick="login()">Entrar</button>
+  <script>
+    const auth = firebase.auth();
+    function login() {
+      const email = document.getElementById("email").value;
+      const senha = document.getElementById("senha").value;
+      auth.signInWithEmailAndPassword(email, senha)
+        .then(() => window.location.href = "cliente.html")
+        .catch(e => alert("Erro: " + e.message));
+    }
+  </script>
+</body>
+</html>
