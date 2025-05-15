@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Administrador</title>
+  
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+  <script src="js/firebase-config.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<audio id='somMensagem' src='som/alerta.mp3' preload='auto'></audio>
+<audio id='somAlerta' src='som/alerta.mp3' preload='auto'></audio>
+  <h2>Chamados Recebidos</h2>
+<label for="statusAtual">Meu status:</label>
+<select id="statusAtual">
+  <option value="Disponível">Disponível</option>
+  <option value="Ocupado">Ocupado</option>
+  <option value="Ausente">Ausente</option>
+</select>
+<h3>Técnicos Online</h3>
+<ul id='tecnicosOnline'></ul>
+<h3>Mensagens entre Técnicos</h3>
+<div id="chatBox" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #fff;"></div>
+<input type="text" id="mensagem" placeholder="Digite uma mensagem...">
+<button onclick="enviarMensagem()">Enviar</button>
+
+  <div id="listaChamados"></div>
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        carregarChamados();
+      } else {
+        window.location.href = "admin-login.html";
+      }
+    });
+
+    function carregarChamados() {
+      let primeiraCarga = true;
+db.collection("chamados").orderBy("criadoEm", "desc").onSnapshot
+        .then(snapshot => {
+  if (!primeiraCarga) document.getElementById('somAlerta').play();
+  primeiraCarga = false;
+          const lista = document.getElementById("listaChamados");
+          lista.innerHTML = "";
+          let primeiraMensagem = true;
+  snapshot.forEach(doc => {
+    if (!primeiraMensagem) document.getElementById("somMensagem").play();
+    primeiraMensagem = false;
+            const ch = doc.data();
+            const id = doc.id;
+            const div = document.createElement("div");
+            div.className = "chamado";
+            div.innerHTML = `
+              <strong>${ch.assunto}</strong><br>
+              <em>Status:</em> ${ch.status}<br>
+              <p><strong>Protocolo:</strong> ${ch.protocolo || 'N/A'}</p><p>${ch.mensagem}</p>
+              <textarea id="resposta-${id}" placeholder="Resposta...">${ch.resposta || ""}</textarea>
+              <select id="status-${id}">
+                <option value="Aberto" ${ch.status==="Aberto"?"selected":""}>Aberto</option>
+                <option value="Em andamento" ${ch.status==="Em andamento"?"selected":""}>Em andamento</option>
+                <option value="Resolvido" ${ch.status==="Resolvido"?"selected":""}>Resolvido</option>
+              </select>
+              <button onclick="atualizarChamado('${id}')">Salvar</button>
+            `;
+            lista.appendChild(div);
+          });
+        });
+    }
+
+    function atualizarChamado(id) {
+      const status = document.getElementById("status-" + id).value;
+      const resposta = document.getElementById("resposta-" + id).value;
+      db.collection("chamados").doc(id).update({ status, resposta }).then(() => {
+        alert("Atualizado!");
+        carregarChamados();
+      });
+    }
+  
+// Chat entre técnicos
+function enviarMensagem() {
+  const texto = document.getElementById("mensagem").value;
+  if (texto.trim() === "") return;
+  db.collection("mensagens_admin").add({
+    de: auth.currentUser.email,
+    texto: texto,
+    data: new Date()
+  }).then(() => {
+    document.getElementById("mensagem").value = "";
+  });
+}
+
+db.collection("mensagens_admin").orderBy("data", "asc").onSnapshot(snapshot => {
+  const chatBox = document.getElementById("chatBox");
+  chatBox.innerHTML = "";
+  let primeiraMensagem = true;
+  snapshot.forEach(doc => {
+    if (!primeiraMensagem) document.getElementById("somMensagem").play();
+    primeiraMensagem = false;
+    const m = doc.data();
+    const div = document.createElement("div");
+    div.textContent = `[${new Date(m.data.toDate()).toLocaleTimeString()}] ${m.de}: ${m.texto}`;
+    chatBox.appendChild(div);
+  });
+});
+
+</script>
+</body>
+</html>
