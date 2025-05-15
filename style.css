@@ -1,0 +1,21 @@
+
+body {
+  background: url('img/fundo-suporte.jpg') no-repeat center center fixed;
+  background-size: cover;
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  color: #333;
+}
+input, textarea, select, button {
+  margin: 5px 0;
+  padding: 10px;
+  width: 100%;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+.chamado {
+  background: rgba(255, 255, 255, 0.9);
+  border-left: 4px solid #007bff;
+  padding: 10px;
+  margin-bottom: 10px;
+}
