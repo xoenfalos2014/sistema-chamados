@@ -17,7 +17,7 @@ function login() {
   const email = document.getElementById("email").value;
   const senha = document.getElementById("senha").value;
   auth.signInWithEmailAndPassword(email, senha)
-    .then(() => window.location.href = "admin.html")
+    .then(() => window.location.href = "painel-admin.html")
     .catch(e => alert("Erro: " + e.message));
 }
 </script></body></html>
