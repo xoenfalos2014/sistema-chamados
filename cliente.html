@@ -58,8 +58,8 @@
         criadoEm: firebase.firestore.Timestamp.now(),
         criadoEm: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
-        alert("Chamado enviado com sucesso! Você será redirecionado.");
-        window.location.href = 'cliente-chamados.html';
+        alert("Chamado enviado!");
+        carregarChamados();
       }).catch(e => {
         alert("Erro ao enviar chamado: " + e.message);
       });
