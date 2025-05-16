@@ -1,56 +1,51 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Sistema de Chamado</title>
+  <title>Abertura de Chamado</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2>Solicitação de Suporte</h2>
+  <h1>Solicitar Suporte</h1>
 
   <form id="form-chamado">
-    <input type="text" id="nome" placeholder="Nome" required><br><br>
-    <input type="email" id="email" placeholder="Email" required><br><br>
+    <input type="text" id="nome" placeholder="Seu nome" required><br><br>
+    <input type="email" id="email" placeholder="Seu email" required><br><br>
     <textarea id="mensagem" placeholder="Descreva o problema" required></textarea><br><br>
-    <button type="button" onclick="criarChamado()">Enviar Chamado</button>
+    <button type="submit">Enviar Chamado</button>
   </form>
 
-  <!-- SDKs do Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-
-  <!-- Configuração do Firebase -->
   <script src="js/firebase-config.js"></script>
 
-  <!-- Script principal -->
   <script>
-    function criarChamado() {
+    const form = document.getElementById("form-chamado");
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
       const nome = document.getElementById("nome").value;
       const email = document.getElementById("email").value;
       const mensagem = document.getElementById("mensagem").value;
 
-      const protocolo = "CHAM-" + Math.random().toString(36).substring(2, 6).toUpperCase() + "-" + Date.now();
+      const protocolo = "PROTOCOLO-" + Date.now();
 
-      const db = firebase.firestore();
-
-      db.collection("chamados").add({
+      firebase.firestore().collection("chamados").add({
         nome: nome,
         email: email,
         mensagem: mensagem,
-        protocolo: protocolo,
         status: "Aberto",
-        data: firebase.firestore.FieldValue.serverTimestamp()
-      })
-      .then(() => {
-        alert("✅ Chamado enviado com sucesso! Protocolo: " + protocolo);
-        document.getElementById("form-chamado").reset();
-      })
-      .catch((error) => {
+        data: new Date().toISOString(),
+        protocolo: protocolo
+      }).then(() => {
+        alert("✅ Obrigado! Seu chamado foi enviado com sucesso.\nProtocolo: " + protocolo);
+        form.reset();
+      }).catch((error) => {
         console.error("Erro ao enviar chamado:", error);
-        alert("❌ Erro ao enviar. Verifique sua conexão.");
+        alert("❌ Ocorreu um erro ao enviar seu chamado. Tente novamente.");
       });
-    }
+    });
   </script>
 </body>
 </html>
