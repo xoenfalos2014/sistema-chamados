@@ -1,51 +1,88 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Abertura de Chamado</title>
+  <title>Cliente</title>
+  
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+  <script src="js/firebase-config.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Solicitar Suporte</h1>
-
-  <form id="form-chamado">
-    <input type="text" id="nome" placeholder="Seu nome" required><br><br>
-    <input type="email" id="email" placeholder="Seu email" required><br><br>
-    <textarea id="mensagem" placeholder="Descreva o problema" required></textarea><br><br>
-    <button type="submit">Enviar Chamado</button>
-  </form>
-
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-  <script src="js/firebase-config.js"></script>
-
+  <h2>Meus Chamados</h2>
+  <input type="text" id="nome" placeholder="Nome"><br>
+  <input type="text" id="assunto" placeholder="Assunto"><br>
+  <textarea id="mensagem" placeholder="Descreva o problema..."></textarea><br>
+  <button onclick="criarChamado()">Enviar Chamado</button>
+  <div id="listaChamados"></div>
   <script>
-    const form = document.getElementById("form-chamado");
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    let usuarioId = "";
 
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
-
-      const nome = document.getElementById("nome").value;
-      const email = document.getElementById("email").value;
-      const mensagem = document.getElementById("mensagem").value;
-
-      const protocolo = "PROTOCOLO-" + Date.now();
-
-      firebase.firestore().collection("chamados").add({
-        nome: nome,
-        email: email,
-        mensagem: mensagem,
-        status: "Aberto",
-        data: new Date().toISOString(),
-        protocolo: protocolo
-      }).then(() => {
-        alert("✅ Obrigado! Seu chamado foi enviado com sucesso.\nProtocolo: " + protocolo);
-        form.reset();
-      }).catch((error) => {
-        console.error("Erro ao enviar chamado:", error);
-        alert("❌ Ocorreu um erro ao enviar seu chamado. Tente novamente.");
-      });
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        usuarioId = user.uid;
+        document.getElementById('nome').value = user.email.split('@')[0];
+        carregarChamados();
+      } else {
+        window.location.href = "cliente-login.html";
+      }
     });
+
+    function criarChamado() {
+      const nome = document.getElementById("nome").value.trim();
+      const assunto = document.getElementById("assunto").value.trim();
+      const mensagem = document.getElementById("mensagem").value.trim();
+
+      if (!nome || !assunto || !mensagem) {
+        alert("Preencha todos os campos.");
+        return;
+      }
+
+      const protocolo = "CHAMADO-" + Math.random().toString(36).substring(2, 6).toUpperCase() + "-" + Date.now();
+
+      db.collection("chamados").add({
+        usuarioId,
+        nome,
+        protocolo,
+        assunto,
+        mensagem,
+        status: "Aberto",
+        criadoEm: firebase.firestore.FieldValue.serverTimestamp()  // Usando serverTimestamp
+      }).then(() => {
+        alert("Chamado enviado!");
+        carregarChamados();
+      }).catch(e => {
+        alert("Erro ao enviar chamado: " + e.message);
+      });
+    }
+
+    function carregarChamados() {
+      db.collection("chamados")
+        .where("usuarioId", "==", usuarioId)
+        .orderBy("criadoEm", "desc")
+        .onSnapshot(snapshot => {
+          const lista = document.getElementById("listaChamados");
+          lista.innerHTML = "";
+          snapshot.forEach(doc => {
+            const c = doc.data();
+            const div = document.createElement("div");
+            div.className = "chamado";
+            div.innerHTML = `
+              <strong>${c.assunto}</strong><br>
+              Protocolo: ${c.protocolo}<br>
+              Status: ${c.status}<br>
+              <p>${c.mensagem}</p>
+              <p><em>${c.resposta || ''}</em></p>
+            `;
+            lista.appendChild(div);
+          });
+        });
+    }
   </script>
 </body>
 </html>
