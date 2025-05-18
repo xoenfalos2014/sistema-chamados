@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel de Chamados</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .chamado-card {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+    }
+    .chamado-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .status {
+      font-weight: bold;
+    }
+    .btn {
+      padding: 5px 10px;
+      margin-left: 5px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .btn-excluir { background-color: #e74c3c; color: white; }
+    .btn-status { background-color: #2ecc71; color: white; }
+    .btn-filtro { background-color: #3498db; color: white; }
+  </style>
+</head>
+<body>
+
+  <h1>Painel de Chamados</h1>
+
+  <div>
+    <button class="btn btn-filtro" onclick="filtrarChamados('Aberto')">Abertos</button>
+    <button class="btn btn-filtro" onclick="filtrarChamados('Em Andamento')">Em Andamento</button>
+    <button class="btn btn-filtro" onclick="filtrarChamados('Finalizado')">Finalizados</button>
+  </div>
+
+  <div id="chamados-container"></div>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/chamados-admin.js"></script>
+</body>
+</html>
