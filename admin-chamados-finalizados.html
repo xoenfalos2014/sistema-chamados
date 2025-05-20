@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8"/>
+<title>Admin - Chamados Finalizados</title>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<link href="style.css" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #e9f2fc;
+    padding: 20px;
+  }
+  .painel-titulo {
+    font-size: 24px;
+    color: #2c3e50;
+    margin-bottom: 10px;
+  }
+  .abas-nav {
+    display: flex;
+    gap: 10px;
+    border-bottom: 2px solid #ccc;
+    margin-bottom: 20px;
+  }
+  .aba-link {
+    padding: 10px 20px;
+    text-decoration: none;
+    color: #444;
+    font-weight: bold;
+    border-bottom: 3px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .aba-link:hover {
+    background-color: #f1f1f1;
+  }
+  .ativo {
+    border-bottom: 3px solid #3498db;
+    color: #3498db;
+  }
+
+  .btn-profissional {
+    background-color: #3498db;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    margin: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  .btn-profissional:hover {
+    background-color: #2980b9;
+  }
+  .chamado {
+    margin: 20px 0;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+</style>
+</head>
+<body>
+<div class="painel-titulo">Painel de Chamados</div>
+<div class="abas-nav">
+  <a href="admin-chamados.html" class="aba-link"><i class="fas fa-inbox"></i> Abertos</a>
+  <a href="admin-chamados-andamento.html" class="aba-link"><i class="fas fa-spinner"></i> Em Andamento</a>
+  <a href="admin-chamados-finalizados.html" class="aba-link ativo"><i class="fas fa-check-circle"></i> Finalizados</a>
+</div>
+
+<h2>Painel de Chamados - Finalizados</h2>
+<a href="admin-chamados.html">Voltar aos Chamados Abertos</a>
+
+<button class="btn-profissional" onclick="gerarPDFChamados()">📄 Gerar PDF</button>
+
+
+<div id="cabecalho-pdf" style="margin-bottom: 20px; text-align: center; font-size: 14px;" style="margin-bottom: 20px; text-align: center; font-size: 14px;">
+  <strong>WG INFORMATICA SUPORTE E MANUTENÇÃO DE COMPUTADORES</strong><br>
+  CNPJ 18.227.202/0001-36<br>
+  RUA DOUTOR FELICIANO SODRÉ, Nº 182 - SL 301 - CENTRO - SÃO GONÇALO
+</div>
+
+
+<div id="listaChamadosFinalizados"></div>
+<script>
+    function formatarData(timestamp) {
+      if (!timestamp || !timestamp.toDate) return "Data inválida";
+      const data = timestamp.toDate();
+      return data.toLocaleDateString("pt-BR") + " " + data.toLocaleTimeString("pt-BR");
+    }
+    const db = firebase.firestore();
+
+    function carregarChamadosFinalizados() {
+      db.collection("chamados")
+        .where("status", "==", "Resolvido")
+        .orderBy("criadoEm", "desc")
+        .onSnapshot(snapshot => {
+          const lista = document.getElementById("listaChamadosFinalizados");
+          lista.innerHTML = "";
+          snapshot.forEach(doc => {
+            const ch = doc.data();
+            const id = doc.id;
+            const div = document.createElement("div");
+            div.className = "chamado";
+            div.id = `chamado-${id}`;
+div.innerHTML = `
+<button class="btn-profissional" onclick="gerarPDFUnico('${id}')">📄 PDF deste chamado</button><br>
+              <strong>Nome:</strong> ${ch.nome || "N/A"}<br>
+              <strong>Data:</strong> ${formatarData(ch.criadoEm)}<br>
+              <strong>Protocolo:</strong> ${ch.protocolo || "N/A"}<br>
+              <strong>Assunto:</strong> ${ch.assunto}<br>
+              <strong>Status:</strong> ${ch.status}<br>
+              <button class="btn-profissional" onclick="mudarStatus('${id}', 'Aberto')">Reabrir</button>
+              <button class="btn-profissional" onclick="excluirChamado('${id}')">Excluir</button>
+              <p><strong>Mensagem:</strong> ${ch.mensagem}</p>
+            `;
+            lista.appendChild(div);
+          });
+        });
+    }
+
+    function mudarStatus(id, novoStatus) {
+      db.collection("chamados").doc(id).update({ status: novoStatus })
+        .then(() => alert("Status alterado para: " + novoStatus));
+    }
+
+    function excluirChamado(id) {
+      if (confirm("Tem certeza que deseja excluir este chamado?")) {
+        db.collection("chamados").doc(id).delete()
+          .then(() => alert("Chamado excluído com sucesso!"));
+      }
+    }
+
+    carregarChamadosFinalizados();
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+  function gerarPDFChamados() {
+    const element = document.getElementById("listaChamadosFinalizados");
+    html2canvas(element).then(canvas => {
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jspdf.jsPDF("p", "mm", "a4");
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save("chamados-finalizados.pdf");
+    });
+  }
+</script>
+
+
+<script>
+  function gerarPDFChamados() {
+    const lista = document.getElementById("listaChamadosFinalizados");
+    const cabecalho = document.getElementById("cabecalho-pdf");
+
+    const wrapper = document.createElement("div");
+    wrapper.style.padding = "20px";
+    wrapper.style.background = "#ffffff";
+    wrapper.appendChild(cabecalho.cloneNode(true));
+    wrapper.appendChild(lista.cloneNode(true));
+
+    document.body.appendChild(wrapper);
+
+    html2canvas(wrapper).then(canvas => {
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jspdf.jsPDF("p", "mm", "a4");
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save("relatorio-chamados-finalizados.pdf");
+      document.body.removeChild(wrapper);
+    });
+  }
+</script>
+
+
+<script>
+  function gerarPDFUnico(id) {
+    const chamadoDiv = document.getElementById("chamado-" + id);
+    const cabecalho = document.getElementById("cabecalho-pdf");
+
+    const wrapper = document.createElement("div");
+    wrapper.style.padding = "20px";
+    wrapper.style.background = "#ffffff";
+    wrapper.appendChild(cabecalho.cloneNode(true));
+    wrapper.appendChild(chamadoDiv.cloneNode(true));
+
+    document.body.appendChild(wrapper);
+
+    html2canvas(wrapper).then(canvas => {
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jspdf.jsPDF("p", "mm", "a4");
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save("chamado-" + id + ".pdf");
+      document.body.removeChild(wrapper);
+    });
+  }
+</script>
+
+</body>
+</html>
