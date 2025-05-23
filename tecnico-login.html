@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Login Técnico</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f2f2f2;
+      padding: 20px;
+    }
+    .login-box {
+      max-width: 400px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h2>Login Técnico</h2>
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="senha" placeholder="Senha" required>
+    <button onclick="loginTecnico()">Entrar</button>
+  </div>
+
+  <script>
+    function loginTecnico() {
+      const email = document.getElementById('email').value;
+      const senha = document.getElementById('senha').value;
+
+      firebase.auth().signInWithEmailAndPassword(email, senha)
+        .then(cred => {
+          return firebase.firestore().collection("usuarios").doc(cred.user.uid).get();
+        })
+        .then(doc => {
+          if (doc.exists && doc.data().tipo === "tecnico") {
+            window.location.href = "painel-tecnicos.html";
+          } else {
+            alert("Acesso negado. Conta não é de técnico.");
+            firebase.auth().signOut();
+          }
+        })
+        .catch(error => {
+          alert("Erro: " + error.message);
+        });
+    }
+  </script>
+</body>
+</html>

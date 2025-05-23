@@ -1,0 +1,210 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Chamados em Andamento</title>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+  <script src="js/firebase-config.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .btn-profissional {
+      background-color: #3498db;
+      color: white;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: bold;
+      margin: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .btn-profissional:hover {
+      background-color: #2980b9;
+    }
+    .chamado-section {
+      margin: 20px 0;
+      padding: 10px;
+      border-radius: 5px;
+      background-color: #f8f9fa;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .chamado-title {
+      font-size: 1.2em;
+      margin-bottom: 10px;
+    }
+  </style>
+
+<style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f6fa;
+    color: #333;
+    transition: background-color 0.3s, color 0.3s;
+  }
+  body.dark-mode {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+  }
+  .card-chamado {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 10px 0;
+    background-color: #fff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card-chamado:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+  .dark-mode .card-chamado {
+    background-color: #2b2b2b;
+    border-color: #444;
+  }
+  .btn-moderno, .botao-voltar-limpo {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #3498db;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.2s;
+    cursor: pointer;
+  }
+  .btn-moderno:hover, .botao-voltar-limpo:hover {
+    background-color: #2980b9;
+    transform: scale(1.05);
+  }
+  .dark-mode .btn-moderno, .dark-mode .botao-voltar-limpo {
+    background-color: #555;
+    color: #f0f0f0;
+  }
+  .status {
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+  }
+  .status-aberto { color: #f39c12; }
+  .status-andamento { color: #3498db; }
+  .status-finalizado { color: #2ecc71; }
+  .botao-tema {
+    position: fixed;
+    top: 10px;
+    right: 12px;
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1000;
+  }
+  .dark-mode .botao-tema {
+    background-color: #333;
+    color: #f0f0f0;
+  }
+</style>
+
+
+
+</head>
+<body>
+
+
+  <h2>Painel de Chamados - Em Andamento</h2>
+  <a href="admin-chamados.html" class="btn-profissional">Voltar aos Chamados Abertos</a>
+  <div id="listaChamadosAndamento"></div>
+
+  <script>
+    
+    function formatarData(timestamp) {
+      if (!timestamp || !timestamp.toDate) return "Data inválida";
+      const data = timestamp.toDate();
+      return data.toLocaleDateString("pt-BR") + " " + data.toLocaleTimeString("pt-BR");
+    }
+    const db = firebase.firestore();
+
+    function carregarChamadosAndamento() {
+      db.collection("chamados")
+        .where("status", "==", "Em Andamento")
+        .orderBy("criadoEm", "desc")
+        .onSnapshot(snapshot => {
+          const lista = document.getElementById("listaChamadosAndamento");
+          lista.innerHTML = "";
+          snapshot.forEach(doc => {
+            const ch = doc.data();
+            const id = doc.id;
+            const div = document.createElement("div"); div.classList.add("card-chamado");
+            div.className = "chamado";
+            div.innerHTML = `
+<strong>Nome:</strong> ${ch.nome || "N/A"}<br>
+<strong>Data:</strong> ${formatarData(ch.criadoEm)}<br>
+<strong>Protocolo:</strong> ${ch.protocolo || "N/A"}<br>
+<strong>Assunto:</strong> ${ch.assunto}<br>
+<strong>Status:</strong> ${ch.status}<br>
+<button class="btn-moderno" onclick="excluirChamado('${id}')">🗑 Excluir</button>
+<label><strong>Observação:</strong><br>
+<textarea rows="3" style="width:100%;border-radius:6px;padding:5px;" placeholder="Descreva o serviço realizado..." 
+onblur="salvarObservacao('${id}', this.value)">${ch.observacao || ""}</textarea></label><br>
+              <strong>Nome:</strong> ${ch.nome || "N/A"}<br>
+              <strong>Data:</strong> ${formatarData(ch.criadoEm)}<br>
+              <strong>Protocolo:</strong> ${ch.protocolo || "N/A"}<br>
+              <strong>Assunto:</strong> ${ch.assunto}<br>
+              <strong>Status:</strong> ${ch.status}<br>
+<button class="btn-moderno" onclick="excluirChamado('${id}')">🗑 Excluir</button>
+              <button class="btn-profissional" onclick="mudarStatus('${id}', 'Aberto')">Mover para Aberto</button>
+              <button class="btn-profissional" onclick="marcarResolvido('${id}')">Marcar como Resolvido</button>
+              <button class="btn-moderno" onclick="excluirChamado('${id}')">🗑 Excluir</button>
+              <p><strong>Mensagem:</strong> ${ch.mensagem}</p>
+<button class="btn-moderno" onclick="excluirChamado('${id}')">🗑 Excluir</button>
+            `;
+            lista.appendChild(div);
+          });
+        });
+    }
+
+    
+    function mudarStatus(id, novoStatus) {
+      db.collection("chamados").doc(id).update({ status: novoStatus })
+        .then(() => alert("Status alterado para: " + novoStatus));
+    }
+
+    function marcarResolvido(id) {
+      db.collection("chamados").doc(id).update({ status: "Resolvido" })
+        .then(() => alert("Chamado marcado como resolvido!"));
+    }
+
+    function excluirChamado(id) {
+      if (confirm("Tem certeza que deseja excluir este chamado?")) {
+        db.collection("chamados").doc(id).delete()
+          .then(() => alert("Chamado excluído com sucesso!"));
+      }
+    }
+
+    
+    function salvarObservacao(id, texto) {
+      db.collection("chamados").doc(id).update({ observacao: texto })
+        .then(() => console.log("Observação salva para o chamado " + id));
+    }
+
+    carregarChamadosAndamento();
+    
+  </script>
+</body>
+</html>

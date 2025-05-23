@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastro de Cliente</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .form-box {
+      max-width: 400px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+    }
+    label {
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      margin-bottom: 12px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-box">
+    <h2>Cadastro de Cliente</h2>
+    <label for="email">Email:</label>
+    <input type="email" id="email" required>
+
+    <label for="senha">Senha:</label>
+    <input type="password" id="senha" required>
+
+    <button onclick="cadastrarCliente()">Cadastrar</button>
+  </div>
+
+  <script>
+    function cadastrarCliente() {
+      const email = document.getElementById('email').value;
+      const senha = document.getElementById('senha').value;
+
+      if (email === '' || senha.length < 6) {
+        alert("Preencha um email válido e senha com no mínimo 6 caracteres.");
+        return;
+      }
+
+      firebase.auth().createUserWithEmailAndPassword(email, senha)
+        .then(cred => {
+          return firebase.firestore().collection("usuarios").doc(cred.user.uid).set({
+            email: email,
+            tipo: "cliente"
+          });
+        })
+        .then(() => {
+          alert("Cadastro realizado com sucesso!");
+          window.location.href = "cliente.html";
+        })
+        .catch(error => {
+          alert("Erro ao cadastrar: " + error.message);
+        });
+    }
+  </script>
+</body>
+</html>

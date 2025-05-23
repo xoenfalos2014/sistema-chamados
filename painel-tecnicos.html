@@ -1,0 +1,331 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel de Técnicos</title>
+  
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+  <!-- CSS externo -->
+  <link rel="stylesheet" href="style.css">
+  
+  <script src="js/firebase-config.js"></script>
+  <link rel="stylesheet" href="style.css">
+
+<style>
+  .btn-voltar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #ddd;
+    color: #333;
+    padding: 6px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.2s;
+    margin-bottom: 10px;
+  }
+  .btn-voltar:hover {
+    background-color: #bbb;
+    transform: translateX(-3px);
+  }
+</style>
+
+
+<style>
+  .btn-moderno {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #3498db;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.2s;
+    cursor: pointer;
+  }
+  .btn-moderno:hover {
+    background-color: #2980b9;
+    transform: scale(1.05);
+  }
+</style>
+
+
+<style>
+  .card-chamado {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 10px 0;
+    background-color: #fff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card-chamado:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+  a:hover {
+    opacity: 0.85;
+  }
+</style>
+
+
+<style>
+  .status {
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+  }
+  .status-aberto {
+    color: #f39c12;
+  }
+  .status-andamento {
+    color: #3498db;
+  }
+  .status-finalizado {
+    color: #2ecc71;
+  }
+</style>
+
+
+<style>
+  body.dark-mode {
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+  }
+  .dark-mode .card-chamado {
+    background-color: #2b2b2b;
+    border-color: #444;
+  }
+  .dark-mode a, .dark-mode .btn-moderno, .dark-mode .botao-voltar-limpo {
+    color: #90caf9;
+  }
+  .botao-tema {
+    position: fixed;
+    top: 10px;
+    right: 12px;
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1000;
+  }
+  .dark-mode .botao-tema {
+    background-color: #333;
+    color: #f0f0f0;
+  }
+</style>
+
+
+</head>
+<body>
+
+
+
+<a href="cliente.html" class="botao-voltar-limpo">
+  <span class="icone">◀</span> <span class="texto">Voltar</span>
+</a>
+
+<h2>Painel dos Técnicos</h2>
+  <label for="statusAtual">Meu status:</label>
+  <select id="statusAtual">
+    <option value="Disponível">Disponível</option>
+    <option value="Ocupado">Ocupado</option>
+    <option value="Ausente">Ausente</option>
+  </select>
+
+  <h3>Técnicos Online</h3>
+  <ul id="tecnicosOnline"></ul>
+
+  <h3>Mensagens entre Técnicos</h3>
+  <audio id="somMensagem" src="som/alerta.mp3" preload="auto"></audio>
+  <div id="chatBox" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #fff;"></div>
+  <input type="text" id="mensagem" placeholder="Digite uma mensagem...">
+  <button class="btn-moderno">📨 Enviar</button>
+
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      const userRef = db.collection("presenca_admin").doc(user.uid);
+      let statusAtual = "Disponível";
+
+      document.getElementById("statusAtual").addEventListener("change", (e) => {
+        statusAtual = e.target.value;
+        userRef.update({ status: statusAtual });
+      });
+
+      userRef.set({
+        uid: user.uid,
+        email: user.email,
+        online: true,
+        lastSeen: new Date(),
+        status: statusAtual
+      }, { merge: true });
+
+      window.addEventListener("beforeunload", () => {
+        userRef.update({ online: false, lastSeen: new Date() });
+      });
+
+      db.collection("presenca_admin").where("online", "==", true)
+        .onSnapshot(snapshot => {
+          const lista = document.getElementById("tecnicosOnline");
+          lista.innerHTML = "";
+          snapshot.forEach(doc => {
+            const t = doc.data();
+            const li = document.createElement("li");
+            li.textContent = `${t.email} - ${t.status || 'Desconhecido'}`;
+            lista.appendChild(li);
+          });
+        });
+
+      // Mensagens
+      db.collection("mensagens_admin").orderBy("data", "asc").onSnapshot(snapshot => {
+        const chatBox = document.getElementById("chatBox");
+        chatBox.innerHTML = "";
+        let primeira = true;
+        snapshot.forEach(doc => {
+          const m = doc.data();
+          const div = document.createElement("div"); div.classList.add("card-chamado"); div.classList.add("card-chamado");
+          div.textContent = `[${new Date(m.data.toDate()).toLocaleTimeString()}] ${m.de}: ${m.texto}`;
+          chatBox.appendChild(div);
+        });
+        if (!primeira) {
+          document.getElementById("somMensagem").play();
+        }
+        primeira = false;
+      });
+    });
+
+    function enviarMensagem() {
+      const texto = document.getElementById("mensagem").value;
+      if (texto.trim() === "") return;
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          db.collection("mensagens_admin").add({
+            de: user.email,
+            texto: texto,
+            data: new Date()
+          });
+          document.getElementById("mensagem").value = "";
+        }
+      });
+    }
+  </script>
+
+<script>
+  function reabrirChamado(id) {
+    if (confirm("Tem certeza que deseja reabrir este chamado?")) {
+      firebase.firestore().collection("chamados").doc(id).update({
+        status: "Aberto"
+      }).then(() => {
+        alert("Chamado reaberto!");
+        location.reload();
+      });
+    }
+  }
+</script>
+
+
+
+
+
+<div style="text-align:center; margin-bottom: 20px;">
+  <button onclick="filtrarChamados('Aberto')" class="btn-moderno">📂 Abertos</button>
+  <button onclick="filtrarChamados('Em andamento')" class="btn-moderno">🔧 Em Andamento</button>
+</div>
+<div id="chamados-container" style="padding: 20px;"></div>
+
+<script>
+  let chamados = [];
+
+  firebase.firestore().collection("chamados").onSnapshot(snapshot => {
+    chamados = [];
+    snapshot.forEach(doc => {
+      const ch = doc.data();
+      const id = doc.id;
+      if (ch.status === "Aberto" || ch.status === "Em andamento") {
+        chamados.push({ id, ...ch });
+      }
+    });
+    filtrarChamados("Aberto");
+  });
+
+  function filtrarChamados(status) {
+    const container = document.getElementById("chamados-container");
+    container.innerHTML = "";
+    const filtrados = chamados.filter(c => c.status === status);
+    if (filtrados.length === 0) {
+      container.innerHTML = "<p>Nenhum chamado encontrado.</p>";
+    } else {
+      filtrados.forEach(ch => {
+        const div = document.createElement("div");
+        div.classList.add("card-chamado");
+
+        let botoes = "";
+        if (ch.status === "Aberto") {
+          botoes += `<button class="btn-moderno" onclick="iniciarAtendimento('${ch.id}')">🟡 Iniciar Atendimento</button>`;
+        }
+        if (ch.status === "Em andamento") {
+          botoes += `<button class="btn-moderno" onclick="finalizarChamado('${ch.id}')">✅ Finalizar</button>`;
+        }
+        botoes += `<button class="btn-moderno" onclick="verDetalhes('${ch.id}')">💬 Ver Chat</button>`;
+
+        div.innerHTML = `
+          <p><strong>ID:</strong> ${ch.id}</p>
+          <p><strong>Status:</strong> ${ch.status}</p>
+          <p><strong>Mensagem:</strong> ${ch.mensagem}</p>
+          ${botoes}
+        `;
+        container.appendChild(div);
+      });
+    }
+  }
+
+  function iniciarAtendimento(id) {
+    firebase.firestore().collection("chamados").doc(id).update({
+      status: "Em andamento"
+    }).then(() => {
+      alert("Chamado movido para 'Em andamento'.");
+    });
+  }
+
+  function finalizarChamado(id) {
+    if (confirm("Finalizar este chamado?")) {
+      firebase.firestore().collection("chamados").doc(id).update({
+        status: "Finalizado"
+      }).then(() => {
+        alert("Chamado finalizado.");
+      });
+    }
+  }
+
+  function verDetalhes(id) {
+    window.location.href = "chat.html?id=" + id;
+  }
+</script>
+
+
+
+
+</body>
+</html>

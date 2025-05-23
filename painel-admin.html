@@ -1,0 +1,287 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel do Administrador</title>
+  
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+  <script src="js/firebase-config.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .btn {
+      display: inline-block;
+      margin: 20px;
+      padding: 15px 30px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      background-color: #007bff;
+      color: white;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
+
+<style>
+  .btn-voltar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #ddd;
+    color: #333;
+    padding: 6px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.2s;
+    margin-bottom: 10px;
+  }
+  .btn-voltar:hover {
+    background-color: #bbb;
+    transform: translateX(-3px);
+  }
+</style>
+
+
+<style>
+  .btn-moderno {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #3498db;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.2s;
+    cursor: pointer;
+  }
+  .btn-moderno:hover {
+    background-color: #2980b9;
+    transform: scale(1.05);
+  }
+</style>
+
+
+<style>
+  .card-chamado {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 10px 0;
+    background-color: #fff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .card-chamado:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+  a:hover {
+    opacity: 0.85;
+  }
+</style>
+
+
+<style>
+  .status {
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+  }
+  .status-aberto {
+    color: #f39c12;
+  }
+  .status-andamento {
+    color: #3498db;
+  }
+  .status-finalizado {
+    color: #2ecc71;
+  }
+</style>
+
+
+<style>
+  body.dark-mode {
+    background-color: #1e1e1e;
+    color: #f0f0f0;
+  }
+  .dark-mode .card-chamado {
+    background-color: #2b2b2b;
+    border-color: #444;
+  }
+  .dark-mode a, .dark-mode .btn-moderno, .dark-mode .botao-voltar-limpo {
+    color: #90caf9;
+  }
+  .botao-tema {
+    position: fixed;
+    top: 10px;
+    right: 12px;
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1000;
+  }
+  .dark-mode .botao-tema {
+    background-color: #333;
+    color: #f0f0f0;
+  }
+</style>
+
+
+</head>
+<body>
+
+
+
+<a href="cliente.html" class="botao-voltar-limpo">
+  <span class="icone">◀</span> <span class="texto">Voltar</span>
+</a>
+
+<h2>Painel do Administrador</h2>
+<a href="cadastro-usuarios.html" class="btn-moderno" style="margin-top: 10px; display: inline-block;">👤 Novo Usuário</a>
+  <div id="painel" style="display: none;">
+
+  <h3>📊 Dashboard</h3>
+  <canvas id="graficoStatus" width="400" height="200"></canvas>
+  <canvas id="graficoDias" width="400" height="200"></canvas>
+  <hr>
+
+    <a href="admin-chamados.html" class="btn">📄 Gerenciar Chamados</a>
+    <a href="admin-tecnicos.html" class="btn">👥 Técnicos Online e Chat</a>
+  </div>
+  <script>
+    const auth = firebase.auth();
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        document.getElementById("painel").style.display = "block";
+      } else {
+        window.location.href = "admin-login.html";
+      }
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    function gerarDashboard() {
+      const db = firebase.firestore();
+
+      db.collection("chamados").get().then(snapshot => {
+        const statusCount = { Aberto: 0, "Em Andamento": 0, Finalizado: 0 };
+        const diasCount = {};
+
+        const hoje = new Date();
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(hoje);
+          d.setDate(d.getDate() - i);
+          const key = d.toISOString().slice(0, 10);
+          diasCount[key] = 0;
+        }
+
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const status = data.status || "Desconhecido";
+          const criadoEm = data.criadoEm?.toDate?.() || new Date(data.criadoEm);
+
+          if (statusCount[status] !== undefined) {
+            statusCount[status]++;
+          }
+
+          const dataKey = criadoEm.toISOString().slice(0, 10);
+          if (diasCount[dataKey] !== undefined) {
+            diasCount[dataKey]++;
+          }
+        });
+
+        new Chart(document.getElementById("graficoStatus"), {
+          type: "bar",
+          data: {
+            labels: Object.keys(statusCount),
+            datasets: [{
+              label: "Chamados por Status",
+              data: Object.values(statusCount),
+              backgroundColor: ["#3498db", "#f39c12", "#2ecc71"]
+            }]
+          }
+        });
+
+        new Chart(document.getElementById("graficoDias"), {
+          type: "line",
+          data: {
+            labels: Object.keys(diasCount),
+            datasets: [{
+              label: "Chamados nos últimos 7 dias",
+              data: Object.values(diasCount),
+              borderColor: "#8e44ad",
+              fill: false
+            }]
+          }
+        });
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", gerarDashboard);
+  </script>
+
+
+
+<h3>📋 Usuários Cadastrados</h3>
+<table id="tabelaUsuarios" style="width:100%; border-collapse: collapse; margin-top: 10px;">
+  <thead>
+    <tr>
+      <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ccc;">Email</th>
+      <th style="text-align: left; padding: 8px; border-bottom: 2px solid #ccc;">Tipo</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+<script>
+  firebase.firestore().collection("usuarios").get().then(snapshot => {
+    const tbody = document.querySelector("#tabelaUsuarios tbody");
+    snapshot.forEach(doc => {
+      const user = doc.data();
+      const id = doc.id;
+      const linha = document.createElement("tr");
+      linha.innerHTML = `
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${user.email}</td>
+        <td style="padding: 8px; border-bottom: 1px solid #ddd;">
+          <select onchange="atualizarTipoUsuario('${id}', this.value)">
+            <option value="cliente" ${user.tipo === "cliente" ? "selected" : ""}>Cliente</option>
+            <option value="tecnico" ${user.tipo === "tecnico" ? "selected" : ""}>Técnico</option>
+            <option value="admin" ${user.tipo === "admin" ? "selected" : ""}>Administrador</option>
+          </select>
+        </td>
+      `;
+      tbody.appendChild(linha);
+    });
+  });
+
+  function atualizarTipoUsuario(id, novoTipo) {
+    firebase.firestore().collection("usuarios").doc(id).update({
+      tipo: novoTipo
+    }).then(() => {
+      alert("Tipo de usuário atualizado com sucesso!");
+    }).catch(error => {
+      alert("Erro ao atualizar tipo: " + error.message);
+    });
+  }
+</script>
+
+
+</body>
+</html>
