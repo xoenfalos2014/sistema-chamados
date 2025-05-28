@@ -1,0 +1,208 @@
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background: #f7f7f7;
+}
+input, textarea, button {
+  display: block;
+  margin: 10px 0;
+  padding: 8px;
+  width: 100%;
+  max-width: 500px;
+}
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px;
+}
+h2, h3 {
+  color: #333;
+}
+
+/* Cores principais - Azul piscina em 3 tons 
+:root {
+  --azul-claro: #a8e0ff;
+  --azul-medio: #00bcd4;
+  --azul-escuro: #007c91;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, var(--azul-claro), var(--azul-medio));
+  color: #ffffff;
+  text-align: center;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+h2 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  color: var(--azul-escuro);
+  text-shadow: 1px 1px 2px #00000044;
+}
+
+a {
+  display: inline-block;
+  margin: 1rem auto;
+  padding: 0.8rem 2rem;
+  font-size: 1.2rem;
+  color: white;
+  background-color: var(--azul-escuro);
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+a:hover {
+  background-color: var(--azul-medio);
+  transform: translateY(-2px);
+}
+
+a:active {
+  transform: scale(0.98);
+}
+*/
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  background-color: #fff;
+  padding: 40px 30px;
+  border-radius: 20px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  max-width: 420px;
+  width: 90%;
+}
+
+h2 {
+  color: #2c3e50;
+  font-size: 1.9rem;
+  margin-bottom: 30px;
+}
+
+.btn {
+  display: block;
+  margin: 12px 0;
+  padding: 14px 0;
+  font-size: 17px;
+  font-weight: 500;
+  color: white;
+  text-decoration: none;
+  border-radius: 10px;
+  transition: background 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-cliente {
+  background-color: #34495e;
+}
+
+.btn-tecnico {
+  background-color: #27ae60;
+}
+
+.btn-admin {
+  background-color: #8e44ad;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  opacity: 0.95;
+}
+
+body {
+  margin: 0;
+  padding: 40px 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+}
+
+.container {
+  max-width: 700px;
+  margin: auto;
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+h2, h3 {
+  color: #2c3e50;
+  text-align: center;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.input {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  resize: vertical;
+}
+
+.btn {
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-green {
+  background-color: #27ae60;
+}
+
+.btn-green:hover {
+  background-color: #2ecc71;
+  transform: translateY(-2px);
+}
+
+.lista > div {
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 15px;
+  margin-top: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.lista button {
+  margin-top: 10px;
+  background: #34495e;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.lista button:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
