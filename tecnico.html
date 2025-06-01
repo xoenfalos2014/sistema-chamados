@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel Técnico</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Painel Técnico</h2>
+    <div class="nav-buttons">
+      <button class="btn btn-dark" onclick="mostrarChamados('Aberto')">Abertos</button>
+      <button class="btn btn-green" onclick="mostrarChamados('Em Andamento')">Em Andamento</button>
+      <button class="btn btn-purple" onclick="mostrarChamados('Resolvido')">Finalizados</button>
+    </div>
+
+    <div id="lista-chamados" class="lista">Carregando chamados...</div>
+  </div>
+
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    let tecnicoEmail = null;
+
+    auth.onAuthStateChanged(user => {
+      if (!user) return location.href = "login-tecnico.html";
+      tecnicoEmail = user.email;
+      mostrarChamados("Aberto");
+    });
+
+    function mostrarChamados(status) {
+      const lista = document.getElementById("lista-chamados");
+      lista.innerHTML = "<p>Carregando chamados...</p>";
+
+      db.collection("chamados").where("status", "==", status)
+        .onSnapshot(snapshot => {
+          lista.innerHTML = "";
+          if (snapshot.empty) {
+            lista.innerHTML = `<p>Nenhum chamado ${status.toLowerCase()} encontrado.</p>`;
+            return;
+          }
+          snapshot.forEach(doc => {
+            const c = doc.data();
+            const criadoEm = formatarData(c.criadoEm);
+            const id = doc.id;
+
+            lista.innerHTML += `
+              <div class="chamado-card">
+                <p>⏰ <b>${criadoEm}</b></p>
+                <p><strong>${c.nome}</strong> (${c.email})<br>
+                ${c.empresa} - ${c.setor}</p>
+                <p>${c.mensagem}</p>
+
+                <button onclick="window.location.href='chat-tecnico.html?id=${id}'" class="btn btn-dark">Abrir Chat</button>
+
+                <textarea id="obs-${id}" class="input" placeholder="Observação Técnica">${c.observacaoTecnica || ""}</textarea>
+                <button onclick="salvarObs('${id}')" class="btn btn-green">Salvar Observação</button>
+
+                ${status === "Aberto" ? `<button onclick="mudarStatus('${id}', 'Em Andamento')" class="btn btn-purple">Mover para Em Andamento</button>` : ""}
+                ${status === "Em Andamento" ? `<button onclick="mudarStatus('${id}', 'Resolvido')" class="btn btn-dark">Finalizar Chamado</button>` : ""}
+                ${status === "Resolvido" ? `<button onclick="mudarStatus('${id}', 'Em Andamento')" class="btn btn-green">Reabrir Chamado</button>` : ""}
+              </div>
+            `;
+          });
+        });
+    }
+
+    function salvarObs(id) {
+      const texto = document.getElementById("obs-" + id).value;
+      db.collection("chamados").doc(id).update({ observacaoTecnica: texto });
+    }
+
+    function mudarStatus(id, novoStatus) {
+      db.collection("chamados").doc(id).update({ status: novoStatus });
+    }
+
+    function formatarData(dataFirestore) {
+      if (!dataFirestore || !dataFirestore.toDate) return "";
+      const data = dataFirestore.toDate();
+      const dia = String(data.getDate()).padStart(2, '0');
+      const mes = String(data.getMonth() + 1).padStart(2, '0');
+      const ano = data.getFullYear();
+      const hora = String(data.getHours()).padStart(2, '0');
+      const min = String(data.getMinutes()).padStart(2, '0');
+      return `${dia}/${mes}/${ano} ${hora}:${min}`;
+    }
+  </script>
+
+    <div class="p-4">
+      
+    </div>
+    
+
+
+<div class="flex justify-center items-center py-4">
+  <a href="rotina.html" target="_blank"
+     class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded shadow flex items-center gap-2 transition">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+         viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9.75 3.75h4.5M9 21h6m-8.25-4.5h10.5m1.5-3.75h-13.5m14.25-3.75h-15" />
+    </svg>
+    Rotina
+  </a>
+</div>
+
+
+<div class="mt-6 text-center">
+  <a href="agenda.html" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded shadow inline-block m-2">
+    📅 Abrir Agenda de Serviços
+  </a>
+</div>
+
+</body>
+</html>

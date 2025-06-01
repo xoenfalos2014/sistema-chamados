@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Login Cliente</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    #form-cadastro {
+      display: none;
+      margin-top: 15px;
+      border-top: 1px solid #ccc;
+      padding-top: 15px;
+    }
+    button {
+      margin-bottom: 10px;
+    }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+</head>
+<body>
+  <h2>Login do Cliente</h2>
+  <input id="email-login" placeholder="Email" type="email">
+  <input id="senha-login" placeholder="Senha" type="password">
+  <button onclick="login()">Entrar</button>
+
+  <h3>Ainda não tem conta?</h3>
+  <button onclick="mostrarCadastro()">Criar Conta</button>
+
+  <div id="form-cadastro">
+    <input id="nome-cadastro" placeholder="Nome completo">
+    <input id="email-cadastro" placeholder="Novo email" type="email">
+    <input id="senha-cadastro" placeholder="Nova senha" type="password">
+    <button onclick="criarConta()">Confirmar Cadastro</button>
+  </div>
+
+  <script>
+    const db = firebase.firestore();
+
+    function mostrarCadastro() {
+      const form = document.getElementById("form-cadastro");
+      form.style.display = form.style.display === "none" ? "block" : "none";
+    }
+
+    function login() {
+      const email = document.getElementById('email-login').value;
+      const senha = document.getElementById('senha-login').value;
+      firebase.auth().signInWithEmailAndPassword(email, senha)
+        .then(() => window.location.href = "cliente.html")
+        .catch(e => alert("Erro ao logar: " + e.message));
+    }
+
+    function criarConta() {
+      const nome = document.getElementById('nome-cadastro').value;
+      const email = document.getElementById('email-cadastro').value;
+      const senha = document.getElementById('senha-cadastro').value;
+
+      firebase.auth().createUserWithEmailAndPassword(email, senha)
+        .then(userCredential => {
+          const uid = userCredential.user.uid;
+          return db.collection("usuarios").doc(uid).set({
+            nome: nome,
+            email: email,
+            tipo: "cliente"
+          });
+        })
+        .then(() => {
+          alert("Conta criada com sucesso!");
+          window.location.href = "cliente.html";
+        })
+        .catch(e => alert("Erro ao criar conta: " + e.message));
+    }
+  </script>
+</body>
+</html>
