@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Agenda de Serviços</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <link href="style.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body class="bg-gray-100 p-6 font-sans">
+  <div class="max-w-6xl mx-auto bg-white p-4 rounded shadow">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-2xl font-bold">📅 Agenda de Serviços</h1>
+      <button onclick="abrirModalDataHoje()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">➕ Novo Agendamento</button>
+    </div>
+    <div id="calendar"></div>
+  </div>
+
+  <!-- Modal de Agendamento -->
+  <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center">
+    <div class="bg-white p-6 rounded shadow w-full max-w-md">
+      <h2 class="text-xl font-bold mb-4">Novo Agendamento</h2>
+      <input id="cliente" type="text" placeholder="Cliente" class="w-full mb-2 p-2 border rounded" />
+      <input id="tecnico" type="text" placeholder="Técnico" class="w-full mb-2 p-2 border rounded" />
+      <input id="servico" type="text" placeholder="Serviço a Realizar" class="w-full mb-2 p-2 border rounded" />
+      <input id="problema" type="text" placeholder="Problema Reclamado" class="w-full mb-2 p-2 border rounded" />
+      <input id="data" type="date" class="w-full mb-2 p-2 border rounded" />
+      <select id="status" class="w-full mb-4 p-2 border rounded">
+        <option value="pendente">🔴 Pendente</option>
+        <option value="finalizado">✅ Finalizado</option>
+      </select>
+      <div class="flex justify-between">
+        <button onclick="salvarEvento()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Salvar</button>
+        <button onclick="fecharModal()" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+let calendar;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const calendarEl = document.getElementById('calendar');
+  calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    locale: 'pt-br',
+    height: 600,
+    events: [],
+    eventClick: function(info) {
+      const evento = info.event.extendedProps;
+      const confirmado = confirm(
+        `Cliente: ${evento.cliente}\nTécnico: ${evento.tecnico}\nServiço: ${evento.servico}\nProblema: ${evento.problema}\nStatus: ${evento.status}\n\nDeseja excluir este agendamento?`
+      );
+      if (confirmado) {
+        info.event.remove();
+        alert("Agendamento excluído.");
+      }
+    },
+    eventDidMount: function(info) {
+      const status = info.event.extendedProps.status;
+      if (status === 'finalizado') {
+        info.el.classList.add("bg-green-200");
+      } else {
+        info.el.classList.add("bg-red-200");
+      }
+    }
+  });
+  calendar.render();
+});
+
+function abrirModalDataHoje() {
+  const hoje = new Date().toISOString().split('T')[0];
+  document.getElementById('data').value = hoje;
+  document.getElementById('modal').classList.remove('hidden');
+  document.getElementById('modal').classList.add('flex');
+}
+
+function fecharModal() {
+  document.getElementById('modal').classList.add('hidden');
+  document.getElementById('modal').classList.remove('flex');
+}
+
+function salvarEvento() {
+  const cliente = document.getElementById('cliente').value;
+  const tecnico = document.getElementById('tecnico').value;
+  const servico = document.getElementById('servico').value;
+  const problema = document.getElementById('problema').value;
+  const data = document.getElementById('data').value;
+  const status = document.getElementById('status').value;
+
+  if (!cliente || !tecnico || !servico || !problema || !data) {
+    alert("Preencha todos os campos!");
+    return;
+  }
+
+  calendar.addEvent({
+    title: `${cliente} (${status === 'finalizado' ? '✅' : '🔴'})`,
+    start: data,
+    allDay: true,
+    extendedProps: { cliente, tecnico, servico, problema, status }
+  });
+
+  fecharModal();
+}
+</script>
+</body>
+</html>
