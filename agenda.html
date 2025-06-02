@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Agenda de Serviços</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
+      authDomain: "sistema-chamados-99e49.firebaseapp.com",
+      projectId: "sistema-chamados-99e49",
+      storageBucket: "sistema-chamados-99e49.firebasestorage.app",
+      messagingSenderId: "680351942005",
+      appId: "1:680351942005:web:896b35a40f094d42297f3c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth();
+
+    let calendar;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        document.getElementById("userEmail").textContent = user.email;
+        await carregarEventos();
+
+        document.getElementById("formAgendamento").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const cliente = document.getElementById("cliente").value;
+          const tecnico = document.getElementById("tecnico").value;
+          const servico = document.getElementById("servico").value;
+          const problema = document.getElementById("problema").value;
+          const data = document.getElementById("data").value;
+
+          try {
+            await addDoc(collection(db, "agendamentos"), {
+              cliente,
+              tecnico,
+              servico,
+              problema,
+              data,
+              criadoEm: new Date(),
+              criadoPor: user.email
+            });
+            alert("Agendamento salvo com sucesso!");
+            document.getElementById("modal").classList.add("hidden");
+            document.getElementById("formAgendamento").reset();
+            await carregarEventos();
+          } catch (error) {
+            console.error("Erro ao salvar:", error);
+            alert("Erro ao salvar o agendamento.");
+          }
+        });
+      } else {
+        alert("É necessário estar logado.");
+        window.location.href = "login-tecnico.html";
+      }
+    });
+
+    async function carregarEventos() {
+      const q = query(collection(db, "agendamentos"));
+      const snapshot = await getDocs(q);
+      const eventos = [];
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        eventos.push({
+          title: `${d.cliente} - ${d.servico}`,
+          start: d.data
+        });
+      });
+      if (calendar) {
+        calendar.removeAllEvents();
+        calendar.addEventSource(eventos);
+      }
+    }
+
+    window.abrirModal = function () {
+      document.getElementById("modal").classList.remove("hidden");
+    };
+    window.fecharModal = function () {
+      document.getElementById("modal").classList.add("hidden");
+    };
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const calendarEl = document.getElementById("calendar");
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        locale: "pt-br"
+      });
+      calendar.render();
+    });
+  </script>
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="max-w-4xl mx-auto bg-white shadow p-6 rounded">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-xl font-bold">📅 Agenda de Serviços</h1>
+      <button onclick="abrirModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">➕ Novo Agendamento</button>
+    </div>
+    <p class="mb-2 text-sm text-gray-600">Logado como: <span id="userEmail" class="font-medium text-black"></span></p>
+    <div id="calendar"></div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden z-50">
+    <div class="bg-white p-6 rounded shadow w-full max-w-lg relative">
+      <h2 class="text-lg font-bold mb-4">Novo Agendamento</h2>
+      <form id="formAgendamento" class="space-y-3">
+        <input id="cliente" type="text" placeholder="Nome do Cliente" class="w-full border p-2 rounded" required />
+        <input id="tecnico" type="text" placeholder="Técnico Responsável" class="w-full border p-2 rounded" required />
+        <input id="servico" type="text" placeholder="Serviço a realizar" class="w-full border p-2 rounded" required />
+        <textarea id="problema" placeholder="Problema relatado" class="w-full border p-2 rounded" required></textarea>
+        <input id="data" type="date" class="w-full border p-2 rounded" required />
+        <div class="flex justify-between mt-4">
+          <button type="button" onclick="fecharModal()" class="px-4 py-2 bg-gray-400 text-white rounded">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
