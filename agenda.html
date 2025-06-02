@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Agenda de Serviços</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-gray-100 p-6 font-sans">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-2xl font-bold text-center text-blue-800 mb-6">📅 Agenda de Serviços</h1>
+
+    <div class="flex justify-between items-center mb-4">
+      <input type="text" id="busca" placeholder="🔍 Buscar por cliente ou técnico..." class="p-2 border rounded w-1/2" />
+      <button onclick="mostrarTudo()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">🔁 Ver Todos</button>
+    </div>
+
+    <div id="calendar" class="bg-white rounded shadow p-4 mb-6"></div>
+
+    <div id="eventosDoDia" class="mb-6"></div>
+
+    <div class="bg-white p-4 rounded shadow">
+      <h2 class="text-xl font-bold mb-2">Novo Agendamento</h2>
+      <form id="formAgendamento" class="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <input type="date" id="data" required class="p-2 border rounded" />
+        <input type="text" id="cliente" placeholder="Cliente" required class="p-2 border rounded" />
+        <input type="text" id="tecnico" placeholder="Técnico" required class="p-2 border rounded" />
+        <input type="text" id="servico" placeholder="Serviço a realizar" required class="p-2 border rounded" />
+        <textarea id="obs" placeholder="Observações..." class="p-2 border rounded md:col-span-2"></textarea>
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded md:col-span-2">💾 Salvar Agendamento</button>
+      </form>
+    </div>
+  </div>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
+    authDomain: "sistema-chamados-99e49.firebaseapp.com",
+    projectId: "sistema-chamados-99e49"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  let todosAgendamentos = [];
+
+  function renderEventosPara(dataSelecionada) {
+    const eventosDia = todosAgendamentos.filter(a => a.data === dataSelecionada);
+    const div = document.getElementById("eventosDoDia");
+    div.innerHTML = '<h3 class="text-lg font-bold text-gray-800 mb-2">🗂️ Agendamentos do Dia</h3>';
+    eventosDia.forEach(e => {
+      div.innerHTML += `
+        <div class="border-l-4 border-blue-600 bg-white shadow p-3 mb-2 rounded">
+          <strong>Cliente:</strong> ${e.cliente}<br>
+          <strong>Técnico:</strong> ${e.tecnico}<br>
+          <strong>Serviço:</strong> ${e.servico}<br>
+          <strong>Obs:</strong> ${e.obs || "-"}
+        </div>
+      `;
+    });
+    if (!eventosDia.length) div.innerHTML += '<p class="text-gray-600">Nenhum agendamento encontrado.</p>';
+  }
+
+  function mostrarTudo() {
+    renderEventosPara("TODOS");
+    const div = document.getElementById("eventosDoDia");
+    div.innerHTML = '<h3 class="text-lg font-bold text-gray-800 mb-2">📋 Todos os Agendamentos</h3>';
+    todosAgendamentos.forEach(e => {
+      div.innerHTML += `
+        <div class="border-l-4 border-indigo-500 bg-white shadow p-3 mb-2 rounded">
+          <strong>Data:</strong> ${e.data}<br>
+          <strong>Cliente:</strong> ${e.cliente}<br>
+          <strong>Técnico:</strong> ${e.tecnico}<br>
+          <strong>Serviço:</strong> ${e.servico}<br>
+          <strong>Obs:</strong> ${e.obs || "-"}
+        </div>
+      `;
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', async function () {
+    const calendarEl = document.getElementById('calendar');
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      locale: 'pt-br',
+      dateClick: function(info) {
+        document.getElementById("data").value = info.dateStr;
+        renderEventosPara(info.dateStr);
+      },
+    });
+
+    const snap = await db.collection("agendamentos").get();
+    todosAgendamentos = snap.docs.map(doc => doc.data());
+
+    calendar.addEventSource(todosAgendamentos.map(d => ({
+      title: `${d.cliente} - ${d.servico}`,
+      start: d.data
+    })));
+
+    calendar.render();
+
+    document.getElementById("formAgendamento").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const dados = {
+        data: document.getElementById("data").value,
+        cliente: document.getElementById("cliente").value,
+        tecnico: document.getElementById("tecnico").value,
+        servico: document.getElementById("servico").value,
+        obs: document.getElementById("obs").value,
+        criadoEm: new Date()
+      };
+      await db.collection("agendamentos").add(dados);
+      alert("Agendamento salvo com sucesso!");
+      location.reload();
+    });
+
+    document.getElementById("busca").addEventListener("input", e => {
+      const termo = e.target.value.toLowerCase();
+      const filtrados = todosAgendamentos.filter(
+        a => a.cliente.toLowerCase().includes(termo) || a.tecnico.toLowerCase().includes(termo)
+      );
+      const div = document.getElementById("eventosDoDia");
+      div.innerHTML = '<h3 class="text-lg font-bold text-gray-800 mb-2">🔍 Resultado da Busca</h3>';
+      filtrados.forEach(e => {
+        div.innerHTML += `
+          <div class="border-l-4 border-yellow-500 bg-white shadow p-3 mb-2 rounded">
+            <strong>Data:</strong> ${e.data}<br>
+            <strong>Cliente:</strong> ${e.cliente}<br>
+            <strong>Técnico:</strong> ${e.tecnico}<br>
+            <strong>Serviço:</strong> ${e.servico}<br>
+            <strong>Obs:</strong> ${e.obs || "-"}
+          </div>
+        `;
+      });
+      if (!filtrados.length) div.innerHTML += '<p class="text-gray-600">Nenhum resultado encontrado.</p>';
+    });
+  });
+</script>
+</body>
+</html>
