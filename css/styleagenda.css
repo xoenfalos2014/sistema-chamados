@@ -1,0 +1,11 @@
+
+/* Tailwind CSS Build (simulado para testes) */
+body { font-family: sans-serif; background-color: #f9fafb; padding: 1rem; }
+.text-center { text-align: center; }
+.font-bold { font-weight: bold; }
+.bg-green-500 { background-color: #22c55e; }
+.bg-red-500 { background-color: #ef4444; }
+.text-white { color: white; }
+.p-4 { padding: 1rem; }
+.rounded { border-radius: 0.25rem; }
+.shadow { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }

@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <title>Manutenção Preventiva</title>
+  
+  
+
+  
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="bg-gray-50 p-4 font-sans">
+  <div class="max-w-2xl mx-auto bg-white p-6 rounded shadow relative">
+    <img src="img/logo-wg.png" class="absolute top-1/2 left-1/2 w-64 opacity-10 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+    <h1 class="text-2xl font-bold mb-4 text-center">Manutenção Preventiva</h1>
+    <form id="formRotina" class="space-y-3">
+      <input type="text" id="cliente" placeholder="Cliente" class="w-full p-2 border rounded" required>
+      <input type="text" id="tecnico" placeholder="Técnico Responsável" class="w-full p-2 border rounded" required>
+      <input type="date" id="data" class="w-full p-2 border rounded" required>
+
+      <div class="grid grid-cols-2 gap-2">
+        <label><input type="checkbox" id="limpezaSistema"> Limpeza do sistema</label>
+        <label><input type="checkbox" id="antivirus"> Varredura antivírus</label>
+        <label><input type="checkbox" id="limpezaFisica"> Limpeza física</label>
+        <label><input type="checkbox" id="desempenho"> Teste de desempenho</label>
+        <label><input type="checkbox" id="cameras"> Câmeras</label>
+        <label><input type="checkbox" id="backup"> Backup</label>
+      </div>
+
+      <textarea id="observacao" placeholder="Observações..." class="w-full p-2 border rounded"></textarea>
+
+      <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Salvar e Gerar PDF</button>
+    </form>
+<div class="text-center mt-6">
+  <a href="listar-rotinas.html"
+     class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded shadow transition">
+    📋 Ver Rotinas Salvas
+  </a>
+</div>
+  </div>
+
+  
+
+
+
+
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+  const { jsPDF } = window.jspdf;
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
+    authDomain: "sistema-chamados-99e49.firebaseapp.com",
+    projectId: "sistema-chamados-99e49",
+    storageBucket: "sistema-chamados-99e49.firebasestorage.app",
+    messagingSenderId: "680351942005",
+    appId: "1:680351942005:web:896b35a40f094d42297f3c"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth();
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      console.log("Usuário logado:", user.email);
+
+      document.getElementById("formRotina").addEventListener("submit", async e => {
+        e.preventDefault();
+        const form = e.target;
+        const data = {
+          cliente: form.cliente.value,
+          tecnico: form.tecnico.value,
+          data: form.data.value.replace(/-/g, ""),
+          limpezaSistema: form.limpezaSistema.checked,
+          antivirus: form.antivirus.checked,
+          limpezaFisica: form.limpezaFisica.checked,
+          desempenho: form.desempenho.checked,
+          cameras: form.cameras.checked,
+          backup: form.backup.checked,
+          observacao: form.observacao.value,
+          criadoEm: new Date()
+        };
+
+        try {
+          await addDoc(collection(db, "rotinas"), data);
+          gerarPDF(data);
+        } catch (err) {
+          console.error("Erro ao salvar rotina:", err);
+          alert("Erro ao salvar rotina no Firebase. Verifique autenticação ou conexão.");
+        }
+      });
+    } else {
+      alert("Você precisa estar logado para registrar a rotina.");
+      window.location.href = "login.html";
+    }
+  });
+
+  
+    
+    
+function gerarPDF(data) {
+  const form = document.getElementById("formRotina");
+  html2canvas(form, { scale: 3 }).then(canvas => {
+    const imgData = canvas.toDataURL("image/png");
+    const doc = new window.jspdf.jsPDF("p", "mm", "a4");
+    const imgProps = doc.getImageProperties(imgData);
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    doc.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+    // Rodapé com dados da empresa
+    doc.setFontSize(10);
+    doc.text("WG Informática - sistemas de atendimento e manutenção", 10, doc.internal.pageSize.getHeight() - 10);
+
+    doc.save(`rotina_${data.data}_${data.cliente}.pdf`);
+  });
+}
+;
+    }
+    );
+    }
+    
+</script>
+
+</body>
+</html>

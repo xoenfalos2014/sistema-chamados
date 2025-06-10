@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel de Usuários</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
+      authDomain: "sistema-chamados-99e49.firebaseapp.com",
+      projectId: "sistema-chamados-99e49"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        alert("Você precisa estar logado como administrador.");
+        location.href = "login-admin.html";
+      } else {
+        document.getElementById("formNovoUsuario").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const uid = document.getElementById("uid").value.trim();
+          const email = document.getElementById("email").value.trim();
+          const tipo = document.getElementById("tipo").value;
+
+          if (!uid || !email || !tipo) {
+            alert("Preencha todos os campos.");
+            return;
+          }
+
+          await setDoc(doc(db, "usuarios", uid), { email, tipo });
+          alert("Usuário adicionado!");
+          location.reload();
+        });
+
+        carregarUsuarios();
+      }
+    });
+
+    async function carregarUsuarios() {
+      const lista = document.getElementById("listaUsuarios");
+      lista.innerHTML = "Carregando...";
+      const snap = await getDocs(collection(db, "usuarios"));
+      lista.innerHTML = "";
+
+      
+const emailMap = {};
+snap.forEach(docSnap => {
+  emailMap[docSnap.id] = docSnap.data().email || "";
+  localStorage.setItem("usuarios_email_map", JSON.stringify(emailMap));
+
+        const dados = docSnap.data();
+        const div = document.createElement("div");
+        div.className = "border-b py-2 flex justify-between items-center";
+        div.innerHTML = `
+          <div>
+            <strong>${dados.email}</strong><br>
+            <small>UID: ${docSnap.id}</small>
+          </div>
+          <div>
+            Tipo: <strong>${dados.tipo}</strong>
+            <select class="ml-2 p-1 border rounded" data-uid="${docSnap.id}">
+              <option value="">Alterar tipo...</option>
+              <option value="cliente">cliente</option>
+              <option value="tecnico">tecnico</option>
+              <option value="admin">admin</option>
+            </select>
+          </div>
+        `;
+        lista.appendChild(div);
+      });
+
+      document.querySelectorAll("select[data-uid]").forEach(select => {
+        select.addEventListener("change", async () => {
+          const uid = select.dataset.uid;
+          const tipo = select.value;
+          const ref = doc(db, "usuarios", uid);
+          const email = document.querySelector(`select[data-uid="${uid}"]`).closest("div").querySelector("strong").innerText;
+          
+const dadosAntigos = JSON.parse(localStorage.getItem("usuarios_email_map")) || {};
+const emailAtual = dadosAntigos[uid] || email;
+await setDoc(ref, { email: emailAtual, tipo });
+
+          alert("Tipo atualizado!");
+          location.reload();
+        });
+      });
+    }
+  </script>
+</head>
+<body class="bg-gray-100 p-6 font-sans">
+  <div class="max-w-3xl mx-auto bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold mb-4 text-center">👥 Painel de Usuários</h1>
+
+    <form id="formNovoUsuario" class="mb-6 space-y-3">
+      <div class="text-lg font-semibold">Cadastrar manualmente</div>
+      <input id="uid" type="text" placeholder="UID do usuário" class="w-full p-2 border rounded" required>
+      <input id="email" type="email" placeholder="Email do usuário" class="w-full p-2 border rounded" required>
+      <select id="tipo" class="w-full p-2 border rounded" required>
+        <option value="">Selecione o tipo</option>
+        <option value="cliente">cliente</option>
+        <option value="tecnico">tecnico</option>
+        <option value="admin">admin</option>
+      </select>
+      <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Salvar</button>
+    </form>
+
+    <div class="border-t pt-4">
+      <h2 class="text-xl font-bold mb-2">Usuários cadastrados</h2>
+      <div id="listaUsuarios" class="space-y-2 text-sm text-gray-800"></div>
+    </div>
+  </div>
+</body>
+</html>

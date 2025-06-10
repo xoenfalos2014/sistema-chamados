@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+
+<html lang="pt-br">
+<head>
+<meta charset="utf-8"/>
+<title>Agenda de Serviços</title>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tippy.js@6"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
+      authDomain: "sistema-chamados-99e49.firebaseapp.com",
+      projectId: "sistema-chamados-99e49",
+      storageBucket: "sistema-chamados-99e49.appspot.com",
+      messagingSenderId: "680351942005",
+      appId: "1:680351942005:web:896b35a40f094d42297f3c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth();
+
+    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
+
+    async function sincronizarChamadosParaAgendamentos() {
+      const realtimeDb = getDatabase(app);
+      const chamadosRef = ref(realtimeDb, "chamados");
+
+      try {
+        const snapshot = await get(chamadosRef);
+        if (snapshot.exists()) {
+          const chamados = snapshot.val();
+          for (const id in chamados) {
+            const chamado = chamados[id];
+
+            // Verifica se já existe no Firestore
+            const q = query(agendamentosRef, where("id", "==", id));
+            const querySnapshot = await getDocs(q);
+            if (querySnapshot.empty) {
+              await addDoc(agendamentosRef, {
+                id,
+                cliente: chamado.nome,
+                email: chamado.email,
+                empresa: chamado.empresa,
+                setor: chamado.setor,
+                descricao: chamado.mensagem,
+                data: chamado.criadoEm,
+                status: "Pendente"
+              });
+              console.log("Agendamento sincronizado:", id);
+            }
+          }
+        } else {
+          console.warn("Nenhum chamado encontrado para sincronizar.");
+        }
+      } catch (error) {
+        console.error("Erro ao sincronizar chamados:", error);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      sincronizarChamadosParaAgendamentos();
+    });
+
+
+    let calendar;
+    const agendamentosRef = collection(db, "agendamentos");
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const calendarEl = document.getElementById("calendar");
+
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        editable: true,
+        eventClick: async (info) => {
+          const evento = info.event.extendedProps;
+          const confirmDelete = confirm("Excluir este agendamento?");
+          if (confirmDelete) {
+            await deleteDoc(doc(db, "agendamentos", evento.id));
+            info.event.remove();
+          }
+        },
+        events: async function(fetchInfo, successCallback) {
+          const snapshot = await getDocs(agendamentosRef);
+          const eventos = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              title: data.cliente + " - " + data.servico,
+              start: data.data,
+              backgroundColor: data.status === "finalizado" ? "green" : "red",
+              extendedProps: { ...data, id: doc.id }
+            };
+          });
+          successCallback(eventos);
+        }
+      });
+
+      calendar.render();
+
+      document.getElementById("form-agendamento").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const cliente = document.getElementById("cliente").value;
+        const tecnico = document.getElementById("tecnico").value;
+        const servico = document.getElementById("servico").value;
+        const problema = document.getElementById("problema").value;
+        const data = document.getElementById("data").value;
+        const status = document.getElementById("status").value;
+
+        try {
+          await addDoc(agendamentosRef, {
+            cliente, tecnico, servico, problema, data, status,
+            criadoPor: auth.currentUser.email,
+            criadoEm: new Date()
+          });
+          alert("Agendamento salvo!");
+          calendar.refetchEvents();
+          e.target.reset();
+        } catch (error) {
+          alert("Erro ao salvar: " + error.message);
+        }
+      });
+    });
+  </script>
+</head>
+<body class="bg-gray-100 text-gray-900 p-4">
+<div class="max-w-4xl mx-auto"><div class="p-4 flex justify-between items-center"><input class="p-2 border rounded w-1/2" id="busca" onkeyup="buscarAgendamentos()" placeholder="🔍 Buscar agendamento..." type="text"/><button class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 ml-4" onclick="exportarPDF()">📄 Exportar PDF</button></div>
+<h1 class="text-3xl font-bold mb-4 text-center">📅 Agenda de Serviços</h1>
+<form class="grid grid-cols-1 gap-2 md:grid-cols-2 mb-6 bg-white p-4 rounded shadow" id="form-agendamento">
+<input class="border p-2 rounded" id="cliente" placeholder="Cliente" required=""/>
+<input class="border p-2 rounded" id="tecnico" placeholder="Técnico" required=""/>
+<input class="border p-2 rounded" id="servico" placeholder="Serviço" required=""/>
+<input class="border p-2 rounded" id="problema" placeholder="Problema" required=""/>
+<input class="border p-2 rounded" id="data" required="" type="date"/>
+<select class="border p-2 rounded" id="status">
+<option value="aberto">Aberto</option>
+<option value="finalizado">Finalizado</option>
+</select>
+<div class="md:col-span-2 text-right">
+<button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" type="submit">Salvar Agendamento</button>
+</div>
+</form>
+<div class="bg-white p-4 rounded shadow" id="calendar"></div>
+</div>
+<script>
+// 🔍 Modal de visualização completa
+function mostrarDetalhes(agendamento) {
+  alert("Detalhes:\n\nCliente: " + agendamento.cliente + 
+        "\nTécnico: " + agendamento.tecnico + 
+        "\nServiço: " + agendamento.servico + 
+        "\nProblema: " + agendamento.problema + 
+        "\nStatus: " + agendamento.status + 
+        "\nData: " + agendamento.data);
+}
+
+// 🧾 Gerar PDF
+function exportarPDF() {
+  const doc = new jsPDF();
+  doc.text("Agendamentos", 10, 10);
+  doc.text("Aqui entraria a lista formatada de agendamentos para exportação", 10, 20);
+  doc.save("agendamentos.pdf");
+}
+
+// 🔍 Busca e filtro básico
+function buscarAgendamentos() {
+  const termo = document.getElementById("busca").value.toLowerCase();
+  document.querySelectorAll(".fc-event").forEach(evt => {
+    const texto = evt.innerText.toLowerCase();
+    evt.style.display = texto.includes(termo) ? "" : "none";
+  });
+}
+</script></body>
+</html>

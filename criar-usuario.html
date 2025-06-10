@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Criar Usuário</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
+      authDomain: "sistema-chamados-99e49.firebaseapp.com",
+      projectId: "sistema-chamados-99e49"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    document.getElementById("formNovoUsuario").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const nome = document.getElementById("nome").value;
+      const email = document.getElementById("email").value;
+      const senha = document.getElementById("senha").value;
+      const tipo = document.getElementById("tipo").value;
+
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, email, senha);
+        const uid = cred.user.uid;
+
+        await setDoc(doc(db, "usuarios", uid), {
+          nome,
+          email,
+          tipo
+        });
+
+        alert("Usuário criado com sucesso!");
+        e.target.reset();
+      } catch (err) {
+        alert("Erro ao criar usuário. Verifique se o email já está em uso.");
+        console.error(err);
+      }
+    });
+  </script>
+</head>
+<body class="bg-gray-100 p-6 font-sans">
+  <div class="max-w-md mx-auto bg-white p-6 rounded shadow">
+    <h2 class="text-xl font-bold mb-4 text-center">Criar Novo Usuário 🔐</h2>
+    <form id="formNovoUsuario" class="space-y-3">
+      <input id="nome" type="text" placeholder="Nome completo" class="w-full p-2 border rounded" required>
+      <input id="email" type="email" placeholder="Email" class="w-full p-2 border rounded" required>
+      <input id="senha" type="password" placeholder="Senha" class="w-full p-2 border rounded" required>
+      <select id="tipo" class="w-full p-2 border rounded" required>
+        <option value="">Selecione o tipo</option>
+        <option value="admin">Administrador</option>
+        <option value="tecnico">Técnico</option>
+        <option value="cliente">Cliente</option>
+      </select>
+      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Cadastrar</button>
+    </form>
+  </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
+    authDomain: "sistema-chamados-99e49.firebaseapp.com",
+    projectId: "sistema-chamados-99e49"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const snap = await getDoc(doc(db, "usuarios", user.uid));
+      if (!snap.exists() || snap.data().tipo !== "admin") {
+        alert("Acesso restrito aos administradores.");
+        window.location.href = "index.html";
+      }
+    } else {
+      window.location.href = "login-admin.html";
+    }
+  });
+</script>
+
+</body>
+</html>
