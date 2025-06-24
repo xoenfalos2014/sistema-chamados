@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Ordem de Serviço - PDF</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="firebase-config.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    #os-container { width: 800px; margin: auto; padding: 20px; border: 1px solid #ccc; background: #fff; }
+    label { font-weight: bold; display: block; margin-top: 10px; }
+    input, textarea { width: 100%; padding: 8px; margin-top: 5px; }
+    img.logo { width: 120px; margin-bottom: 10px; }
+    .btn { margin-top: 20px; padding: 10px 20px; background-color: #38a169; color: white; border: none; cursor: pointer; }
+  </style>
+</head>
+<body>
+<div id="os-container">
+  <img src="logo-wg.png" class="logo">
+  <h2>WG INFORMATICA SUPORTE E MANUTENÇÃO DE COMPUTADORES LTDA</h2>
+  <p><strong>CNPJ:</strong> 18.227.202/0001-36</p>
+  <p><strong>Endereço:</strong> Rua Doutor Feliciano Sodré, Nº 182, Sala 301, Centro, São Gonçalo – CEP 24440-440</p>
+  <hr>
+
+  <label>Cliente</label>
+  <input type="text" id="cliente">
+
+  <label>Empresa</label>
+  <input type="text" id="empresa">
+
+  <label>Setor</label>
+  <input type="text" id="setor">
+
+  <label>Email</label>
+  <input type="text" id="email">
+
+  <label>Técnico</label>
+  <input type="text" id="tecnico">
+
+  <label>Mensagem</label>
+  <textarea id="mensagem"></textarea>
+
+  <label>Data de Abertura</label>
+  <input type="text" id="data">
+
+  <button class="btn" onclick="salvarOS()">💾 Salvar OS no Firebase</button>
+  <button class="btn" onclick="gerarPDF()">📄 Gerar PDF</button>
+</div>
+
+<script>
+  const db = firebase.firestore();
+  const params = new URLSearchParams(window.location.search);
+  const chamadoId = params.get("id");
+
+  if (chamadoId) {
+    db.collection("chamados").doc(chamadoId).get().then(doc => {
+      if (doc.exists) {
+        const dados = doc.data();
+        document.getElementById("cliente").value = dados.cliente || "";
+        document.getElementById("empresa").value = dados.empresa || "";
+        document.getElementById("setor").value = dados.setor || "";
+        document.getElementById("email").value = dados.email || "";
+        document.getElementById("tecnico").value = dados.tecnico || "";
+        document.getElementById("mensagem").value = dados.mensagem || "";
+        document.getElementById("data").value = new Date(dados.data.seconds * 1000).toLocaleString();
+      }
+    });
+  }
+
+  function gerarNumeroOS() {
+    return "OS-" + Math.floor(100000 + Math.random() * 900000);
+  }
+
+  function salvarOS() {
+    const numeroOS = gerarNumeroOS();
+    const os = {
+      numeroOS: numeroOS,
+      cliente: document.getElementById("cliente").value,
+      empresa: document.getElementById("empresa").value,
+      setor: document.getElementById("setor").value,
+      email: document.getElementById("email").value,
+      tecnico: document.getElementById("tecnico").value,
+      mensagem: document.getElementById("mensagem").value,
+      data: document.getElementById("data").value,
+      criadoEm: new Date().toISOString()
+    };
+
+    db.collection("ordens_servico").add(os).then(() => {
+      alert("OS salva com sucesso: " + numeroOS);
+    }).catch(err => {
+      alert("Erro ao salvar OS: " + err);
+    });
+  }
+
+  async function gerarPDF() {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'pt', 'a4');
+    const container = document.getElementById("os-container");
+
+    await html2canvas(container, { scale: 2 }).then(canvas => {
+      const imgData = canvas.toDataURL("image/png");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgHeight = (imgProps.height * pageWidth) / imgProps.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, imgHeight);
+      const fileName = 'ordem_servico_' + new Date().toISOString().slice(0,10) + '.pdf';
+      pdf.save(fileName);
+    });
+  }
+</script>
+</body>
+</html>

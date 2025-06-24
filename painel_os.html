@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel de Ordens de Serviço</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h2 { margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    th { background-color: #f0f0f0; }
+    button { padding: 6px 12px; margin: 2px; cursor: pointer; }
+    .btn-view { background: #3498db; color: white; }
+    .btn-pdf { background: #2ecc71; color: white; }
+    .btn-del { background: #e74c3c; color: white; }
+  </style>
+</head>
+<body>
+  <h2>Painel de Ordens de Serviço</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Nº OS</th>
+        <th>Cliente</th>
+        <th>Técnico</th>
+        <th>Data</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="lista-os"></tbody>
+  </table>
+
+  <script>
+    const db = firebase.firestore();
+
+    function carregarOS() {
+      db.collection("ordens_servico").get().then(snapshot => {
+        const lista = document.getElementById("lista-os");
+        lista.innerHTML = "";
+        snapshot.forEach(doc => {
+          const os = doc.data();
+          const linha = document.createElement("tr");
+          linha.innerHTML = `
+            <td>${os.numeroOS || "(sem número)"}</td>
+            <td>${os.cliente || ""}</td>
+            <td>${os.tecnico || ""}</td>
+            <td>${os.data || ""}</td>
+            <td>
+              <button class="btn-view" onclick="visualizar('${doc.id}')">Visualizar</button>
+              <button class="btn-pdf" onclick="gerarPDF('${doc.id}')">PDF</button>
+              <button class="btn-del" onclick="excluir('${doc.id}')">Excluir</button>
+            </td>
+          `;
+          lista.appendChild(linha);
+        });
+      });
+    }
+
+    function visualizar(id) {
+      window.open(`ordem_servico.html?id=${id}`, '_blank');
+    }
+
+    function gerarPDF(id) {
+      window.open(`ordem_servico_com_pdf.html?id=${id}`, '_blank');
+    }
+
+    function excluir(id) {
+      if (confirm("Tem certeza que deseja excluir esta OS?")) {
+        firebase.firestore().collection("ordens_servico").doc(id).delete().then(() => {
+          alert("OS excluída com sucesso.");
+          carregarOS();
+        });
+      }
+    }
+
+    carregarOS();
+  </script>
+</body>
+</html>

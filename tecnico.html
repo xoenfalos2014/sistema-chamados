@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel Técnico</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #f0fdf4;
+      color: #1e3a1a;
+    }
+    header {
+      background-color: #10b981;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 600;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    .nav-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+    .btn:hover {
+      transform: scale(1.05);
+    }
+    .btn-dark { background-color: #065f46; color: white; }
+    .btn-green { background-color: #10b981; color: white; }
+    .btn-purple { background-color: #7c3aed; color: white; }
+    .btn-yellow { background-color: #f59e0b; color: white; }
+    .chamado-card {
+      background-color: #ecfdf5;
+      border-left: 6px solid #10b981;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .chamado-card p { margin: 0.3rem 0; }
+    .chamado-card button { margin: 0.2rem 0.3rem 0 0; }
+  </style>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+</head>
+<body>
+  <div style="margin-bottom: 20px;">
+    <a href="ordem_servico_com_pdf_salva_os.html" target="_blank">
+      <button style="padding: 10px 20px; background-color: #3498db; color: white; border: none; border-radius: 5px;">
+        📄 Nova Ordem de Serviço
+      </button>
+    </a>
+    <a href="painel_os.html" target="_blank">
+      <button style="padding: 10px 20px; background-color: #2ecc71; color: white; border: none; border-radius: 5px;">
+        📋 Painel de OS
+      </button>
+    </a>
+  </div>
+
+  <header>Painel Técnico</header>
+  <div class="container">
+    <div class="nav-buttons">
+      <button class="btn btn-green" onclick="window.location.href='rotina.html'">📋 Rotina</button>
+      <button class="btn btn-green" onclick="window.location.href='agenda.html'">📅 Agenda</button>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-dark" onclick="mostrarChamados('Aberto')">Abertos</button>
+      <button class="btn btn-green" onclick="mostrarChamados('Em Andamento')">Em Andamento</button>
+      <button class="btn btn-purple" onclick="mostrarChamados('Resolvido')">Finalizados</button>
+    </div>
+    <div id="lista-chamados">Carregando chamados...</div>
+  </div>
+
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    let tecnicoEmail = null;
+
+    auth.onAuthStateChanged(user => {
+      if (!user) return location.href = "login-tecnico.html";
+      tecnicoEmail = user.email;
+      mostrarChamados("Aberto");
+    });
+
+    function mostrarChamados(status) {
+      const lista = document.getElementById("lista-chamados");
+      lista.innerHTML = "<p>Carregando chamados...</p>";
+
+      db.collection("chamados").where("status", "==", status)
+        .onSnapshot(snapshot => {
+          lista.innerHTML = "";
+          if (snapshot.empty) {
+            lista.innerHTML = `<p>Nenhum chamado ${status.toLowerCase()} encontrado.</p>`;
+            return;
+          }
+          snapshot.forEach(doc => {
+            const c = doc.data();
+            const criadoEm = formatarData(c.criadoEm);
+            const id = doc.id;
+
+            lista.innerHTML += `
+              <div class="chamado-card">
+                <p>⏰ <b>${criadoEm}</b></p>
+                <p><strong>${c.nome}</strong> - ${c.setor}</p>
+                <p>${c.mensagem}</p>
+                <button class="btn btn-green" onclick="abrirChat('${id}')">💬 Chat</button>
+                <button class="btn btn-yellow" onclick="mudarStatus('${id}', 'Aberto')">🔄 Aberto</button>
+                <button class="btn btn-dark" onclick="mudarStatus('${id}', 'Em Andamento')">🟠 Em Andamento</button>
+                <button class="btn btn-purple" onclick="mudarStatus('${id}', 'Resolvido')">✅ Finalizar</button>
+              </div>
+            `;
+          });
+        });
+    }
+
+    function formatarData(timestamp) {
+      if (!timestamp || !timestamp.toDate) return "";
+      const data = timestamp.toDate();
+      return data.toLocaleDateString("pt-BR") + " " + data.toLocaleTimeString("pt-BR");
+    }
+
+    function abrirChat(chamadoId) {
+      window.location.href = `chat-tecnico.html?id=${chamadoId}`;
+    }
+
+    function mudarStatus(chamadoId, novoStatus) {
+      db.collection("chamados").doc(chamadoId).update({
+        status: novoStatus
+      })
+      .then(() => {
+        alert(`Status alterado para: ${novoStatus}`);
+        mostrarChamados(novoStatus);
+      })
+      .catch(error => {
+        console.error("Erro ao mudar status:", error);
+        alert("Erro ao atualizar status.");
+      });
+    }
+  </script>
+</body>
+</html>
