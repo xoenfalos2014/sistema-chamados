@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório Técnico</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <style>
+    body::before {
+      content: "";
+      background: url('logo.png') no-repeat center;
+      background-size: 300px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      opacity: 0.05;
+      z-index: -1;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-xl mx-auto bg-white rounded-xl shadow-md p-6">
+    <h2 class="text-2xl font-bold mb-4">Relatório Técnico</h2>
+    <form id="form-relatorio" class="space-y-4">
+      <input id="cliente" class="w-full border p-2 rounded" placeholder="Cliente" required>
+      <input id="data" type="date" class="w-full border p-2 rounded" required>
+      <textarea id="servico" class="w-full border p-2 rounded" placeholder="Serviço Executado" required></textarea>
+      <input id="tecnico" class="w-full border p-2 rounded" placeholder="Técnico Responsável" required>
+      <textarea id="observacoes" class="w-full border p-2 rounded" placeholder="Observações"></textarea>
+      <input id="numeroWhatsapp" class="w-full border p-2 rounded" placeholder="Número do WhatsApp (ex: 5521999999999)" type="tel">
+      <div class="flex gap-2">
+        <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Salvar</button>
+        <button type="button" onclick="gerarPDF()" class="bg-blue-500 text-white px-4 py-2 rounded">Gerar PDF</button>
+        <button type="button" onclick="enviarWhatsApp()" class="bg-teal-500 text-white px-4 py-2 rounded">Enviar WhatsApp</button>
+        <a id="botaoWhatsapp" href="#" target="_blank" class="bg-green-600 text-white px-4 py-2 rounded">Abrir WhatsApp</a>
+      </div>
+    </form>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    const db = firebase.firestore();
+
+    document.getElementById("form-relatorio").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const dataRelatorio = {
+        cliente: document.getElementById("cliente").value,
+        data: document.getElementById("data").value,
+        servico: document.getElementById("servico").value,
+        tecnico: document.getElementById("tecnico").value,
+        observacoes: document.getElementById("observacoes").value,
+        criadoEm: firebase.firestore.Timestamp.now()
+      };
+      await db.collection("relatorios_tecnicos").add(dataRelatorio);
+      alert("Relatório salvo com sucesso!");
+      document.getElementById("form-relatorio").reset();
+    });
+
+    function gerarPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const logoImg = new Image();
+      logoImg.src = 'logo.png';
+      logoImg.onload = function() {
+        doc.addImage(logoImg, 'PNG', 35, 60, 140, 140, undefined, 'FAST');
+        doc.setFontSize(12);
+        doc.text("RELATÓRIO TÉCNICO", 15, 20);
+        doc.text("Cliente: " + document.getElementById("cliente").value, 15, 30);
+        doc.text("Data: " + document.getElementById("data").value, 15, 40);
+        doc.text("Serviço: " + document.getElementById("servico").value, 15, 50);
+        doc.text("Técnico: " + document.getElementById("tecnico").value, 15, 60);
+        doc.text("Observações: " + document.getElementById("observacoes").value, 15, 70);
+        doc.save("relatorio_tecnico.pdf");
+      };
+    }
+
+    function enviarWhatsApp() {
+      const cliente = document.getElementById("cliente").value;
+      const data = document.getElementById("data").value;
+      const servico = document.getElementById("servico").value;
+      const tecnico = document.getElementById("tecnico").value;
+      const observacoes = document.getElementById("observacoes").value;
+      const numero = document.getElementById("numeroWhatsapp").value;
+
+      const texto = `*RELATÓRIO TÉCNICO*
+Cliente: ${cliente}
+Data: ${data}
+Serviço: ${servico}
+Técnico: ${tecnico}
+Observações: ${observacoes}`;
+      const baseUrl = numero ? `https://wa.me/${numero}` : `https://wa.me/`;
+      const url = `${baseUrl}?text=${encodeURIComponent(texto)}`;
+      window.open(url, '_blank');
+
+      // Atualiza o botão de atalho
+      const botao = document.getElementById("botaoWhatsapp");
+      botao.href = url;
+    }
+  </script>
+</body>
+</html>
