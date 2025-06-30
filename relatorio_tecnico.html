@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -12,14 +11,14 @@
   <style>
     body::before {
       content: "";
-      background: url('logo.png') no-repeat center;
+      background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAACgCAMAAADVRocKAAAAM1BMVEX///8AAAC3t7e5ubmpqal5eXksLCwZGRlQUFDg4ODT09PS0tIkJCSampqRkZE9PT3Nzc0cZ/kyAAABnklEQVR4nO3XSQ7CMBBF0e2F//9s2sC6VWoD3DMlXHoqcLx+EnDFz5s27NkyZMiRI0ePHj169GjXHyBQwcAvyFVZ/SpXb9W0yfVTN+5/GvZvUw+2mOp1X5+HHdY/dFjeQ6qHe/TMPl2PNtd+uEbpeH7hbm49Zgft6/vREHYcXyM+5rncbqdE4nU6n0+lxOp3O59Npz7ldz5Zc5NwfF8E8rJ3Ncbj8yS1V/sLLKz6/2iTbdvoQVG6MHvux2Mrbq4x9WMEa/fjhx48aNGzdu3Ljx/AcHRu03PM9rPgAAAABJRU5ErkJggg==') no-repeat center;
       background-size: 300px;
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      opacity: 0.05;
+      opacity: 0.06;
       z-index: -1;
     }
   </style>
@@ -33,12 +32,10 @@
       <textarea id="servico" class="w-full border p-2 rounded" placeholder="Serviço Executado" required></textarea>
       <input id="tecnico" class="w-full border p-2 rounded" placeholder="Técnico Responsável" required>
       <textarea id="observacoes" class="w-full border p-2 rounded" placeholder="Observações"></textarea>
-      <input id="numeroWhatsapp" class="w-full border p-2 rounded" placeholder="Número do WhatsApp (ex: 5521999999999)" type="tel">
+      <input id="numeroZap" class="w-full border p-2 rounded" placeholder="Número do WhatsApp (ex: 5521999999999)" required>
       <div class="flex gap-2">
-        <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Salvar</button>
+        <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Salvar e Enviar WhatsApp</button>
         <button type="button" onclick="gerarPDF()" class="bg-blue-500 text-white px-4 py-2 rounded">Gerar PDF</button>
-        <button type="button" onclick="enviarWhatsApp()" class="bg-teal-500 text-white px-4 py-2 rounded">Enviar WhatsApp</button>
-        <a id="botaoWhatsapp" href="#" target="_blank" class="bg-green-600 text-white px-4 py-2 rounded">Abrir WhatsApp</a>
       </div>
     </form>
   </div>
@@ -46,62 +43,66 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
     const db = firebase.firestore();
+    const auth = firebase.auth();
 
-    document.getElementById("form-relatorio").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const dataRelatorio = {
-        cliente: document.getElementById("cliente").value,
-        data: document.getElementById("data").value,
-        servico: document.getElementById("servico").value,
-        tecnico: document.getElementById("tecnico").value,
-        observacoes: document.getElementById("observacoes").value,
-        criadoEm: firebase.firestore.Timestamp.now()
-      };
-      await db.collection("relatorios_tecnicos").add(dataRelatorio);
-      alert("Relatório salvo com sucesso!");
-      document.getElementById("form-relatorio").reset();
-    });
+    auth.onAuthStateChanged(user => {
+      if (!user) return location.href = "login-tecnico.html";
 
-    function gerarPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
+      const uid = user.uid;
+      const email = user.email;
 
-      const logoImg = new Image();
-      logoImg.src = 'logo.png';
-      logoImg.onload = function() {
-        doc.addImage(logoImg, 'PNG', 35, 60, 140, 140, undefined, 'FAST');
-        doc.setFontSize(12);
-        doc.text("RELATÓRIO TÉCNICO", 15, 20);
-        doc.text("Cliente: " + document.getElementById("cliente").value, 15, 30);
-        doc.text("Data: " + document.getElementById("data").value, 15, 40);
-        doc.text("Serviço: " + document.getElementById("servico").value, 15, 50);
-        doc.text("Técnico: " + document.getElementById("tecnico").value, 15, 60);
-        doc.text("Observações: " + document.getElementById("observacoes").value, 15, 70);
-        doc.save("relatorio_tecnico.pdf");
-      };
-    }
+      document.getElementById("form-relatorio").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const cliente = document.getElementById("cliente").value;
+        const data = document.getElementById("data").value;
+        const servico = document.getElementById("servico").value;
+        const tecnico = document.getElementById("tecnico").value;
+        const observacoes = document.getElementById("observacoes").value;
+        const numero = document.getElementById("numeroZap").value;
+        const criadoEm = new Date();
+        const relatorioId = db.collection("relatorios_tecnicos").doc().id;
 
-    function enviarWhatsApp() {
-      const cliente = document.getElementById("cliente").value;
-      const data = document.getElementById("data").value;
-      const servico = document.getElementById("servico").value;
-      const tecnico = document.getElementById("tecnico").value;
-      const observacoes = document.getElementById("observacoes").value;
-      const numero = document.getElementById("numeroWhatsapp").value;
+        const dataRelatorio = {
+          id: relatorioId,
+          cliente,
+          data,
+          servico,
+          tecnico,
+          observacoes,
+          email,
+          usuarioId: uid,
+          criadoEm: firebase.firestore.Timestamp.fromDate(criadoEm)
+        };
 
-      const texto = `*RELATÓRIO TÉCNICO*
+        try {
+          await db.collection("relatorios_tecnicos").doc(relatorioId).set(dataRelatorio);
+          const texto = `*RELATÓRIO TÉCNICO*
 Cliente: ${cliente}
 Data: ${data}
 Serviço: ${servico}
 Técnico: ${tecnico}
 Observações: ${observacoes}`;
-      const baseUrl = numero ? `https://wa.me/${numero}` : `https://wa.me/`;
-      const url = `${baseUrl}?text=${encodeURIComponent(texto)}`;
-      window.open(url, '_blank');
+          const url = `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+          window.open(url, '_blank');
+          alert("Relatório salvo e WhatsApp aberto!");
+          document.getElementById("form-relatorio").reset();
+        } catch (error) {
+          console.error("Erro ao salvar no Firebase:", error);
+          alert("Erro ao salvar o relatório. Verifique as permissões no Firebase.");
+        }
+      });
+    });
 
-      // Atualiza o botão de atalho
-      const botao = document.getElementById("botaoWhatsapp");
-      botao.href = url;
+    function gerarPDF() {
+      const doc = new window.jspdf.jsPDF();
+      doc.setFontSize(12);
+      doc.text("RELATÓRIO TÉCNICO", 15, 20);
+      doc.text("Cliente: " + document.getElementById("cliente").value, 15, 30);
+      doc.text("Data: " + document.getElementById("data").value, 15, 40);
+      doc.text("Serviço: " + document.getElementById("servico").value, 15, 50);
+      doc.text("Técnico: " + document.getElementById("tecnico").value, 15, 60);
+      doc.text("Observações: " + document.getElementById("observacoes").value, 15, 70);
+      doc.save("relatorio_tecnico.pdf");
     }
   </script>
 </body>
