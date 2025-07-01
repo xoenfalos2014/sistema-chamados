@@ -59,7 +59,7 @@
                 <div class="chamado-card">
                   <p><b>${criadoEm}</b> - <b>Status:</b> ${c.status}</p>
                   <p><b>${c.setor}</b> — ${c.mensagem}</p>
-                  <button class="btn btn-green" onclick="abrirChat('${doc.id}')">💬 Ver Chat</button>
+                  <button class="btn btn-green" onclick="abrirChat('${doc.id}')">💬Chat</button>
                 </div>
               `;
             });
@@ -100,7 +100,7 @@
     });
 
     function abrirChat(chamadoId) {
-      window.location.href = `chat.html?id=${chamadoId}`;
+      window.location.href = `chat-cliente.html?id=${chamadoId}`;
     }
 
     function formatarData(timestamp) {
