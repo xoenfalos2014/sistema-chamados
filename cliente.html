@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <title>Área do Cliente</title>
   <link rel="stylesheet" href="css/style.css">
-
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -20,6 +19,13 @@
       <input id="empresa" placeholder="Empresa" required class="input">
       <input id="setor" placeholder="Setor" required class="input">
       <textarea id="mensagem" placeholder="Descreva o problema" required class="input"></textarea>
+
+      <!-- Checkbox LGPD -->
+      <label style="margin-top:10px; display:block;">
+        <input type="checkbox" id="lgpd-consentimento" required>
+        Eu li e concordo com a <a href="politica-privacidade.html" target="_blank">Política de Privacidade</a>.
+      </label>
+
       <button type="submit" class="btn btn-green">Enviar Chamado</button>
     </form>
 
@@ -36,7 +42,6 @@
 
       const uid = user.uid;
       const email = user.email;
-
       document.getElementById("email").value = email;
 
       db.collection("chamados").where("usuarioId", "==", uid)
@@ -63,6 +68,11 @@
 
       document.getElementById("form-chamado").addEventListener("submit", async (e) => {
         e.preventDefault();
+
+        if (!document.getElementById("lgpd-consentimento").checked) {
+          alert("Você precisa aceitar a Política de Privacidade para continuar.");
+          return;
+        }
 
         const nome = document.getElementById("nome").value;
         const setor = document.getElementById("setor").value;
