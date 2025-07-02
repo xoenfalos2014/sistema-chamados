@@ -536,5 +536,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 10000); // atualiza a cada 10 segundos
 </script>
 
+
+<script>
+  function carregarEventos() {
+    if (typeof calendarioGlobal !== 'undefined' && calendarioGlobal) {
+      calendarioGlobal.refetchEvents();
+    }
+  }
+
+  setInterval(() => {
+    carregarEventos();
+  }, 10000); // atualiza a cada 10 segundos
+</script>
+
 </body>
 </html>
