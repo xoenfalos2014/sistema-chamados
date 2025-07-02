@@ -527,5 +527,14 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
+
+<script>
+  setInterval(() => {
+    if (typeof carregarEventos === "function") {
+      carregarEventos();
+    }
+  }, 10000); // atualiza a cada 10 segundos
+</script>
+
 </body>
 </html>
