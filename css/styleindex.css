@@ -1,0 +1,74 @@
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  transition: background 0.5s ease;
+}
+
+body.gradiente {
+  background: linear-gradient(135deg, #0a0f2c, #1e3c72, #2a5298);
+  color: #fff;
+}
+
+body.tech {
+  background: url('../img/bg-tech.jpg') no-repeat center center fixed;
+  background-size: cover;
+  color: #fff;
+}
+
+body.vidro {
+  background: url('../img/bg-glass.jpg') no-repeat center center fixed;
+  background-size: cover;
+  color: #fff;
+}
+
+.container {
+  text-align: center;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+}
+
+.logo {
+  width: 120px;
+  margin-bottom: 20px;
+}
+
+.btn {
+  display: block;
+  margin: 10px auto;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 600;
+  transition: transform 0.2s ease, background 0.3s;
+  width: 250px;
+}
+
+.btn:hover {
+  transform: scale(1.05);
+}
+
+.btn-cliente {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-tecnico {
+  background-color: #fd7e14;
+  color: white;
+}
+
+.btn-admin {
+  background-color: #6f42c1;
+  color: white;
+}
