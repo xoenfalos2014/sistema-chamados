@@ -84,7 +84,7 @@
     function reenviarWhatsapp(numero, cliente, data, servico, tecnico, observacoes) {
       const texto = `*RELATÓRIO TÉCNICO*\nCliente: ${cliente}\nData: ${data}\nServiço: ${servico}\nTécnico: ${tecnico}\nObservações: ${observacoes}`;
       const url = `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
-      window.open(url, '_blank');
+      window.location.href = url;
     }
 
     function gerarPDF(cliente, data, servico, tecnico, observacoes) {
