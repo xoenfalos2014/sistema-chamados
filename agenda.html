@@ -286,6 +286,20 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
+
+<style>
+  .modal-aberto {
+    overflow: hidden;
+  }
+  @keyframes fade-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+</style>
+
 </head>
 <body class="bg-gray-100 p-6">
   <h1 class="text-2xl font-bold mb-4">📅 Agenda de Serviços</h1>
@@ -302,8 +316,8 @@ document.addEventListener("DOMContentLoaded", () => {
     <div id="calendar" class="bg-white rounded shadow p-4"></div>
     
 
-  <div id="modalDetalhes" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+  <div id="modalDetalhes" class="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center px-4 transition-opacity duration-300 ease-in-out modal-aberto hidden" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto scroll-smooth scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 animate-fade-in">
       <h2 class="text-xl font-bold mb-4">Detalhes do Agendamento</h2>
       
     <div id="detalhesConteudo" class="space-y-2 text-gray-800"></div>
@@ -353,7 +367,11 @@ document.addEventListener("DOMContentLoaded", () => {
   let idAgendamentoAtual = null;
   let dadosAtuais = null;
 
-  function fecharModal() {
+  
+function fecharModal() {
+  document.getElementById("modalDetalhes").classList.add("hidden");
+  document.body.classList.remove("modal-aberto");
+
     document.getElementById("modalDetalhes").classList.add("hidden");
   }
 
