@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatórios Técnicos</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-5xl mx-auto bg-white rounded-lg shadow p-6">
+    <h1 class="text-2xl font-bold mb-4">📂 Relatórios Técnicos Salvos</h1>
+
+    <div class="flex gap-4 mb-4">
+      <input id="filtroCliente" type="text" placeholder="Filtrar por cliente" class="border p-2 rounded w-full">
+      <input id="filtroDataInicio" type="date" class="border p-2 rounded" placeholder="Data Início"><input id="filtroDataFim" type="date" class="border p-2 rounded" placeholder="Data Fim">
+      <button onclick="carregarRelatorios()" class="bg-blue-600 text-white px-4 py-2 rounded">🔍 Buscar</button>
+    </div>
+
+    <div id="listaRelatorios" class="space-y-4"></div>
+  </div>
+
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    auth.onAuthStateChanged(user => {
+      if (!user) return location.href = "login-tecnico.html";
+      carregarRelatorios();
+    });
+
+    async function carregarRelatorios() {
+      const lista = document.getElementById("listaRelatorios");
+      lista.innerHTML = "<p>Carregando...</p>";
+
+      const clienteFiltro = document.getElementById("filtroCliente").value.toLowerCase();
+      
+      const dataInicio = document.getElementById("filtroDataInicio").value;
+      const dataFim = document.getElementById("filtroDataFim").value;
+
+
+      const snapshot = await db.collection("relatorios_tecnicos").orderBy("criadoEm", "desc").get();
+      lista.innerHTML = "";
+
+      if (snapshot.empty) {
+        lista.innerHTML = "<p>Nenhum relatório encontrado.</p>";
+        return;
+      }
+
+      snapshot.forEach(doc => {
+        const r = doc.data();
+        const dataFormatada = r.criadoEm?.toDate().toLocaleString("pt-BR") || "";
+        if (clienteFiltro && !r.cliente.toLowerCase().includes(clienteFiltro)) return;
+        
+      if (dataInicio && r.data < dataInicio) return;
+      if (dataFim && r.data > dataFim) return;
+
+
+        const item = document.createElement("div");
+        item.className = "bg-gray-50 p-4 border rounded shadow";
+
+        item.innerHTML = `
+          <p><b>Cliente:</b> <input value="${r.cliente}" class="border p-1 rounded w-full" id="cliente-${r.id}"></p>
+          <p><b>Data:</b> <input type="date" value="${r.data}" class="border p-1 rounded" id="data-${r.id}"></p>
+          <p><b>Serviço:</b> <textarea class="border p-1 rounded w-full" id="servico-${r.id}">${r.servico}</textarea></p>
+          <p><b>Técnico:</b> <input value="${r.tecnico}" class="border p-1 rounded w-full" id="tecnico-${r.id}"></p>
+          <p><b>Observações:</b> <textarea class="border p-1 rounded w-full" id="obs-${r.id}">${r.observacoes}</textarea></p>
+          <div class="flex gap-2 mt-2 flex-wrap">
+            <button onclick="reenviarWhatsapp('${r.numeroZap}', \`${r.cliente}\`, \`${r.data}\`, \`${r.servico}\`, \`${r.tecnico}\`, \`${r.observacoes}\`)" class="bg-green-600 text-white px-3 py-1 rounded">📲 WhatsApp</button>
+            <button onclick="gerarPDF('${r.cliente}', '${r.data}', '${r.servico}', '${r.tecnico}', '${r.observacoes}')" class="bg-blue-600 text-white px-3 py-1 rounded">📄 PDF</button>
+            <button onclick="salvarEdicao('${r.id}')" class="bg-yellow-500 text-white px-3 py-1 rounded">💾 Salvar</button>
+            <button onclick="excluirRelatorio('${r.id}')" class="bg-red-600 text-white px-3 py-1 rounded">🗑️ Excluir</button>
+            <span class="text-sm text-gray-500 ml-auto">${dataFormatada}</span>
+          </div>
+        `;
+        lista.appendChild(item);
+      });
+    }
+
+    function reenviarWhatsapp(numero, cliente, data, servico, tecnico, observacoes) {
+      const texto = `*RELATÓRIO TÉCNICO*\nCliente: ${cliente}\nData: ${data}\nServiço: ${servico}\nTécnico: ${tecnico}\nObservações: ${observacoes}`;
+      const url = `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+      window.open(url, '_blank');
+    }
+
+    function gerarPDF(cliente, data, servico, tecnico, observacoes) {
+      const doc = new window.jspdf.jsPDF();
+      doc.setFontSize(12);
+      doc.text("RELATÓRIO TÉCNICO", 15, 20);
+      doc.text("Cliente: " + cliente, 15, 30);
+      doc.text("Data: " + data, 15, 40);
+      doc.text("Serviço: " + servico, 15, 50);
+      doc.text("Técnico: " + tecnico, 15, 60);
+      doc.text("Observações: " + observacoes, 15, 70);
+      doc.save("relatorio_tecnico.pdf");
+    }
+
+    async function salvarEdicao(id) {
+      const cliente = document.getElementById(`cliente-${id}`).value;
+      const data = document.getElementById(`data-${id}`).value;
+      const servico = document.getElementById(`servico-${id}`).value;
+      const tecnico = document.getElementById(`tecnico-${id}`).value;
+      const observacoes = document.getElementById(`obs-${id}`).value;
+
+      await db.collection("relatorios_tecnicos").doc(id).update({
+        cliente, data, servico, tecnico, observacoes
+      });
+      alert("Relatório atualizado!");
+    }
+
+    async function excluirRelatorio(id) {
+      if (!confirm("Deseja realmente excluir este relatório?")) return;
+      await db.collection("relatorios_tecnicos").doc(id).delete();
+      alert("Relatório excluído.");
+      carregarRelatorios();
+    }
+  </script>
+</body>
+</html>
