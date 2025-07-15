@@ -1,11 +1,12 @@
 
 <!DOCTYPE html>
+
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Login - Técnico</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script type="module">
+<meta charset="utf-8"/>
+<title>Login - Técnico</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
     import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
@@ -43,14 +44,14 @@
     });
   </script>
 </head>
-<body class="bg-gray-100 p-4">
-  <div class="max-w-sm mx-auto bg-white p-6 rounded shadow">
-    <h1 class="text-xl font-bold mb-4 text-center">Login - Técnico</h1>
-    <form id="formLogin" class="space-y-4">
-      <input id="email" type="email" placeholder="Email" class="w-full p-2 border rounded" required>
-      <input id="senha" type="password" placeholder="Senha" class="w-full p-2 border rounded" required>
-      <button type="submit" class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Entrar</button>
-    </form>
-  </div>
-</body>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 to-blue-600 font-sans text-white">
+
+<div class="bg-white/10 backdrop-blur-md p-8 rounded-xl shadow-md w-full max-w-md text-white text-center"><img alt="Logo WG" class="mx-auto mb-6 w-24" src="img/logo-wg.png"/><div class="max-w-sm mx-auto bg-white p-6 rounded shadow">
+<h1 class="text-xl font-bold mb-4 text-center">Login - Técnico</h1>
+<form class="space-y-4" id="formLogin">
+<input class="w-full p-2 border rounded" id="email" placeholder="Email" required="" type="email"/>
+<input class="w-full p-2 border rounded" id="senha" placeholder="Senha" required="" type="password"/>
+<button class="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" type="submit">Entrar</button>
+</form>
+</div></div></body>
 </html>

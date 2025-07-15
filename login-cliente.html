@@ -1,17 +1,17 @@
 
 <!DOCTYPE html>
+
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Login Cliente</title>
-  <script src="https://cdn.tailwindcss.com">
+<meta charset="utf-8"/>
+<title>Login Cliente</title>
+<script src="https://cdn.tailwindcss.com">
     document.getElementById("toggleCadastro").addEventListener("click", () => {
       const form = document.getElementById("formCadastro");
       form.style.display = form.style.display === "none" ? "block" : "none";
     });
     </script>
-
-  <script type="module">
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
     import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
@@ -77,33 +77,28 @@
       form.style.display = form.style.display === "none" ? "block" : "none";
     });
     </script>
-
 </head>
-<body class="bg-gray-100 p-6 font-sans">
-  <div class="max-w-md mx-auto bg-white p-6 rounded shadow space-y-8">
-    <div>
-      <h2 class="text-xl font-bold text-center mb-4">🔐 Login Cliente</h2>
-      <form id="formLogin" class="space-y-3">
-        <input id="loginEmail" type="email" placeholder="Email" class="w-full p-2 border rounded" required>
-        <input id="loginSenha" type="password" placeholder="Senha" class="w-full p-2 border rounded" required>
-        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Entrar</button>
-      </form>
-    </div>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 to-blue-600 font-sans text-white">
 
-    <hr>
-
-    <div>
-      <h2 class="text-lg font-semibold text-center mb-2">🆕 Cadastro de Cliente</h2>
-      
-    <button id="toggleCadastro" type="button" class="w-full bg-gray-300 hover:bg-gray-400 text-black py-2 rounded">+ Novo Cliente</button>
-    <form id="formCadastro" style="display: none;" class="space-y-3">
-        
-    <input id="cadastroNome" type="text" placeholder="Seu Nome" class="w-full p-2 border rounded" required>
-    <input id="cadastroEmail" type="email" placeholder="Seu Email" class="w-full p-2 border rounded" required>
-        <input id="cadastroSenha" type="password" placeholder="Criar Senha" class="w-full p-2 border rounded" required>
-        <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Cadastrar</button>
-      </form>
-    </div>
-  </div>
-</body>
+<div class="bg-white/10 backdrop-blur-md p-8 rounded-xl shadow-md w-full max-w-md text-white text-center"><img alt="Logo WG" class="mx-auto mb-6 w-24" src="img/logo-wg.png"/><div class="max-w-md mx-auto bg-white p-6 rounded shadow space-y-8">
+<div>
+<h2 class="text-xl font-bold text-center mb-4">🔐 Login Cliente</h2>
+<form class="space-y-3" id="formLogin">
+<input class="w-full p-2 border rounded" id="loginEmail" placeholder="Email" required="" type="email"/>
+<input class="w-full p-2 border rounded" id="loginSenha" placeholder="Senha" required="" type="password"/>
+<button class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700" type="submit">Entrar</button>
+</form>
+</div>
+<hr/>
+<div>
+<h2 class="text-lg font-semibold text-center mb-2">🆕 Cadastro de Cliente</h2>
+<button class="w-full bg-gray-300 hover:bg-gray-400 text-black py-2 rounded" id="toggleCadastro" type="button">+ Novo Cliente</button>
+<form class="space-y-3" id="formCadastro" style="display: none;">
+<input class="w-full p-2 border rounded" id="cadastroNome" placeholder="Seu Nome" required="" type="text"/>
+<input class="w-full p-2 border rounded" id="cadastroEmail" placeholder="Seu Email" required="" type="email"/>
+<input class="w-full p-2 border rounded" id="cadastroSenha" placeholder="Criar Senha" required="" type="password"/>
+<button class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700" type="submit">Cadastrar</button>
+</form>
+</div>
+</div></div></body>
 </html>
