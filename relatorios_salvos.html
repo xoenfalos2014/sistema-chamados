@@ -15,9 +15,10 @@
   <div class="max-w-5xl mx-auto bg-white rounded-lg shadow p-6">
     <h1 class="text-2xl font-bold mb-4">📂 Relatórios Técnicos Salvos</h1>
 
-    <div class="flex gap-4 mb-4">
-      <input id="filtroCliente" type="text" placeholder="Filtrar por cliente" class="border p-2 rounded w-full">
-      <input id="filtroDataInicio" type="date" class="border p-2 rounded" placeholder="Data Início"><input id="filtroDataFim" type="date" class="border p-2 rounded" placeholder="Data Fim">
+    <div class="flex gap-4 mb-4 flex-wrap">
+      <input id="filtroCliente" type="text" placeholder="Filtrar por cliente" class="border p-2 rounded w-full sm:w-auto flex-1">
+      <input id="filtroDataInicio" type="date" class="border p-2 rounded">
+      <input id="filtroDataFim" type="date" class="border p-2 rounded">
       <button onclick="carregarRelatorios()" class="bg-blue-600 text-white px-4 py-2 rounded">🔍 Buscar</button>
     </div>
 
@@ -38,12 +39,19 @@
       lista.innerHTML = "<p>Carregando...</p>";
 
       const clienteFiltro = document.getElementById("filtroCliente").value.toLowerCase();
-      
       const dataInicio = document.getElementById("filtroDataInicio").value;
       const dataFim = document.getElementById("filtroDataFim").value;
 
+      let query = db.collection("relatorios_tecnicos").orderBy("criadoEm", "desc");
 
-      const snapshot = await db.collection("relatorios_tecnicos").orderBy("criadoEm", "desc").get();
+      if (dataInicio) query = query.where("criadoEm", ">=", new Date(dataInicio));
+      if (dataFim) {
+        const fim = new Date(dataFim);
+        fim.setHours(23, 59, 59, 999);
+        query = query.where("criadoEm", "<=", fim);
+      }
+
+      const snapshot = await query.get();
       lista.innerHTML = "";
 
       if (snapshot.empty) {
@@ -55,82 +63,44 @@
         const r = doc.data();
         const dataFormatada = r.criadoEm?.toDate().toLocaleString("pt-BR") || "";
         if (clienteFiltro && !r.cliente.toLowerCase().includes(clienteFiltro)) return;
-        
-      if (dataInicio && r.data < dataInicio) return;
-      if (dataFim && r.data > dataFim) return;
-
 
         const item = document.createElement("div");
         item.className = "bg-gray-50 p-4 border rounded shadow";
 
         item.innerHTML = `
-          <p><b>Cliente:</b> <input value="${r.cliente}" class="border p-1 rounded w-full" id="cliente-${r.id}"></p>
-          <p><b>Data:</b> <input type="date" value="${r.data}" class="border p-1 rounded" id="data-${r.id}"></p>
-          <p><b>Serviço:</b> <textarea class="border p-1 rounded w-full" id="servico-${r.id}">${r.servico}</textarea></p>
-          <p><b>Técnico:</b> <input value="${r.tecnico}" class="border p-1 rounded w-full" id="tecnico-${r.id}"></p>
-          <p><b>Observações:</b> <textarea class="border p-1 rounded w-full" id="obs-${r.id}">${r.observacoes}</textarea></p>
-          <div class="flex gap-2 mt-2 flex-wrap">
-            <button onclick="reenviarWhatsapp('${r.numeroZap}', \`${r.cliente}\`, \`${r.data}\`, \`${r.servico}\`, \`${r.tecnico}\`, \`${r.observacoes}\`)" class="bg-green-600 text-white px-3 py-1 rounded">📲 WhatsApp</button>
-            <button onclick="gerarPDF('${r.cliente}', '${r.data}', '${r.servico}', '${r.tecnico}', '${r.observacoes}')" class="bg-blue-600 text-white px-3 py-1 rounded">📄 PDF</button>
-            <button onclick="salvarEdicao('${r.id}')" class="bg-yellow-500 text-white px-3 py-1 rounded">💾 Salvar</button>
-            <button onclick="excluirRelatorio('${r.id}')" class="bg-red-600 text-white px-3 py-1 rounded">🗑️ Excluir</button>
-            <span class="text-sm text-gray-500 ml-auto">${dataFormatada}</span>
-          </div>
+          <p><b>Cliente:</b> <input value="${r.cliente}" class="border p-1 rounded w-full"></p>
+          <p><b>Data:</b> <input type="date" value="${r.data}" class="border p-1 rounded"></p>
+          <p><b>Serviço:</b> <textarea class="border p-1 rounded w-full">${r.servico}</textarea></p>
+          <p><b>Observações:</b> <textarea class="border p-1 rounded w-full">${r.observacoes || ""}</textarea></p>
+          <p><b>Criado em:</b> ${dataFormatada}</p>
+          <button onclick='enviarWhatsapp(${JSON.stringify({
+            cliente: r.cliente,
+            data: r.data,
+            servico: r.servico,
+            observacoes: r.observacoes || "",
+            criadoEm: dataFormatada
+          })})' class='mt-2 bg-green-600 text-white px-4 py-1 rounded'>📤 Enviar por WhatsApp</button>
         `;
+
         lista.appendChild(item);
       });
     }
 
-    function reenviarWhatsapp(numero, cliente, data, servico, tecnico, observacoes) {
-  if (!numero || numero.length < 11) {
-    alert("Número de WhatsApp inválido ou não informado.");
-    return;
-  }
+    function enviarWhatsapp(relatorio) {
+      const mensagem = `
+📋 *Relatório Técnico*
+👤 Cliente: ${relatorio.cliente}
+📅 Data: ${relatorio.data}
+🛠️ Serviço: ${relatorio.servico}
+📝 Observações: ${relatorio.observacoes}
+📌 Criado em: ${relatorio.criadoEm}
+      `.trim();
 
-  const numeroLimpo = numero.replace(/[^0-9]/g, "");
-  const texto = `*RELATÓRIO TÉCNICO*
-Cliente: ${cliente}
-Data: ${data}
-Serviço: ${servico}
-Técnico: ${tecnico}
-Observações: ${observacoes}`;
-  const url = `https://wa.me/${numeroLimpo}?text=${encodeURIComponent(texto)}`;
-  window.location.href = url;
-}\nData: ${data}\nServiço: ${servico}\nTécnico: ${tecnico}\nObservações: ${observacoes}`;
-      const url = `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
-      window.location.href = url;
-    }
+      const numero = prompt("Digite o número do WhatsApp com DDD (ex: 21999999999):");
+      if (!numero) return;
 
-    function gerarPDF(cliente, data, servico, tecnico, observacoes) {
-      const doc = new window.jspdf.jsPDF();
-      doc.setFontSize(12);
-      doc.text("RELATÓRIO TÉCNICO", 15, 20);
-      doc.text("Cliente: " + cliente, 15, 30);
-      doc.text("Data: " + data, 15, 40);
-      doc.text("Serviço: " + servico, 15, 50);
-      doc.text("Técnico: " + tecnico, 15, 60);
-      doc.text("Observações: " + observacoes, 15, 70);
-      doc.save("relatorio_tecnico.pdf");
-    }
-
-    async function salvarEdicao(id) {
-      const cliente = document.getElementById(`cliente-${id}`).value;
-      const data = document.getElementById(`data-${id}`).value;
-      const servico = document.getElementById(`servico-${id}`).value;
-      const tecnico = document.getElementById(`tecnico-${id}`).value;
-      const observacoes = document.getElementById(`obs-${id}`).value;
-
-      await db.collection("relatorios_tecnicos").doc(id).update({
-        cliente, data, servico, tecnico, observacoes
-      });
-      alert("Relatório atualizado!");
-    }
-
-    async function excluirRelatorio(id) {
-      if (!confirm("Deseja realmente excluir este relatório?")) return;
-      await db.collection("relatorios_tecnicos").doc(id).delete();
-      alert("Relatório excluído.");
-      carregarRelatorios();
+      const url = `https://wa.me/55${numero}?text=${encodeURIComponent(mensagem)}`;
+      window.open(url, "_blank");
     }
   </script>
 </body>
