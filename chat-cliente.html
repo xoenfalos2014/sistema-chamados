@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat do Chamado</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Chat do Chamado</h2>
+
+    <div id="chat" class="chat-box">Carregando...</div>
+
+    <div class="chat-form">
+      <textarea id="mensagem" placeholder="Digite sua mensagem" class="input" rows="3"></textarea>
+      <button onclick="enviarMensagem()" class="btn btn-green">Enviar</button>
+    </div>
+  </div>
+
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const params = new URLSearchParams(window.location.search);
+    const chamadoId = params.get("id");
+
+    auth.onAuthStateChanged(user => {
+      if (!user || !chamadoId) return location.href = "login-cliente.html";
+
+      db.collection("chamados").doc(chamadoId).collection("mensagens")
+        .orderBy("data")
+        .onSnapshot(snapshot => {
+          const chat = document.getElementById("chat");
+          chat.innerHTML = "";
+          snapshot.forEach(doc => {
+            const msg = doc.data();
+            const div = document.createElement("div");
+            div.className = "chat-msg";
+            div.innerHTML = `<b>${msg.usuario}:</b> ${msg.texto}`;
+            chat.appendChild(div);
+          });
+
+          chat.scrollTop = chat.scrollHeight;
+        });
+    });
+
+    async function enviarMensagem() {
+      const texto = document.getElementById("mensagem").value;
+      const user = firebase.auth().currentUser;
+      if (texto.trim() === "" || !user) return;
+
+      await db.collection("chamados").doc(chamadoId).collection("mensagens").add({
+        texto: texto,
+        usuario: user.email,
+        data: new Date()
+      });
+
+      // === DISPARO DE E-MAIL SILENCIOSO (cliente -> técnicos/admin) ===
+      try {
+        const base = location.origin;
+        enviarEmailSilencioso({
+          para: EMAILS_TECNICOS.join(','),
+          cc:   EMAILS_ADMIN.join(','),
+          assunto: `💬 Nova mensagem no chat do chamado #${chamadoId.slice(0,6).toUpperCase()}`,
+          html: montarHtmlMsgChat({
+            autor: user.email,
+            papel: 'Cliente',
+            msg: texto,
+            linkChat: `${base}/chat.html?chamado=${chamadoId}`,
+            idChamado: chamadoId
+          })
+        });
+      } catch(e){
+        console.error('Falha ao disparar e-mail de chat (cliente):', e);
+      }
+
+      document.getElementById("mensagem").value = "";
+    }
+  </script>
+
+  <!-- ====== BLOCO COMUM: e-mail silencioso (anti-CORS) ====== -->
+  <iframe name="gas_silent" style="display:none"></iframe>
+  <script>
+    // Config do GAS
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz2U9j696QVojXt00lnsfcLO2rUgDA8AptLlTbPsRuAO8KrrOCDpHE-Cx8FYMeXf4F86A/exec";
+    const GAS_SECRET = "!Plokij789";
+
+    // Destinatários pré-definidos
+    const EMAILS_TECNICOS = [
+      "xoenfalos2014@gmail.com",
+      "kassyo@suporteworkgroup.com.br",
+      "malaquias@suporteworkgroup.com.br",
+      "rlkbubu70@gmail.com"
+    ];
+    const EMAILS_ADMIN = [
+      "xoenfalos2014@gmail.com",
+      "kassyo@suporteworkgroup.com.br"
+    ];
+
+    function enviarEmailSilencioso({ para, cc, assunto, html, replyTo, nomeRemetente="WG Informática" }) {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `${GAS_URL}?token=${encodeURIComponent(GAS_SECRET)}`;
+      form.target = 'gas_silent';
+      form.style.display = 'none';
+
+      const fields = { para, cc, assunto, html, replyTo, nomeRemetente };
+      Object.entries(fields).forEach(([k,v])=>{
+        if (!v) return;
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = k;
+        input.value = v;
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+      setTimeout(()=>form.remove(), 1500);
+    }
+
+    function esc(s){ return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+    function nl2br(s){ return (s||'').replace(/\n/g,'<br>'); }
+    function pad(n){ return n<10?'0'+n:n; }
+    function agoraBR(){
+      const d = new Date();
+      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+    function montarHtmlMsgChat({autor, papel, msg, linkChat, idChamado}){
+      return `
+        <div style="font:14px Arial,Helvetica,sans-serif">
+          <h2 style="margin:0 0 8px">Nova mensagem no chat</h2>
+          <p><b>Chamado:</b> ${esc(idChamado)}</p>
+          <p><b>Remetente:</b> ${esc(autor)} (${esc(papel)})</p>
+          <p><b>Mensagem:</b><br>${nl2br(esc(msg))}</p>
+          <p><b>Quando:</b> ${agoraBR()}</p>
+          <hr>
+          <p><a href="${esc(linkChat)}" target="_blank">Abrir chat agora</a></p>
+          <p style="color:#777">WG Informática • Notificação automática</p>
+        </div>`;
+    }
+  </script>
+</body>
+</html>

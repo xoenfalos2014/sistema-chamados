@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Área do Cliente</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h2>Abertura de Chamado</h2>
+    <form id="form-chamado" class="form">
+      <input id="nome" placeholder="Seu nome" required class="input">
+      <input id="email" placeholder="Seu e-mail" required class="input">
+      <input id="empresa" placeholder="Empresa" required class="input">
+      <input id="setor" placeholder="Setor" required class="input">
+      <textarea id="mensagem" placeholder="Descreva o problema" required class="input"></textarea>
+
+      <!-- Checkbox LGPD -->
+      <label style="margin-top:10px; display:block;">
+        <input type="checkbox" id="lgpd-consentimento" required>
+        Eu li e concordo com a <a href="politica-privacidade.html" target="_blank">Política de Privacidade</a>.
+      </label>
+
+      <button type="submit" class="btn btn-green">Enviar Chamado</button>
+    </form>
+
+    <h3>Seus Chamados Anteriores</h3>
+    <div id="lista-chamados" class="lista">Carregando...</div>
+  </div>
+
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    auth.onAuthStateChanged(user => {
+      if (!user) return location.href = "login-cliente.html";
+
+      const uid = user.uid;
+      const email = user.email;
+      document.getElementById("email").value = email;
+
+      db.collection("chamados").where("usuarioId", "==", uid)
+        .orderBy("criadoEm", "desc")
+        .onSnapshot(snapshot => {
+          const lista = document.getElementById("lista-chamados");
+          lista.innerHTML = "";
+          if (snapshot.empty) {
+            lista.innerHTML = "<p>Você ainda não abriu chamados.</p>";
+          } else {
+            snapshot.forEach(doc => {
+              const c = doc.data();
+              const criadoEm = formatarData(c.criadoEm);
+              lista.innerHTML += `
+                <div class="chamado-card">
+                  <p><b>${criadoEm}</b> - <b>Status:</b> ${c.status}</p>
+                  <p><b>${c.setor}</b> — ${c.mensagem}</p>
+                  <button class="btn btn-green" onclick="abrirChat('${doc.id}')">💬Chat</button>
+                </div>
+              `;
+            });
+          }
+        });
+
+      document.getElementById("form-chamado").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        if (!document.getElementById("lgpd-consentimento").checked) {
+          alert("Você precisa aceitar a Política de Privacidade para continuar.");
+          return;
+        }
+
+        const nome = document.getElementById("nome").value;
+        const setor = document.getElementById("setor").value;
+        const mensagem = document.getElementById("mensagem").value;
+        const empresa = document.getElementById("empresa").value;
+        const criadoEm = new Date();
+        const chamadoId = db.collection("chamados").doc().id;
+
+        const chamadoData = {
+          id: chamadoId,
+          nome,
+          email,
+          empresa,
+          setor,
+          mensagem,
+          status: "Aberto",
+          usuarioId: uid,
+          criadoEm: firebase.firestore.Timestamp.fromDate(criadoEm)
+        };
+
+        await db.collection("chamados").doc(chamadoId).set(chamadoData);
+
+        // === DISPARO DE E-MAIL SILENCIOSO (AGORA COM AWAIT) ===
+        try {
+          const idCurto = chamadoId.slice(0,6).toUpperCase();
+          const base = location.origin;
+          await enviarEmailSilencioso({
+            para: EMAILS_TECNICOS.join(','),
+            cc:   EMAILS_ADMIN.join(','),
+            assunto: `🔔 Novo chamado #${idCurto} – ${empresa}`,
+            html: montarHtmlNovoChamado({
+              id: chamadoId,
+              idCurto,
+              cliente: nome,
+              email: email,
+              empresa,
+              setor,
+              descricao: mensagem,
+              status: 'Aberto',
+              linkTecnico: `${base}/tecnico.html?chamado=${chamadoId}`,
+              linkAdmin:   `${base}/admin.html?chamado=${chamadoId}`,
+              linkChat:    `${base}/chat.html?chamado=${chamadoId}`
+            }),
+            replyTo: email || ''
+          });
+        } catch (e) {
+          console.error('Falha ao disparar e-mail do novo chamado:', e);
+        }
+
+        alert("Chamado enviado com sucesso!");
+        location.reload();
+      });
+    });
+
+    function abrirChat(chamadoId) {
+      window.location.href = `chat-cliente.html?id=${chamadoId}`;
+    }
+
+    function formatarData(timestamp) {
+      if (!timestamp || !timestamp.toDate) return "";
+      const data = timestamp.toDate();
+      return data.toLocaleDateString("pt-BR") + " " + data.toLocaleTimeString("pt-BR");
+    }
+  </script>
+
+  <!-- ====== BLOCO COMUM: e-mail silencioso (anti-CORS) ====== -->
+  <iframe name="gas_silent" style="display:none"></iframe>
+  <script>
+    // Config do GAS
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbz2U9j696QVojXt00lnsfcLO2rUgDA8AptLlTbPsRuAO8KrrOCDpHE-Cx8FYMeXf4F86A/exec";
+    const GAS_SECRET = "!Plokij789";
+
+    // Destinatários pré-definidos
+    const EMAILS_TECNICOS = [
+      "xoenfalos2014@gmail.com",
+      "kassyo@suporteworkgroup.com.br",
+      "malaquias@suporteworkgroup.com.br",
+      "rlkbubu70@gmail.com"
+    ];
+    const EMAILS_ADMIN = [
+      "xoenfalos2014@gmail.com",
+      "kassyo@suporteworkgroup.com.br"
+    ];
+
+    // Agora retorna Promise e só resolvemos quando o iframe carregar (ou timeout de 2s)
+    function enviarEmailSilencioso({ para, cc, assunto, html, replyTo, nomeRemetente="WG Informática" }) {
+      return new Promise((resolve) => {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `${GAS_URL}?token=${encodeURIComponent(GAS_SECRET)}`;
+        form.target = 'gas_silent';
+        form.style.display = 'none';
+
+        const fields = { para, cc, assunto, html, replyTo, nomeRemetente };
+        Object.entries(fields).forEach(([k,v])=>{
+          if (!v) return;
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = k;
+          input.value = v;
+          form.appendChild(input);
+        });
+
+        const iframe = document.querySelector('iframe[name="gas_silent"]');
+        const onLoad = () => { iframe.removeEventListener('load', onLoad); try{form.remove();}catch{} resolve(); };
+        iframe.addEventListener('load', onLoad, { once: true });
+
+        document.body.appendChild(form);
+        form.submit();
+
+        // fallback: se o GAS não navegar, garante resolução
+        setTimeout(() => { try{form.remove();}catch{} resolve(); }, 2000);
+      });
+    }
+
+    function esc(s){ return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+    function nl2br(s){ return (s||'').replace(/\n/g,'<br>'); }
+    function pad(n){ return n<10?'0'+n:n; }
+    function agoraBR(){
+      const d = new Date();
+      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+    function montarHtmlNovoChamado(ch){
+      return `
+        <div style="font:14px Arial,Helvetica,sans-serif">
+          <h2 style="margin:0 0 8px">Novo Chamado</h2>
+          <p><b>Cliente:</b> ${esc(ch.cliente)}</p>
+          <p><b>Empresa:</b> ${esc(ch.empresa)}</p>
+          <p><b>Setor:</b> ${esc(ch.setor)}</p>
+          <p><b>E-mail:</b> ${esc(ch.email)}</p>
+          <p><b>Descrição:</b><br>${nl2br(esc(ch.descricao))}</p>
+          <p><b>Status:</b> ${esc(ch.status||'Aberto')} • <b>Abertura:</b> ${agoraBR()}</p>
+          <hr>
+          <ul>
+            <li><a href="${esc(ch.linkTecnico||'#')}" target="_blank">Abrir no painel do Técnico</a></li>
+            <li><a href="${esc(ch.linkAdmin||'#')}" target="_blank">Abrir no painel do Admin</a></li>
+            <li><a href="${esc(ch.linkChat||'#')}" target="_blank">Ir direto ao Chat</a></li>
+          </ul>
+          <p style="color:#777">WG Informática • Notificação automática</p>
+        </div>`;
+    }
+  </script>
+</body>
+</html>
