@@ -7,327 +7,322 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-        }
-        .animate-fade-in {
-            animation: fade-in 0.3s ease-out forwards;
-        }
-        @keyframes fade-in {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        .loader {
-            border: 4px solid #475569; /* slate-600 */
-            border-top: 4px solid #10b981; /* emerald-500 */
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-</head>
-<body class="bg-slate-900 text-slate-300">
-
-    <!-- Cabeçalho -->
-    <header class="bg-slate-800 shadow-md">
-        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-white">Área do Cliente</h1>
-            <div class="flex items-center gap-4">
-                 <div id="userInfo" class="text-right text-sm text-slate-400"></div>
-                 <button id="btnLogout" class="bg-red-600 hover:bg-red-500 text-white font-semibold py-2 px-4 rounded-lg text-sm transition">Sair</button>
-            </div>
-        </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <!-- Coluna para Abrir Chamado -->
-            <div class="lg:col-span-1">
-                <div class="bg-slate-800 rounded-lg shadow-lg p-6">
-                    <h2 class="text-xl font-bold text-white mb-4">Abrir Novo Chamado</h2>
-                    <form id="form-chamado" class="space-y-4">
-                        <input id="nome" placeholder="Seu nome completo" required class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                        <input id="email" placeholder="Seu e-mail" required class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500" disabled>
-                        <input id="empresa" placeholder="Empresa" required class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                        <input id="setor" placeholder="Setor" required class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                        
-                        <div>
-                            <textarea id="mensagem" placeholder="Descreva o problema detalhadamente..." required rows="4" class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
-                            <button type="button" onclick="getSolutionsFromIA()" class="w-full mt-2 bg-purple-600 text-white font-semibold py-2 rounded-lg hover:bg-purple-500 transition-colors text-sm">✨ Ver Possíveis Soluções com IA</button>
-                        </div>
-
-                        <div class="flex items-start pt-2">
-                            <input type="checkbox" id="lgpd-consentimento" required class="mt-1 h-4 w-4 text-emerald-600 bg-slate-700 border-slate-500 rounded focus:ring-emerald-500">
-                            <label for="lgpd-consentimento" class="ml-2 text-sm text-slate-400">
-                                Eu li e concordo com a <a href="politica-privacidade.html" target="_blank" class="font-medium text-emerald-500 hover:text-emerald-400">Política de Privacidade</a>.
-                            </label>
-                        </div>
-
-                        <button type="submit" class="w-full bg-emerald-600 text-white font-semibold py-3 rounded-lg hover:bg-emerald-500 transition-colors">Enviar Chamado</button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Coluna para Chamados Anteriores -->
-            <div class="lg:col-span-2">
-                 <h2 class="text-xl font-bold text-white mb-4">Meus Chamados</h2>
-                <div id="lista-chamados" class="space-y-4">
-                    <p>Carregando seus chamados...</p>
-                </div>
-            </div>
-        </div>
-    </main>
-    
-    <!-- Modal de Soluções IA -->
-    <div id="modal-solucoes" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 rounded-lg shadow-2xl p-6 max-w-2xl w-full border border-slate-700 animate-fade-in">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-white">✨ Possíveis Soluções com IA</h2>
-                <button onclick="hideSolutionsModal()" class="text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
-            </div>
-            <div id="solucoes-conteudo" class="space-y-4 text-slate-300 bg-slate-900 p-4 rounded-md min-h-[250px] max-h-[60vh] overflow-y-auto">
-                <!-- Conteúdo das soluções ou loading spinner aqui -->
-            </div>
-            <div class="mt-6 flex justify-end gap-4">
-                <button onclick="hideSolutionsModal()" class="bg-slate-600 hover:bg-slate-500 text-white font-semibold py-2 px-4 rounded-lg transition">Fechar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts Firebase -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     <script src="js/firebase-config.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200">
+
+    <header class="bg-slate-800 shadow-lg p-4 text-center">
+        <h1 class="text-xl font-bold text-white">Área do Cliente</h1>
+    </header>
+
+    <div class="container mx-auto p-4 md:p-6 max-w-4xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- Formulário de Abertura de Chamado -->
+            <div class="bg-slate-800 p-6 rounded-lg shadow-lg">
+                <h2 class="text-lg font-semibold text-white mb-4">Abertura de Chamado</h2>
+                <form id="form-chamado" class="space-y-4">
+                    <input id="nome" placeholder="Seu nome" required class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    <input id="email" placeholder="Seu e-mail" required class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    <input id="empresa" placeholder="Empresa" required class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    <input id="setor" placeholder="Setor" required class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    <textarea id="mensagem" placeholder="Descreva o problema" required rows="4" class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"></textarea>
+                    
+                    <!-- Botão Gemini -->
+                    <button type="button" onclick="getSolutions()" class="w-full flex justify-center items-center gap-2 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-500 transition-colors">
+                        ✨ Ver Possíveis Soluções com IA
+                    </button>
+                    
+                    <label class="flex items-center text-sm text-slate-400">
+                        <input type="checkbox" id="lgpd-consentimento" required class="h-4 w-4 rounded bg-slate-700 border-slate-600 text-teal-500 focus:ring-teal-500">
+                        <span class="ml-2">Eu li e concordo com a <a href="politica-privacidade.html" target="_blank" class="text-teal-400 hover:underline">Política de Privacidade</a>.</span>
+                    </label>
+
+                    <button type="submit" class="w-full bg-teal-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-teal-500 transition-colors shadow-lg">Enviar Chamado</button>
+                </form>
+            </div>
+
+            <!-- Seus Chamados Anteriores -->
+            <div>
+                <h2 class="text-lg font-semibold text-white mb-4">Seus Chamados Anteriores</h2>
+                <div id="lista-chamados" class="space-y-3">
+                    <p class="text-slate-400">Carregando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Gemini -->
+    <div id="ai-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 rounded-lg shadow-2xl p-6 max-w-lg w-full border border-slate-700">
+            <h3 class="text-lg font-bold text-white mb-3">💡 Possíveis Soluções</h3>
+            <div id="ai-solutions" class="text-slate-300 text-sm max-h-80 overflow-y-auto pr-2"></div>
+            <button onclick="closeModal()" class="mt-4 w-full bg-slate-600 text-white font-semibold py-2 rounded-lg hover:bg-slate-500 transition-colors">Fechar</button>
+        </div>
+    </div>
+    
+    <!-- Iframe para envio de email silencioso -->
+    <iframe name="gas_silent" style="display:none"></iframe>
 
     <script>
         const db = firebase.firestore();
         const auth = firebase.auth();
+        let currentUserUid = null;
 
         auth.onAuthStateChanged(user => {
             if (!user) {
                 window.location.href = "login-cliente.html";
                 return;
             }
-
-            const uid = user.uid;
-            const email = user.email;
-            document.getElementById("email").value = email;
-            document.getElementById("userInfo").textContent = email;
             
-             db.collection("usuarios").doc(uid).get().then(doc => {
+            currentUserUid = user.uid;
+            const userEmail = user.email;
+            document.getElementById("email").value = userEmail;
+
+            db.collection("usuarios").doc(user.uid).get().then(doc => {
                 if (doc.exists) {
                     document.getElementById("nome").value = doc.data().nome || '';
                 }
             });
 
-            db.collection("chamados").where("usuarioId", "==", uid)
+            db.collection("chamados").where("usuarioId", "==", user.uid)
                 .orderBy("criadoEm", "desc")
                 .onSnapshot(snapshot => {
                     const lista = document.getElementById("lista-chamados");
                     lista.innerHTML = "";
                     if (snapshot.empty) {
-                        lista.innerHTML = '<p class="text-center text-slate-400 p-4 bg-slate-800 rounded-lg">Você ainda não abriu nenhum chamado.</p>';
+                        lista.innerHTML = "<p class='text-slate-400'>Você ainda não abriu chamados.</p>";
                     } else {
                         snapshot.forEach(doc => {
                             const c = doc.data();
-                            const criadoEm = formatarData(c.criadoEm);
-                            const statusCores = {
-                                'Aberto': 'bg-amber-500',
-                                'Em Andamento': 'bg-blue-500',
-                                'Resolvido': 'bg-emerald-500'
-                            };
-                            const corStatus = statusCores[c.status] || 'bg-slate-500';
-
-                            lista.innerHTML += `
-                                <div class="bg-slate-800 p-4 rounded-lg shadow-md flex justify-between items-center flex-wrap gap-4">
-                                    <div>
-                                        <div class="flex items-center gap-3">
-                                            <span class="text-sm font-semibold text-white px-2 py-1 rounded-full ${corStatus}">${c.status}</span>
-                                            <p class="text-sm text-slate-400">${criadoEm}</p>
-                                        </div>
-                                        <p class="mt-2 text-slate-300"><b>${c.setor}:</b> ${c.mensagem}</p>
-                                    </div>
-                                    <button class="bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 px-4 rounded-lg text-sm transition" onclick="abrirChat('${doc.id}')">💬 Chat</button>
-                                </div>
+                            const criadoEm = c.criadoEm ? c.criadoEm.toDate().toLocaleString('pt-BR') : 'Data inválida';
+                            const card = document.createElement('div');
+                            card.className = "bg-slate-800 p-4 rounded-lg shadow-md border-l-4 border-teal-500";
+                            card.innerHTML = `
+                                <p class="text-xs text-slate-400">${criadoEm} - Status: <span class="font-semibold">${c.status}</span></p>
+                                <p class="text-slate-300 mt-1"><b>${c.setor}</b> — ${c.mensagem}</p>
+                                <button class="mt-2 bg-teal-700 text-white font-semibold px-3 py-1 rounded-md hover:bg-teal-600 transition-colors text-sm" onclick="abrirChat('${doc.id}')">💬 Chat</button>
                             `;
+                            lista.appendChild(card);
                         });
                     }
                 });
-
-            document.getElementById("form-chamado").addEventListener("submit", async (e) => {
-                e.preventDefault();
-
-                if (!document.getElementById("lgpd-consentimento").checked) {
-                    alert("Você precisa aceitar a Política de Privacidade para continuar.");
-                    return;
-                }
-
-                const nome = document.getElementById("nome").value;
-                const setor = document.getElementById("setor").value;
-                const mensagem = document.getElementById("mensagem").value;
-                const empresa = document.getElementById("empresa").value;
-                const criadoEm = new Date();
-                const chamadoId = db.collection("chamados").doc().id;
-
-                const chamadoData = {
-                    id: chamadoId,
-                    nome,
-                    email,
-                    empresa,
-                    setor,
-                    mensagem,
-                    status: "Aberto",
-                    usuarioId: uid,
-                    criadoEm: firebase.firestore.Timestamp.fromDate(criadoEm)
-                };
-
-                await db.collection("chamados").doc(chamadoId).set(chamadoData);
-                
-                const userDoc = await db.collection("usuarios").doc(uid).get();
-                if (userDoc.exists && !userDoc.data().nome) {
-                    await db.collection("usuarios").doc(uid).update({ nome: nome });
-                }
-
-                try {
-                    const idCurto = chamadoId.slice(0,6).toUpperCase();
-                    const base = location.origin;
-                    await enviarEmailSilencioso({
-                        para: EMAILS_TECNICOS.join(','),
-                        cc: EMAILS_ADMIN.join(','),
-                        assunto: `🔔 Novo chamado #${idCurto} – ${empresa}`,
-                        html: montarHtmlNovoChamado({
-                            id: chamadoId, idCurto, cliente: nome, email: email, empresa, setor,
-                            descricao: mensagem, status: 'Aberto', linkTecnico: `${base}/tecnico.html`,
-                            linkAdmin: `${base}/admin.html`, linkChat: `${base}/chat-cliente.html?id=${chamadoId}`
-                        }),
-                        replyTo: email || ''
-                    });
-                } catch (e) {
-                    console.error('Falha ao disparar e-mail do novo chamado:', e);
-                }
-
-                alert("Chamado enviado com sucesso!");
-                e.target.reset();
-                document.getElementById("email").value = email;
-            });
-
-            document.getElementById("btnLogout").addEventListener("click", () => {
-                auth.signOut().then(() => { window.location.href = "index.html"; });
-            });
         });
-        
+
+        document.getElementById("form-chamado").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            if (!document.getElementById("lgpd-consentimento").checked) {
+                alert("Você precisa aceitar a Política de Privacidade para continuar.");
+                return;
+            }
+
+            const nome = document.getElementById("nome").value;
+            const email = document.getElementById("email").value;
+            const setor = document.getElementById("setor").value;
+            const mensagem = document.getElementById("mensagem").value;
+            const empresa = document.getElementById("empresa").value;
+            const chamadoId = db.collection("chamados").doc().id;
+
+            const chamadoData = {
+                id: chamadoId,
+                nome,
+                email,
+                empresa,
+                setor,
+                mensagem,
+                status: "Aberto",
+                usuarioId: currentUserUid,
+                criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await db.collection("chamados").doc(chamadoId).set(chamadoData);
+
+            // === DISPARO DE E-MAIL RESTAURADO ===
+            try {
+                const idCurto = chamadoId.slice(0, 6).toUpperCase();
+                const base = location.origin;
+                await enviarEmailSilencioso({
+                    para: EMAILS_TECNICOS.join(','),
+                    cc: EMAILS_ADMIN.join(','),
+                    assunto: `🔔 Novo chamado #${idCurto} – ${empresa}`,
+                    html: montarHtmlNovoChamado({
+                        id: chamadoId,
+                        idCurto,
+                        cliente: nome,
+                        email: email,
+                        empresa,
+                        setor,
+                        descricao: mensagem,
+                        status: 'Aberto',
+                        linkTecnico: `${base}/tecnico.html?chamado=${chamadoId}`,
+                        linkAdmin: `${base}/admin.html?chamado=${chamadoId}`,
+                        linkChat: `${base}/chat-cliente.html?id=${chamadoId}`
+                    }),
+                    replyTo: email || ''
+                });
+            } catch (err) {
+                console.error('Falha ao disparar e-mail do novo chamado:', err);
+            }
+
+            alert("Chamado enviado com sucesso!");
+            document.getElementById("form-chamado").reset();
+            document.getElementById("email").value = auth.currentUser.email; // Preenche o e-mail novamente
+        });
+
         function abrirChat(chamadoId) {
-            window.open(`chat-cliente.html?id=${chamadoId}`, '_blank');
+            window.location.href = `chat-cliente.html?id=${chamadoId}`;
         }
 
-        function formatarData(timestamp) {
-            if (!timestamp || !timestamp.toDate) return "";
-            const data = timestamp.toDate();
-            return data.toLocaleDateString("pt-BR") + " " + data.toLocaleTimeString("pt-BR");
-        }
-
-        // --- Funções da API Gemini ---
-        // IMPORTANTE: Insira sua chave de API do Google Gemini aqui.
-        // Você pode obter uma chave gratuita no Google AI Studio: https://aistudio.google.com/app/apikey
+        // Funções da IA Gemini
         const apiKey = "AIzaSyALJ6CJjviy4JFaxUAhbldZRrdd99twvSE";
         
-        async function callGeminiAPI(prompt, retries = 3, delay = 1000) {
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-            const payload = { contents: [{ parts: [{ text: prompt }] }] };
-
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    const result = await response.json();
-                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Não foi possível obter uma resposta da IA.";
-                } catch (error) {
-                    console.error(`Attempt ${i + 1} failed:`, error);
-                    if (i < retries - 1) {
-                        await new Promise(res => setTimeout(res, delay * Math.pow(2, i)));
-                    } else {
-                        return "Erro ao contatar a IA após múltiplas tentativas.";
-                    }
-                }
+        async function getSolutions() {
+            const problemDescription = document.getElementById('mensagem').value;
+            if (problemDescription.trim().length < 10) {
+                alert("Por favor, descreva o problema com mais detalhes antes de buscar soluções.");
+                return;
             }
-        }
 
-        function showSolutionsModal() {
-            document.getElementById('modal-solucoes').classList.remove('hidden');
-        }
+            const modal = document.getElementById('ai-modal');
+            const solutionsDiv = document.getElementById('ai-solutions');
+            solutionsDiv.innerHTML = '<p>Analisando seu problema e buscando soluções... Por favor, aguarde.</p>';
+            modal.classList.remove('hidden');
 
-        function hideSolutionsModal() {
-            document.getElementById('modal-solucoes').classList.add('hidden');
-        }
+            const systemPrompt = `Você é um assistente de suporte técnico. Responda em português. 
+            Seu objetivo é fornecer soluções simples e passo a passo para problemas de informática que um usuário leigo possa seguir. 
+            Formate a resposta em HTML com títulos (<h3>) e listas ordenadas (<ol><li>).
+            Se o problema for muito vago, peça mais detalhes. Se parecer complexo (ex: hardware queimado), recomende abrir o chamado para um técnico.`;
 
-        async function getSolutionsFromIA() {
-            // Adicionada verificação da chave de API
+            const userQuery = `Meu problema é: "${problemDescription}". Me dê algumas possíveis soluções que eu mesmo possa tentar.`;
+
             if (!apiKey) {
-                alert("A funcionalidade de IA não está configurada. É necessário adicionar uma chave de API do Google Gemini no código do arquivo cliente.html.");
+                solutionsDiv.innerHTML = "<p class='text-red-400'>A chave da API do Gemini não foi configurada. A funcionalidade de IA está desativada.</p>";
                 return;
             }
 
-            const problema = document.getElementById('mensagem').value;
-            if (problema.trim().length < 10) {
-                alert("Por favor, descreva seu problema com mais detalhes antes de buscar soluções.");
-                return;
-            }
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
-            const modalContent = document.getElementById('solucoes-conteudo');
-            showSolutionsModal();
-            modalContent.innerHTML = '<div class="loader"></div><p class="text-center mt-2">Buscando soluções...</p>';
-
-            const userPrompt = `Aja como um assistente de suporte técnico de TI amigável e prestativo. Um cliente está enfrentando o seguinte problema. Forneça 2 a 3 sugestões simples, em formato de passo a passo, que uma pessoa sem conhecimento técnico possa seguir para tentar resolver a questão antes de precisar abrir um chamado formal. Use uma linguagem clara, emojis para ilustrar e evite jargões. O problema descrito é: "${problema}"`;
-
+            const payload = {
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                contents: [{ parts: [{ text: userQuery }] }],
+            };
+            
             try {
-                const iaResponse = await callGeminiAPI(userPrompt);
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
 
-                const formattedResponse = iaResponse
-                    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-emerald-400">$1</strong>')
-                    .replace(/\n/g, '<br>');
-
-                modalContent.innerHTML = formattedResponse;
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    solutionsDiv.innerHTML = candidate.content.parts[0].text;
+                } else {
+                    throw new Error("Resposta da IA inválida ou vazia.");
+                }
             } catch (error) {
-                console.error("Erro ao buscar soluções com IA:", error);
-                modalContent.innerHTML = "<p>Ocorreu um erro ao tentar buscar as soluções. Por favor, tente novamente ou prossiga com a abertura do chamado.</p>";
+                console.error("Erro ao chamar a API Gemini:", error);
+                solutionsDiv.innerHTML = "<p class='text-red-400'>Desculpe, não foi possível obter sugestões no momento. Tente novamente mais tarde.</p>";
             }
         }
         
-        window.getSolutionsFromIA = getSolutionsFromIA;
-        window.hideSolutionsModal = hideSolutionsModal;
-
+        function closeModal() {
+            document.getElementById('ai-modal').classList.add('hidden');
+        }
     </script>
     
-    <!-- Bloco de e-mail -->
-    <iframe name="gas_silent" style="display:none"></iframe>
+    <!-- Bloco de scripts para envio de e-mail -->
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbz2U9j696QVojXt00lnsfcLO2rUgDA8AptLlTbPsRuAO8KrrOCDpHE-Cx8FYMeXf4F86A/exec";
         const GAS_SECRET = "!Plokij789";
-        const EMAILS_TECNICOS = ["xoenfalos2014@gmail.com", "kassyo@suporteworkgroup.com.br", "malaquias@suporteworkgroup.com.br", "rlkbubu70@gmail.com"];
-        const EMAILS_ADMIN = ["xoenfalos2014@gmail.com", "kassyo@suporteworkgroup.com.br"];
-        function enviarEmailSilencioso({ para, cc, assunto, html, replyTo, nomeRemetente="WG Informática" }) { /* ... */ }
-        function esc(s){ /* ... */ }
-        function nl2br(s){ /* ... */ }
-        function pad(n){ /* ... */ }
-        function agoraBR(){ /* ... */ }
-        function montarHtmlNovoChamado(ch){ /* ... */ }
+
+        const EMAILS_TECNICOS = [
+            "xoenfalos2014@gmail.com",
+            "kassyo@suporteworkgroup.com.br",
+            "malaquias@suporteworkgroup.com.br",
+            "rlkbubu70@gmail.com"
+        ];
+        const EMAILS_ADMIN = [
+            "xoenfalos2014@gmail.com",
+            "kassyo@suporteworkgroup.com.br"
+        ];
+
+        function enviarEmailSilencioso({ para, cc, assunto, html, replyTo, nomeRemetente="WG Informática" }) {
+            return new Promise((resolve) => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `${GAS_URL}?token=${encodeURIComponent(GAS_SECRET)}`;
+                form.target = 'gas_silent';
+                form.style.display = 'none';
+
+                const fields = { para, cc, assunto, html, replyTo, nomeRemetente };
+                Object.entries(fields).forEach(([k,v])=>{
+                    if (!v) return;
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = k;
+                    input.value = v;
+                    form.appendChild(input);
+                });
+
+                const iframe = document.querySelector('iframe[name="gas_silent"]');
+                const onLoad = () => { 
+                    iframe.removeEventListener('load', onLoad); 
+                    try { form.remove(); } catch(e) {} 
+                    resolve(); 
+                };
+                iframe.addEventListener('load', onLoad, { once: true });
+
+                document.body.appendChild(form);
+                form.submit();
+                setTimeout(() => { 
+                    try { form.remove(); } catch(e) {} 
+                    resolve(); 
+                }, 2000); 
+            });
+        }
+
+        function esc(s){ return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+        function nl2br(s){ return (s||'').replace(/\n/g,'<br>'); }
+        function agoraBR(){
+            const d = new Date();
+            const pad = (n) => n < 10 ? '0' + n : n;
+            return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+        function montarHtmlNovoChamado(ch){
+            return `
+                <div style="font:14px Arial,Helvetica,sans-serif; color: #333;">
+                  <div style="background-color:#f4f4f4; padding:20px; border-radius:8px;">
+                    <h2 style="margin:0 0 16px; color:#0d9488;">🔔 Novo Chamado Recebido</h2>
+                    <p><b>Cliente:</b> ${esc(ch.cliente)}</p>
+                    <p><b>Empresa:</b> ${esc(ch.empresa)}</p>
+                    <p><b>Setor:</b> ${esc(ch.setor)}</p>
+                    <p><b>E-mail para resposta:</b> ${esc(ch.email)}</p>
+                    <p><b>Descrição do Problema:</b><br>${nl2br(esc(ch.descricao))}</p>
+                    <p><b>Status:</b> ${esc(ch.status||'Aberto')} • <b>Abertura:</b> ${agoraBR()}</p>
+                    <hr style="border:none; border-top:1px solid #ddd; margin:16px 0;">
+                    <p><strong>Ações Rápidas:</strong></p>
+                    <p>
+                        <a href="${esc(ch.linkTecnico||'#')}" target="_blank" style="background-color:#0d9488; color:white; padding:8px 12px; text-decoration:none; border-radius:5px; margin-right:10px;">Ver no Painel Técnico</a>
+                        <a href="${esc(ch.linkChat||'#')}" target="_blank" style="background-color:#0f766e; color:white; padding:8px 12px; text-decoration:none; border-radius:5px;">Ir para o Chat</a>
+                    </p>
+                  </div>
+                  <p style="color:#999; font-size:12px; margin-top:15px;">WG Informática • Notificação automática</p>
+                </div>`;
+        }
     </script>
+
 </body>
 </html>
-
-
 
