@@ -1,177 +1,199 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Chat Técnico</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-  <script src="js/firebase-config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat do Chamado - WG Informática</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0a181c; /* Fundo escuro para o chat */
+        }
+        .chat-bg {
+            background-image: url('https://i.pinimg.com/736x/8c/98/99/8c98994518b575bfd8c949e91d20548b.jpg');
+            background-repeat: repeat;
+        }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
 </head>
-<body>
-  <div class="container">
-    <h2>Chat com Cliente</h2>
+<body class="flex flex-col h-screen">
 
-    <div id="chat" class="chat-box">Carregando mensagens...</div>
+    <header class="bg-slate-800 shadow-md text-white p-4 flex items-center justify-between">
+        <div>
+            <h1 class="text-lg font-bold">Chat do Chamado</h1>
+            <p id="info-chamado" class="text-xs text-slate-300">Carregando...</p>
+        </div>
+        <a href="tecnico.html" class="text-sm text-teal-400 hover:text-teal-300">← Voltar</a>
+    </header>
 
-    <div class="chat-form">
-      <textarea id="mensagem" placeholder="Digite sua mensagem" class="input" rows="3"></textarea>
-      <button onclick="enviarMensagem()" class="btn btn-dark">Enviar</button>
-    </div>
-  </div>
+    <main class="flex-1 overflow-y-auto p-4 chat-bg">
+        <div id="chat" class="space-y-4">
+            <!-- As mensagens serão inseridas aqui -->
+        </div>
+    </main>
 
-  <script>
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-    const params = new URLSearchParams(window.location.search);
-    const chamadoId = params.get("id");
+    <footer class="bg-slate-800 p-2">
+        <div class="flex items-center gap-2">
+            <textarea id="mensagem" placeholder="Digite sua mensagem..." class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none" rows="1" oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';"></textarea>
+            <button onclick="enviarMensagem()" class="bg-teal-600 text-white rounded-full p-3 hover:bg-teal-500 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-send"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+        </div>
+    </footer>
+    
+    <!-- Iframe para envio de e-mail silencioso -->
+    <iframe name="gas_silent" style="display:none"></iframe>
 
-    auth.onAuthStateChanged(user => {
-      if (!user || !chamadoId) return location.href = "login-tecnico.html";
+    <script>
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const params = new URLSearchParams(window.location.search);
+        const chamadoId = params.get("id");
+        let currentUserEmail = null;
+        let clienteEmail = null; // Variável para guardar o email do cliente
 
-      db.collection("chamados").doc(chamadoId).collection("mensagens")
-        .orderBy("data")
-        .onSnapshot(snapshot => {
-          const chat = document.getElementById("chat");
-          chat.innerHTML = "";
-          snapshot.forEach(doc => {
-            const msg = doc.data();
-            const div = document.createElement("div");
-            div.className = "chat-msg";
-            div.innerHTML = `<b>${msg.usuario}:</b> ${msg.texto}`;
-            chat.appendChild(div);
-          });
+        auth.onAuthStateChanged(user => {
+            if (!user || !chamadoId) {
+                window.location.href = "login-tecnico.html";
+                return;
+            }
+            currentUserEmail = user.email;
+            
+            db.collection("chamados").doc(chamadoId).get().then(doc => {
+                if (doc.exists) {
+                    const chamado = doc.data();
+                    clienteEmail = chamado.email; // Armazena o email do cliente
+                    document.getElementById("info-chamado").textContent = `Chamado #${doc.id.substring(0,6)} - ${chamado.empresa || 'Cliente'}`;
+                }
+            });
 
-          chat.scrollTop = chat.scrollHeight;
+            db.collection("chamados").doc(chamadoId).collection("mensagens")
+              .orderBy("data")
+              .onSnapshot(snapshot => {
+                  const chat = document.getElementById("chat");
+                  chat.innerHTML = "";
+                  snapshot.forEach(doc => {
+                      const msg = doc.data();
+                      const isSelf = msg.usuario === currentUserEmail;
+                      const dataMsg = msg.data ? msg.data.toDate() : new Date();
+                      const horaFormatada = dataMsg.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                      
+                      const div = document.createElement("div");
+                      div.className = `flex ${isSelf ? 'justify-end' : 'justify-start'}`;
+                      div.innerHTML = `
+                          <div class="max-w-xs md:max-w-md p-3 rounded-lg shadow-md ${isSelf ? 'bg-sky-800 text-white' : 'bg-slate-600 text-white'}">
+                              <p class="text-xs font-bold mb-1 ${isSelf ? 'text-sky-200' : 'text-slate-300'}">${msg.usuario}</p>
+                              <p class="text-sm">${msg.texto}</p>
+                              <p class="text-xs text-right mt-1 ${isSelf ? 'text-sky-300' : 'text-slate-400'}">${horaFormatada}</p>
+                          </div>
+                      `;
+                      chat.appendChild(div);
+                  });
+                  chat.parentElement.scrollTop = chat.parentElement.scrollHeight;
+              });
         });
-    });
 
-    async function enviarMensagem() {
-      const texto = document.getElementById("mensagem").value;
-      const user = firebase.auth().currentUser;
-      if (texto.trim() === "" || !user) return;
+        async function enviarMensagem() {
+            const texto = document.getElementById("mensagem").value;
+            if (texto.trim() === "" || !currentUserEmail) return;
 
-      await db.collection("chamados").doc(chamadoId).collection("mensagens").add({
-        texto: texto,
-        usuario: user.email,
-        data: new Date()
-      });
+            await db.collection("chamados").doc(chamadoId).collection("mensagens").add({
+                texto: texto,
+                usuario: currentUserEmail,
+                data: firebase.firestore.FieldValue.serverTimestamp()
+            });
 
-      // === DISPARO DE E-MAIL SILENCIOSO (técnico -> admins) ===
-      try {
-        const base = location.origin;
-        enviarEmailSilencioso({
-          para: EMAILS_ADMIN.join(','), // admin recebe sempre
-          // se quiser que técnicos também recebam cópia, troque para EMAILS_TECNICOS.concat(EMAILS_ADMIN).join(',')
-          assunto: `💬 Nova resposta do técnico no chamado #${chamadoId.slice(0,6).toUpperCase()}`,
-          html: montarHtmlMsgChat({
-            autor: user.email,
-            papel: 'Técnico',
-            msg: texto,
-            linkChat: `${base}/chat.html?chamado=${chamadoId}`,
-            idChamado: chamadoId
-          })
+            // === DISPARO DE E-MAIL SILENCIOSO (técnico -> cliente/admin) ===
+            if (clienteEmail) { // Só envia se o email do cliente foi carregado
+                try {
+                    const base = location.origin;
+                    enviarEmailSilencioso({
+                        para: clienteEmail, // Envia para o cliente
+                        cc:   EMAILS_ADMIN.join(','), // Cópia para os admins
+                        assunto: `💬 Nova resposta do técnico no chamado #${chamadoId.slice(0,6).toUpperCase()}`,
+                        html: montarHtmlMsgChat({
+                            autor: currentUserEmail,
+                            papel: 'Técnico',
+                            msg: texto,
+                            linkChat: `${base}/chat-cliente.html?id=${chamadoId}`,
+                            idChamado: chamadoId
+                        })
+                    });
+                } catch(e){
+                    console.error('Falha ao disparar e-mail de chat (técnico):', e);
+                }
+            }
+
+            document.getElementById("mensagem").value = "";
+            document.getElementById("mensagem").style.height = 'auto';
+        }
+
+        document.getElementById('mensagem').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                enviarMensagem();
+            }
         });
-      } catch(e){
-        console.error('Falha ao disparar e-mail de chat (técnico):', e);
-      }
 
-      document.getElementById("mensagem").value = "";
-    }
-  </script>
+        // ====== BLOCO COMUM: e-mail silencioso (anti-CORS) ======
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbz2U9j696QVojXt00lnsfcLO2rUgDA8AptLlTbPsRuAO8KrrOCDpHE-Cx8FYMeXf4F86A/exec";
+        const GAS_SECRET = "!Plokij789";
 
-  <div class="text-center mt-6">
-    <button id="btnLogout" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded shadow transition">
-      🚪 Sair
-    </button>
-  </div>
+        const EMAILS_ADMIN = [
+            "xoenfalos2014@gmail.com",
+            "kassyo@suporteworkgroup.com.br"
+        ];
 
-  <!-- ====== BLOCO COMUM: e-mail silencioso (anti-CORS) ====== -->
-  <iframe name="gas_silent" style="display:none"></iframe>
-  <script>
-    // Config do GAS
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz2U9j696QVojXt00lnsfcLO2rUgDA8AptLlTbPsRuAO8KrrOCDpHE-Cx8FYMeXf4F86A/exec";
-    const GAS_SECRET = "!Plokij789";
+        function enviarEmailSilencioso({ para, cc, assunto, html, replyTo, nomeRemetente="WG Informática" }) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `${GAS_URL}?token=${encodeURIComponent(GAS_SECRET)}`;
+            form.target = 'gas_silent';
+            form.style.display = 'none';
 
-    // Destinatários pré-definidos
-    const EMAILS_TECNICOS = [
-     "xoenfalos2014@gmail.com,rlkbubu70@gmail.com",
-      "kassyo@suporteworkgroup.com.br",
-      "malaquias@suporteworkgroup.com.br",
-      "rlkbubu70@gmail.com",
-       "oliveirakassyo12@gmail.com
-    ];
-    const EMAILS_ADMIN = [
-      "xoenfalos2014@gmail.com,rlkbubu70@gmail.com",
-      "kassyo@suporteworkgroup.com.br",
-      "rlkbubu70@gmail.com",
-      "oliveirakassyo12@gmail.com
-    ];
+            const fields = { para, cc, assunto, html, replyTo, nomeRemetente };
+            Object.entries(fields).forEach(([k,v])=>{
+                if (!v) return;
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = k;
+                input.value = v;
+                form.appendChild(input);
+            });
 
-    function enviarEmailSilencioso({ para, cc, assunto, html, replyTo, nomeRemetente="WG Informática" }) {
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = `${GAS_URL}?token=${encodeURIComponent(GAS_SECRET)}`;
-      form.target = 'gas_silent';
-      form.style.display = 'none';
+            document.body.appendChild(form);
+            form.submit();
+            setTimeout(()=> { try { form.remove(); } catch(e) {} }, 2000);
+        }
 
-      const fields = { para, cc, assunto, html, replyTo, nomeRemetente };
-      Object.entries(fields).forEach(([k,v])=>{
-        if (!v) return;
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = k;
-        input.value = v;
-        form.appendChild(input);
-      });
-
-      document.body.appendChild(form);
-      form.submit();
-      setTimeout(()=>form.remove(), 1500);
-    }
-
-    function esc(s){ return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-    function nl2br(s){ return (s||'').replace(/\n/g,'<br>'); }
-    function pad(n){ return n<10?'0'+n:n; }
-    function agoraBR(){
-      const d = new Date();
-      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    }
-    function montarHtmlMsgChat({autor, papel, msg, linkChat, idChamado}){
-      return `
-        <div style="font:14px Arial,Helvetica,sans-serif">
-          <h2 style="margin:0 0 8px">Nova mensagem no chat</h2>
-          <p><b>Chamado:</b> ${esc(idChamado)}</p>
-          <p><b>Remetente:</b> ${esc(autor)} (${esc(papel)})</p>
-          <p><b>Mensagem:</b><br>${nl2br(esc(msg))}</p>
-          <p><b>Quando:</b> ${agoraBR()}</p>
-          <hr>
-          <p><a href="${esc(linkChat)}" target="_blank">Abrir chat agora</a></p>
-          <p style="color:#777">WG Informática • Notificação automática</p>
-        </div>`;
-    }
-  </script>
-
-  <!-- Módulo extra do seu arquivo original mantido -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
-      authDomain: "sistema-chamados-99e49.firebaseapp.com",
-      projectId: "sistema-chamados-99e49"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth2 = getAuth(app);
-
-    document.getElementById("btnLogout").addEventListener("click", async () => {
-      await signOut(auth2);
-      alert("Você saiu do sistema.");
-      window.location.href = "index.html";
-    });
-  </script>
+        function esc(s){ return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+        function nl2br(s){ return (s||'').replace(/\n/g,'<br>'); }
+        function pad(n){ return n<10?'0'+n:n; }
+        function agoraBR(){
+            const d = new Date();
+            return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+        function montarHtmlMsgChat({autor, papel, msg, linkChat, idChamado}){
+            return `
+                <div style="font:14px Arial,Helvetica,sans-serif">
+                    <h2 style="margin:0 0 8px">Nova mensagem no chat</h2>
+                    <p><b>Chamado:</b> ${esc(idChamado)}</p>
+                    <p><b>Remetente:</b> ${esc(autor)} (${esc(papel)})</p>
+                    <p><b>Mensagem:</b><br>${nl2br(esc(msg))}</p>
+                    <p><b>Quando:</b> ${agoraBR()}</p>
+                    <hr>
+                    <p><a href="${esc(linkChat)}" target="_blank">Abrir chat agora</a></p>
+                    <p style="color:#777">WG Informática • Notificação automática</p>
+                </div>`;
+        }
+    </script>
 </body>
 </html>
+
