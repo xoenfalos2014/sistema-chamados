@@ -1,107 +1,150 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Relatórios Técnicos</title>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="js/firebase-config.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios Salvos - WG Informática</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
 </head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-5xl mx-auto bg-white rounded-lg shadow p-6">
-    <h1 class="text-2xl font-bold mb-4">📂 Relatórios Técnicos Salvos</h1>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
 
-    <div class="flex gap-4 mb-4 flex-wrap">
-      <input id="filtroCliente" type="text" placeholder="Filtrar por cliente" class="border p-2 rounded w-full sm:w-auto flex-1">
-      <input id="filtroDataInicio" type="date" class="border p-2 rounded">
-      <input id="filtroDataFim" type="date" class="border p-2 rounded">
-      <button onclick="carregarRelatorios()" class="bg-blue-600 text-white px-4 py-2 rounded">🔍 Buscar</button>
-    </div>
+    <header class="bg-slate-800 shadow-md">
+        <div class="max-w-5xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-white">📂 Relatórios Salvos</h1>
+            <a href="tecnico.html" class="text-sm text-teal-400 hover:text-teal-300">← Voltar ao Painel</a>
+        </div>
+    </header>
 
-    <div id="listaRelatorios" class="space-y-4"></div>
-  </div>
+    <main class="max-w-5xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="bg-slate-800 rounded-2xl shadow-2xl p-6 border border-slate-700">
+            <!-- Filtros -->
+            <div class="flex flex-col sm:flex-row gap-4 mb-6 items-center">
+                <input id="filtroCliente" type="text" placeholder="Filtrar por cliente..." class="flex-grow w-full p-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <input id="filtroDataInicio" type="date" class="p-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <input id="filtroDataFim" type="date" class="p-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <button onclick="carregarRelatorios()" class="w-full sm:w-auto bg-teal-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-teal-500 transition-colors">🔍 Buscar</button>
+            </div>
 
-  <script>
-    const db = firebase.firestore();
-    const auth = firebase.auth();
+            <!-- Lista de Relatórios -->
+            <div id="listaRelatorios" class="space-y-4"></div>
+        </div>
+    </main>
 
-    auth.onAuthStateChanged(user => {
-      if (!user) return location.href = "login-tecnico.html";
-      carregarRelatorios();
-    });
+    <script>
+        const db = firebase.firestore();
+        const auth = firebase.auth();
 
-    async function carregarRelatorios() {
-      const lista = document.getElementById("listaRelatorios");
-      lista.innerHTML = "<p>Carregando...</p>";
+        auth.onAuthStateChanged(user => {
+            if (!user) return location.href = "login-tecnico.html";
+            carregarRelatorios();
+        });
 
-      const clienteFiltro = document.getElementById("filtroCliente").value.toLowerCase();
-      const dataInicio = document.getElementById("filtroDataInicio").value;
-      const dataFim = document.getElementById("filtroDataFim").value;
+        async function carregarRelatorios() {
+            const lista = document.getElementById("listaRelatorios");
+            lista.innerHTML = "<p class='text-center text-slate-400'>Carregando relatórios...</p>";
 
-      let query = db.collection("relatorios_tecnicos").orderBy("criadoEm", "desc");
+            const clienteFiltro = document.getElementById("filtroCliente").value.toLowerCase();
+            const dataInicio = document.getElementById("filtroDataInicio").value;
+            const dataFim = document.getElementById("filtroDataFim").value;
 
-      if (dataInicio) query = query.where("criadoEm", ">=", new Date(dataInicio));
-      if (dataFim) {
-        const fim = new Date(dataFim);
-        fim.setHours(23, 59, 59, 999);
-        query = query.where("criadoEm", "<=", fim);
-      }
+            let query = db.collection("relatorios_tecnicos").orderBy("criadoEm", "desc");
 
-      const snapshot = await query.get();
-      lista.innerHTML = "";
+            if (dataInicio) {
+                query = query.where("criadoEm", ">=", new Date(dataInicio + 'T00:00:00'));
+            }
+            if (dataFim) {
+                const fim = new Date(dataFim + 'T23:59:59');
+                query = query.where("criadoEm", "<=", fim);
+            }
 
-      if (snapshot.empty) {
-        lista.innerHTML = "<p>Nenhum relatório encontrado.</p>";
-        return;
-      }
+            try {
+                const snapshot = await query.get();
+                const relatoriosFiltrados = [];
 
-      snapshot.forEach(doc => {
-        const r = doc.data();
-        const dataFormatada = r.criadoEm?.toDate().toLocaleString("pt-BR") || "";
-        if (clienteFiltro && !r.cliente.toLowerCase().includes(clienteFiltro)) return;
+                if (snapshot.empty) {
+                    lista.innerHTML = "<div class='text-center p-8 bg-slate-700/50 rounded-lg'><p class='text-slate-400'>Nenhum relatório encontrado para os filtros aplicados.</p></div>";
+                    return;
+                }
 
-        const item = document.createElement("div");
-        item.className = "bg-gray-50 p-4 border rounded shadow";
+                snapshot.forEach(doc => {
+                    const r = doc.data();
+                    if (clienteFiltro && !r.cliente.toLowerCase().includes(clienteFiltro)) {
+                        return;
+                    }
+                    relatoriosFiltrados.push(r);
+                });
 
-        item.innerHTML = `
-          <p><b>Cliente:</b> <input value="${r.cliente}" class="border p-1 rounded w-full"></p>
-          <p><b>Data:</b> <input type="date" value="${r.data}" class="border p-1 rounded"></p>
-          <p><b>Serviço:</b> <textarea class="border p-1 rounded w-full">${r.servico}</textarea></p>
-          <p><b>Observações:</b> <textarea class="border p-1 rounded w-full">${r.observacoes || ""}</textarea></p>
-          <p><b>Criado em:</b> ${dataFormatada}</p>
-          <button onclick='enviarWhatsapp(${JSON.stringify({
-            cliente: r.cliente,
-            data: r.data,
-            servico: r.servico,
-            observacoes: r.observacoes || "",
-            criadoEm: dataFormatada
-          })})' class='mt-2 bg-green-600 text-white px-4 py-1 rounded'>📤 Enviar por WhatsApp</button>
-        `;
+                if (relatoriosFiltrados.length === 0) {
+                     lista.innerHTML = "<div class='text-center p-8 bg-slate-700/50 rounded-lg'><p class='text-slate-400'>Nenhum relatório encontrado para o cliente informado.</p></div>";
+                    return;
+                }
 
-        lista.appendChild(item);
-      });
-    }
+                lista.innerHTML = ""; // Limpa o "Carregando"
+                relatoriosFiltrados.forEach(r => {
+                    const dataFormatada = r.criadoEm?.toDate().toLocaleString("pt-BR") || "Data indisponível";
+                    const dataInput = r.data || '';
 
-    function enviarWhatsapp(relatorio) {
-      const mensagem = `
-📋 *Relatório Técnico*
-👤 Cliente: ${relatorio.cliente}
-📅 Data: ${relatorio.data}
-🛠️ Serviço: ${relatorio.servico}
-📝 Observações: ${relatorio.observacoes}
-📌 Criado em: ${relatorio.criadoEm}
-      `.trim();
+                    const item = document.createElement("div");
+                    item.className = "bg-slate-700 p-4 rounded-lg shadow-md border border-slate-600";
 
-      const numero = prompt("Digite o número do WhatsApp com DDD (ex: 21999999999):");
-      if (!numero) return;
+                    item.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <p class="font-bold text-lg text-white">${r.cliente}</p>
+                            <span class="text-xs text-slate-400">${dataFormatada}</span>
+                        </div>
+                        <div class="mt-3 space-y-2">
+                            <p><strong class="text-teal-400">Data do Serviço:</strong> <span class="text-slate-300">${new Date(dataInput + 'T00:00:00').toLocaleDateString('pt-BR')}</span></p>
+                            <p><strong class="text-teal-400">Serviço:</strong> <span class="text-slate-300">${r.servico}</span></p>
+                            ${r.observacoes ? `<p><strong class="text-teal-400">Observações:</strong> <span class="text-slate-300">${r.observacoes}</span></p>` : ''}
+                        </div>
+                        <div class="mt-4">
+                            <button onclick='enviarWhatsapp(${JSON.stringify({
+                                cliente: r.cliente,
+                                data: new Date(dataInput + 'T00:00:00').toLocaleDateString('pt-BR'),
+                                servico: r.servico,
+                                observacoes: r.observacoes || "",
+                                tecnico: r.tecnico || ""
+                            })})' class='bg-green-600 text-white font-semibold text-sm py-1 px-3 rounded-md hover:bg-green-500 transition-colors'>📤 Enviar por WhatsApp</button>
+                        </div>
+                    `;
 
-      const url = `https://wa.me/55${numero}?text=${encodeURIComponent(mensagem)}`;
-      window.open(url, "_blank");
-    }
-  </script>
+                    lista.appendChild(item);
+                });
+
+            } catch(error) {
+                console.error("Erro ao carregar relatórios:", error);
+                lista.innerHTML = "<div class='text-center p-8 bg-red-900/50 rounded-lg'><p class='text-red-300'>Ocorreu um erro ao buscar os relatórios. Verifique o console para mais detalhes.</p></div>";
+            }
+        }
+
+        function enviarWhatsapp(relatorio) {
+            const mensagem = `*RELATÓRIO TÉCNICO*\n\n*Cliente:* ${relatorio.cliente}\n*Data:* ${relatorio.data}\n*Técnico:* ${relatorio.tecnico}\n\n*Serviço Executado:*\n${relatorio.servico}\n\n*Observações:*\n${relatorio.observacoes}`.trim();
+
+            const numero = prompt("Digite o número do WhatsApp do cliente com DDD (ex: 21999999999):");
+            if (numero && numero.match(/^\d{10,11}$/)) {
+                 const url = `https://wa.me/55${numero}?text=${encodeURIComponent(mensagem)}`;
+                window.open(url, "_blank");
+            } else if (numero) {
+                alert("Número de telefone inválido. Por favor, insira apenas os números, incluindo o DDD.");
+            }
+        }
+
+        // Tornar a função globalmente acessível para o onclick
+        window.enviarWhatsapp = enviarWhatsapp;
+        window.carregarRelatorios = carregarRelatorios;
+
+    </script>
 </body>
 </html>

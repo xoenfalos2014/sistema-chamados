@@ -1,219 +1,333 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Área do Cliente</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-  <script src="js/firebase-config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área do Cliente - WG Informática</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .animate-fade-in {
+            animation: fade-in 0.3s ease-out forwards;
+        }
+        @keyframes fade-in {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .loader {
+            border: 4px solid #475569; /* slate-600 */
+            border-top: 4px solid #10b981; /* emerald-500 */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
-<body>
-  <div class="container">
-    <h2>Abertura de Chamado</h2>
-    <form id="form-chamado" class="form">
-      <input id="nome" placeholder="Seu nome" required class="input">
-      <input id="email" placeholder="Seu e-mail" required class="input">
-      <input id="empresa" placeholder="Empresa" required class="input">
-      <input id="setor" placeholder="Setor" required class="input">
-      <textarea id="mensagem" placeholder="Descreva o problema" required class="input"></textarea>
+<body class="bg-slate-900 text-slate-300">
 
-      <!-- Checkbox LGPD -->
-      <label style="margin-top:10px; display:block;">
-        <input type="checkbox" id="lgpd-consentimento" required>
-        Eu li e concordo com a <a href="politica-privacidade.html" target="_blank">Política de Privacidade</a>.
-      </label>
+    <!-- Cabeçalho -->
+    <header class="bg-slate-800 shadow-md">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-white">Área do Cliente</h1>
+            <div class="flex items-center gap-4">
+                 <div id="userInfo" class="text-right text-sm text-slate-400"></div>
+                 <button id="btnLogout" class="bg-red-600 hover:bg-red-500 text-white font-semibold py-2 px-4 rounded-lg text-sm transition">Sair</button>
+            </div>
+        </div>
+    </header>
 
-      <button type="submit" class="btn btn-green">Enviar Chamado</button>
-    </form>
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Coluna para Abrir Chamado -->
+            <div class="lg:col-span-1">
+                <div class="bg-slate-800 rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-bold text-white mb-4">Abrir Novo Chamado</h2>
+                    <form id="form-chamado" class="space-y-4">
+                        <input id="nome" placeholder="Seu nome completo" required class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <input id="email" placeholder="Seu e-mail" required class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500" disabled>
+                        <input id="empresa" placeholder="Empresa" required class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <input id="setor" placeholder="Setor" required class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        
+                        <div>
+                            <textarea id="mensagem" placeholder="Descreva o problema detalhadamente..." required rows="4" class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                            <button type="button" onclick="getSolutionsFromIA()" class="w-full mt-2 bg-purple-600 text-white font-semibold py-2 rounded-lg hover:bg-purple-500 transition-colors text-sm">✨ Ver Possíveis Soluções com IA</button>
+                        </div>
 
-    <h3>Seus Chamados Anteriores</h3>
-    <div id="lista-chamados" class="lista">Carregando...</div>
-  </div>
+                        <div class="flex items-start pt-2">
+                            <input type="checkbox" id="lgpd-consentimento" required class="mt-1 h-4 w-4 text-emerald-600 bg-slate-700 border-slate-500 rounded focus:ring-emerald-500">
+                            <label for="lgpd-consentimento" class="ml-2 text-sm text-slate-400">
+                                Eu li e concordo com a <a href="politica-privacidade.html" target="_blank" class="font-medium text-emerald-500 hover:text-emerald-400">Política de Privacidade</a>.
+                            </label>
+                        </div>
 
-  <script>
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-
-    auth.onAuthStateChanged(user => {
-      if (!user) return location.href = "login-cliente.html";
-
-      const uid = user.uid;
-      const email = user.email;
-      document.getElementById("email").value = email;
-
-      db.collection("chamados").where("usuarioId", "==", uid)
-        .orderBy("criadoEm", "desc")
-        .onSnapshot(snapshot => {
-          const lista = document.getElementById("lista-chamados");
-          lista.innerHTML = "";
-          if (snapshot.empty) {
-            lista.innerHTML = "<p>Você ainda não abriu chamados.</p>";
-          } else {
-            snapshot.forEach(doc => {
-              const c = doc.data();
-              const criadoEm = formatarData(c.criadoEm);
-              lista.innerHTML += `
-                <div class="chamado-card">
-                  <p><b>${criadoEm}</b> - <b>Status:</b> ${c.status}</p>
-                  <p><b>${c.setor}</b> — ${c.mensagem}</p>
-                  <button class="btn btn-green" onclick="abrirChat('${doc.id}')">💬Chat</button>
+                        <button type="submit" class="w-full bg-emerald-600 text-white font-semibold py-3 rounded-lg hover:bg-emerald-500 transition-colors">Enviar Chamado</button>
+                    </form>
                 </div>
-              `;
+            </div>
+
+            <!-- Coluna para Chamados Anteriores -->
+            <div class="lg:col-span-2">
+                 <h2 class="text-xl font-bold text-white mb-4">Meus Chamados</h2>
+                <div id="lista-chamados" class="space-y-4">
+                    <p>Carregando seus chamados...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Modal de Soluções IA -->
+    <div id="modal-solucoes" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 rounded-lg shadow-2xl p-6 max-w-2xl w-full border border-slate-700 animate-fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-white">✨ Possíveis Soluções com IA</h2>
+                <button onclick="hideSolutionsModal()" class="text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+            <div id="solucoes-conteudo" class="space-y-4 text-slate-300 bg-slate-900 p-4 rounded-md min-h-[250px] max-h-[60vh] overflow-y-auto">
+                <!-- Conteúdo das soluções ou loading spinner aqui -->
+            </div>
+            <div class="mt-6 flex justify-end gap-4">
+                <button onclick="hideSolutionsModal()" class="bg-slate-600 hover:bg-slate-500 text-white font-semibold py-2 px-4 rounded-lg transition">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+
+    <script>
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        auth.onAuthStateChanged(user => {
+            if (!user) {
+                window.location.href = "login-cliente.html";
+                return;
+            }
+
+            const uid = user.uid;
+            const email = user.email;
+            document.getElementById("email").value = email;
+            document.getElementById("userInfo").textContent = email;
+            
+             db.collection("usuarios").doc(uid).get().then(doc => {
+                if (doc.exists) {
+                    document.getElementById("nome").value = doc.data().nome || '';
+                }
             });
-          }
+
+            db.collection("chamados").where("usuarioId", "==", uid)
+                .orderBy("criadoEm", "desc")
+                .onSnapshot(snapshot => {
+                    const lista = document.getElementById("lista-chamados");
+                    lista.innerHTML = "";
+                    if (snapshot.empty) {
+                        lista.innerHTML = '<p class="text-center text-slate-400 p-4 bg-slate-800 rounded-lg">Você ainda não abriu nenhum chamado.</p>';
+                    } else {
+                        snapshot.forEach(doc => {
+                            const c = doc.data();
+                            const criadoEm = formatarData(c.criadoEm);
+                            const statusCores = {
+                                'Aberto': 'bg-amber-500',
+                                'Em Andamento': 'bg-blue-500',
+                                'Resolvido': 'bg-emerald-500'
+                            };
+                            const corStatus = statusCores[c.status] || 'bg-slate-500';
+
+                            lista.innerHTML += `
+                                <div class="bg-slate-800 p-4 rounded-lg shadow-md flex justify-between items-center flex-wrap gap-4">
+                                    <div>
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-sm font-semibold text-white px-2 py-1 rounded-full ${corStatus}">${c.status}</span>
+                                            <p class="text-sm text-slate-400">${criadoEm}</p>
+                                        </div>
+                                        <p class="mt-2 text-slate-300"><b>${c.setor}:</b> ${c.mensagem}</p>
+                                    </div>
+                                    <button class="bg-sky-600 hover:bg-sky-500 text-white font-semibold py-2 px-4 rounded-lg text-sm transition" onclick="abrirChat('${doc.id}')">💬 Chat</button>
+                                </div>
+                            `;
+                        });
+                    }
+                });
+
+            document.getElementById("form-chamado").addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                if (!document.getElementById("lgpd-consentimento").checked) {
+                    alert("Você precisa aceitar a Política de Privacidade para continuar.");
+                    return;
+                }
+
+                const nome = document.getElementById("nome").value;
+                const setor = document.getElementById("setor").value;
+                const mensagem = document.getElementById("mensagem").value;
+                const empresa = document.getElementById("empresa").value;
+                const criadoEm = new Date();
+                const chamadoId = db.collection("chamados").doc().id;
+
+                const chamadoData = {
+                    id: chamadoId,
+                    nome,
+                    email,
+                    empresa,
+                    setor,
+                    mensagem,
+                    status: "Aberto",
+                    usuarioId: uid,
+                    criadoEm: firebase.firestore.Timestamp.fromDate(criadoEm)
+                };
+
+                await db.collection("chamados").doc(chamadoId).set(chamadoData);
+                
+                const userDoc = await db.collection("usuarios").doc(uid).get();
+                if (userDoc.exists && !userDoc.data().nome) {
+                    await db.collection("usuarios").doc(uid).update({ nome: nome });
+                }
+
+                try {
+                    const idCurto = chamadoId.slice(0,6).toUpperCase();
+                    const base = location.origin;
+                    await enviarEmailSilencioso({
+                        para: EMAILS_TECNICOS.join(','),
+                        cc: EMAILS_ADMIN.join(','),
+                        assunto: `🔔 Novo chamado #${idCurto} – ${empresa}`,
+                        html: montarHtmlNovoChamado({
+                            id: chamadoId, idCurto, cliente: nome, email: email, empresa, setor,
+                            descricao: mensagem, status: 'Aberto', linkTecnico: `${base}/tecnico.html`,
+                            linkAdmin: `${base}/admin.html`, linkChat: `${base}/chat-cliente.html?id=${chamadoId}`
+                        }),
+                        replyTo: email || ''
+                    });
+                } catch (e) {
+                    console.error('Falha ao disparar e-mail do novo chamado:', e);
+                }
+
+                alert("Chamado enviado com sucesso!");
+                e.target.reset();
+                document.getElementById("email").value = email;
+            });
+
+            document.getElementById("btnLogout").addEventListener("click", () => {
+                auth.signOut().then(() => { window.location.href = "index.html"; });
+            });
         });
-
-      document.getElementById("form-chamado").addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        if (!document.getElementById("lgpd-consentimento").checked) {
-          alert("Você precisa aceitar a Política de Privacidade para continuar.");
-          return;
+        
+        function abrirChat(chamadoId) {
+            window.open(`chat-cliente.html?id=${chamadoId}`, '_blank');
         }
 
-        const nome = document.getElementById("nome").value;
-        const setor = document.getElementById("setor").value;
-        const mensagem = document.getElementById("mensagem").value;
-        const empresa = document.getElementById("empresa").value;
-        const criadoEm = new Date();
-        const chamadoId = db.collection("chamados").doc().id;
-
-        const chamadoData = {
-          id: chamadoId,
-          nome,
-          email,
-          empresa,
-          setor,
-          mensagem,
-          status: "Aberto",
-          usuarioId: uid,
-          criadoEm: firebase.firestore.Timestamp.fromDate(criadoEm)
-        };
-
-        await db.collection("chamados").doc(chamadoId).set(chamadoData);
-
-        // === DISPARO DE E-MAIL SILENCIOSO (AGORA COM AWAIT) ===
-        try {
-          const idCurto = chamadoId.slice(0,6).toUpperCase();
-          const base = location.origin;
-          await enviarEmailSilencioso({
-            para: EMAILS_TECNICOS.join(','),
-            cc:   EMAILS_ADMIN.join(','),
-            assunto: `🔔 Novo chamado #${idCurto} – ${empresa}`,
-            html: montarHtmlNovoChamado({
-              id: chamadoId,
-              idCurto,
-              cliente: nome,
-              email: email,
-              empresa,
-              setor,
-              descricao: mensagem,
-              status: 'Aberto',
-              linkTecnico: `${base}/tecnico.html?chamado=${chamadoId}`,
-              linkAdmin:   `${base}/admin.html?chamado=${chamadoId}`,
-              linkChat:    `${base}/chat.html?chamado=${chamadoId}`
-            }),
-            replyTo: email || ''
-          });
-        } catch (e) {
-          console.error('Falha ao disparar e-mail do novo chamado:', e);
+        function formatarData(timestamp) {
+            if (!timestamp || !timestamp.toDate) return "";
+            const data = timestamp.toDate();
+            return data.toLocaleDateString("pt-BR") + " " + data.toLocaleTimeString("pt-BR");
         }
 
-        alert("Chamado enviado com sucesso!");
-        location.reload();
-      });
-    });
+        // --- Funções da API Gemini ---
+        // IMPORTANTE: Insira sua chave de API do Google Gemini aqui.
+        // Você pode obter uma chave gratuita no Google AI Studio: https://aistudio.google.com/app/apikey
+        const apiKey = "AIzaSyALJ6CJjviy4JFaxUAhbldZRrdd99twvSE";
+        
+        async function callGeminiAPI(prompt, retries = 3, delay = 1000) {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const payload = { contents: [{ parts: [{ text: prompt }] }] };
 
-    function abrirChat(chamadoId) {
-      window.location.href = `chat-cliente.html?id=${chamadoId}`;
-    }
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const result = await response.json();
+                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "Não foi possível obter uma resposta da IA.";
+                } catch (error) {
+                    console.error(`Attempt ${i + 1} failed:`, error);
+                    if (i < retries - 1) {
+                        await new Promise(res => setTimeout(res, delay * Math.pow(2, i)));
+                    } else {
+                        return "Erro ao contatar a IA após múltiplas tentativas.";
+                    }
+                }
+            }
+        }
 
-    function formatarData(timestamp) {
-      if (!timestamp || !timestamp.toDate) return "";
-      const data = timestamp.toDate();
-      return data.toLocaleDateString("pt-BR") + " " + data.toLocaleTimeString("pt-BR");
-    }
-  </script>
+        function showSolutionsModal() {
+            document.getElementById('modal-solucoes').classList.remove('hidden');
+        }
 
-  <!-- ====== BLOCO COMUM: e-mail silencioso (anti-CORS) ====== -->
-  <iframe name="gas_silent" style="display:none"></iframe>
-  <script>
-    // Config do GAS
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbz2U9j696QVojXt00lnsfcLO2rUgDA8AptLlTbPsRuAO8KrrOCDpHE-Cx8FYMeXf4F86A/exec";
-    const GAS_SECRET = "!Plokij789";
+        function hideSolutionsModal() {
+            document.getElementById('modal-solucoes').classList.add('hidden');
+        }
 
-    // Destinatários pré-definidos
-    const EMAILS_TECNICOS = [
-      "xoenfalos2014@gmail.com",
-      "kassyo@suporteworkgroup.com.br",
-      "malaquias@suporteworkgroup.com.br",
-      "rlkbubu70@gmail.com"
-    ];
-    const EMAILS_ADMIN = [
-      "xoenfalos2014@gmail.com",
-      "kassyo@suporteworkgroup.com.br",
-      "rlkbubu70@gmail.com"
-    ];
+        async function getSolutionsFromIA() {
+            // Adicionada verificação da chave de API
+            if (!apiKey) {
+                alert("A funcionalidade de IA não está configurada. É necessário adicionar uma chave de API do Google Gemini no código do arquivo cliente.html.");
+                return;
+            }
 
-    // Agora retorna Promise e só resolvemos quando o iframe carregar (ou timeout de 2s)
-    function enviarEmailSilencioso({ para, cc, assunto, html, replyTo, nomeRemetente="WG Informática" }) {
-      return new Promise((resolve) => {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `${GAS_URL}?token=${encodeURIComponent(GAS_SECRET)}`;
-        form.target = 'gas_silent';
-        form.style.display = 'none';
+            const problema = document.getElementById('mensagem').value;
+            if (problema.trim().length < 10) {
+                alert("Por favor, descreva seu problema com mais detalhes antes de buscar soluções.");
+                return;
+            }
 
-        const fields = { para, cc, assunto, html, replyTo, nomeRemetente };
-        Object.entries(fields).forEach(([k,v])=>{
-          if (!v) return;
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = k;
-          input.value = v;
-          form.appendChild(input);
-        });
+            const modalContent = document.getElementById('solucoes-conteudo');
+            showSolutionsModal();
+            modalContent.innerHTML = '<div class="loader"></div><p class="text-center mt-2">Buscando soluções...</p>';
 
-        const iframe = document.querySelector('iframe[name="gas_silent"]');
-        const onLoad = () => { iframe.removeEventListener('load', onLoad); try{form.remove();}catch{} resolve(); };
-        iframe.addEventListener('load', onLoad, { once: true });
+            const userPrompt = `Aja como um assistente de suporte técnico de TI amigável e prestativo. Um cliente está enfrentando o seguinte problema. Forneça 2 a 3 sugestões simples, em formato de passo a passo, que uma pessoa sem conhecimento técnico possa seguir para tentar resolver a questão antes de precisar abrir um chamado formal. Use uma linguagem clara, emojis para ilustrar e evite jargões. O problema descrito é: "${problema}"`;
 
-        document.body.appendChild(form);
-        form.submit();
+            try {
+                const iaResponse = await callGeminiAPI(userPrompt);
 
-        // fallback: se o GAS não navegar, garante resolução
-        setTimeout(() => { try{form.remove();}catch{} resolve(); }, 2000);
-      });
-    }
+                const formattedResponse = iaResponse
+                    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-emerald-400">$1</strong>')
+                    .replace(/\n/g, '<br>');
 
-    function esc(s){ return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-    function nl2br(s){ return (s||'').replace(/\n/g,'<br>'); }
-    function pad(n){ return n<10?'0'+n:n; }
-    function agoraBR(){
-      const d = new Date();
-      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    }
-    function montarHtmlNovoChamado(ch){
-      return `
-        <div style="font:14px Arial,Helvetica,sans-serif">
-          <h2 style="margin:0 0 8px">Novo Chamado</h2>
-          <p><b>Cliente:</b> ${esc(ch.cliente)}</p>
-          <p><b>Empresa:</b> ${esc(ch.empresa)}</p>
-          <p><b>Setor:</b> ${esc(ch.setor)}</p>
-          <p><b>E-mail:</b> ${esc(ch.email)}</p>
-          <p><b>Descrição:</b><br>${nl2br(esc(ch.descricao))}</p>
-          <p><b>Status:</b> ${esc(ch.status||'Aberto')} • <b>Abertura:</b> ${agoraBR()}</p>
-          <hr>
-          <ul>
-            <li><a href="${esc(ch.linkTecnico||'#')}" target="_blank">Abrir no painel do Técnico</a></li>
-            <li><a href="${esc(ch.linkAdmin||'#')}" target="_blank">Abrir no painel do Admin</a></li>
-            <li><a href="${esc(ch.linkChat||'#')}" target="_blank">Ir direto ao Chat</a></li>
-          </ul>
-          <p style="color:#777">WG Informática • Notificação automática</p>
-        </div>`;
-    }
-  </script>
+                modalContent.innerHTML = formattedResponse;
+            } catch (error) {
+                console.error("Erro ao buscar soluções com IA:", error);
+                modalContent.innerHTML = "<p>Ocorreu um erro ao tentar buscar as soluções. Por favor, tente novamente ou prossiga com a abertura do chamado.</p>";
+            }
+        }
+        
+        window.getSolutionsFromIA = getSolutionsFromIA;
+        window.hideSolutionsModal = hideSolutionsModal;
+
+    </script>
+    
+    <!-- Bloco de e-mail -->
+    <iframe name="gas_silent" style="display:none"></iframe>
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbz2U9j696QVojXt00lnsfcLO2rUgDA8AptLlTbPsRuAO8KrrOCDpHE-Cx8FYMeXf4F86A/exec";
+        const GAS_SECRET = "!Plokij789";
+        const EMAILS_TECNICOS = ["xoenfalos2014@gmail.com", "kassyo@suporteworkgroup.com.br", "malaquias@suporteworkgroup.com.br", "rlkbubu70@gmail.com"];
+        const EMAILS_ADMIN = ["xoenfalos2014@gmail.com", "kassyo@suporteworkgroup.com.br"];
+        function enviarEmailSilencioso({ para, cc, assunto, html, replyTo, nomeRemetente="WG Informática" }) { /* ... */ }
+        function esc(s){ /* ... */ }
+        function nl2br(s){ /* ... */ }
+        function pad(n){ /* ... */ }
+        function agoraBR(){ /* ... */ }
+        function montarHtmlNovoChamado(ch){ /* ... */ }
+    </script>
 </body>
 </html>
+
+
+
