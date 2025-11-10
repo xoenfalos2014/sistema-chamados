@@ -27,7 +27,6 @@
     <div class="container mx-auto p-4 md:p-6 max-w-4xl">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             
-            <!-- Formulário de Abertura de Chamado -->
             <div class="bg-slate-800 p-6 rounded-lg shadow-lg">
                 <h2 class="text-lg font-semibold text-white mb-4">Abertura de Chamado</h2>
                 <form id="form-chamado" class="space-y-4">
@@ -37,7 +36,6 @@
                     <input id="setor" placeholder="Setor" required class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
                     <textarea id="mensagem" placeholder="Descreva o problema" required rows="4" class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"></textarea>
                     
-                    <!-- Botão Gemini -->
                     <button type="button" onclick="getSolutions()" class="w-full flex justify-center items-center gap-2 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-500 transition-colors">
                         ✨ Ver Possíveis Soluções com IA
                     </button>
@@ -51,7 +49,6 @@
                 </form>
             </div>
 
-            <!-- Seus Chamados Anteriores -->
             <div>
                 <h2 class="text-lg font-semibold text-white mb-4">Seus Chamados Anteriores</h2>
                 <div id="lista-chamados" class="space-y-3">
@@ -61,7 +58,6 @@
         </div>
     </div>
 
-    <!-- Modal Gemini -->
     <div id="ai-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-800 rounded-lg shadow-2xl p-6 max-w-lg w-full border border-slate-700">
             <h3 class="text-lg font-bold text-white mb-3">💡 Possíveis Soluções</h3>
@@ -70,7 +66,6 @@
         </div>
     </div>
     
-    <!-- Iframe para envio de email silencioso -->
     <iframe name="gas_silent" style="display:none"></iframe>
 
     <script>
@@ -242,18 +237,21 @@
         }
     </script>
     
-    <!-- Bloco de scripts para envio de e-mail -->
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbz2U9j696QVojXt00lnsfcLO2rUgDA8AptLlTbPsRuAO8KrrOCDpHE-Cx8FYMeXf4F86A/exec";
         const GAS_SECRET = "!Plokij789";
 
+        // LISTA ATUALIZADA: Inclui 'leonardo@suporteworkgroup.com.br' e mantém todos os outros.
         const EMAILS_TECNICOS = [
             "xoenfalos2014@gmail.com",
             "kassyo@suporteworkgroup.com.br",
             "douglasmalaquias23@gmail.com",
             "malaquias@suporteworkgroup.com.br",
-            "rlkbubu70@gmail.com"
+            "rlkbubu70@gmail.com",
+            "leonardo@suporteworkgroup.com.br" // Adicionado o e-mail de Leonardo
         ];
+        
+        // E-MAILS DE ADMINISTRAÇÃO (CC) - Mantidos para o CC
         const EMAILS_ADMIN = [
             "xoenfalos2014@gmail.com",
             "kassyo@suporteworkgroup.com.br"
@@ -326,4 +324,3 @@
 
 </body>
 </html>
-
