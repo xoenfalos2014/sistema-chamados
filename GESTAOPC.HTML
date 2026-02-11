@@ -190,47 +190,13 @@
         window.currentUser = null; // Será atualizado
 
         // 1. Autenticação
-        async function initAuth() {
-            try {
-                // Tenta usar token do ambiente (Canvas) ou Login Anônimo
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Erro detalhado do Auth:", error);
-                
-                const statusDot = document.getElementById('connectionStatus');
-                const statusText = document.getElementById('connectionText');
-                
-                if (statusDot) {
-                    statusDot.classList.remove('bg-yellow-500', 'bg-green-500');
-                    statusDot.classList.add('bg-red-500');
-                }
-                if (statusText) {
-                    statusText.innerText = "Erro Login";
-                    statusText.title = error.message;
-                }
+        
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        window.location.href = "login-tecnico.html";
+    }
+});
 
-                let msg = "Erro ao conectar: " + error.message;
-
-                // Erros comuns explicados para o usuário
-                if (error.code === 'auth/operation-not-allowed') {
-                    msg = "ATENÇÃO - CONFIGURAÇÃO NECESSÁRIA:\n\nO Login Anônimo não está ativado no seu Firebase.\n\n1. Vá no Firebase Console\n2. Clique em 'Criação' > 'Authentication'\n3. Vá na aba 'Sign-in method'\n4. Ative o provedor 'Anonymous' (Anônimo).";
-                } else if (error.code === 'auth/network-request-failed') {
-                    msg = "ERRO DE REDE: Verifique sua internet ou se algum firewall está bloqueando o Firebase.";
-                } else if (location.protocol === 'file:') {
-                    msg = "AVISO DE ARQUIVO LOCAL:\n\nO Firebase bloqueou a conexão porque você abriu o arquivo direto (file://).\n\nO erro original foi: " + error.message + "\n\nPara corrigir, tente rodar um mini servidor local ou verifique se 'localhost' está nos domínios autorizados do Firebase Auth.";
-                } else if (error.code === 'auth/api-key-not-valid-please-pass-a-valid-api-key') {
-                    msg = "ERRO NA CHAVE API: A chave API configurada parece inválida. Verifique se copiou corretamente.";
-                }
-                
-                alert(msg);
-            }
-        }
-
-        initAuth();
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
