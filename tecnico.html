@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Técnico - WG Informática</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .btn-dark { background-color: #0d9488; color: white; } /* Teal */
+        .btn-green { background-color: #16a34a; color: white; }
+        .btn-blue { background-color: #2563eb; color: white; }
+        .btn-purple { background-color: #9333ea; color: white; }
+        .btn-indigo { background-color: #4f46e5; color: white; }
+        .btn-teal-secondary { background-color: #1f2937; color: #ccfbf1; border: 1px solid #14b8a6; }
+        .nav-button-active {
+            background-color: #14b8a6;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+
+    <header class="bg-slate-800 shadow-lg">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+            <h1 class="text-2xl font-bold text-white text-center">Painel do Técnico</h1>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="flex justify-center flex-wrap gap-2 mb-6 p-2 bg-slate-800 rounded-xl">
+             <a href="relatorio_tecnico.html" class="btn btn-dark flex-grow sm:flex-grow-0">📑 Relatório Técnico</a>
+             <a href="relatorios_salvos.html" class="btn btn-dark flex-grow sm:flex-grow-0">📂 Relatórios Salvos</a>
+             <a href="rotina.html" class="btn btn-dark flex-grow sm:flex-grow-0">📋 Rotina</a>
+             <a href="agenda.html" class="btn btn-dark flex-grow sm:flex-grow-0">📅 Agenda</a>
+             <a href="GESTAOPC.HTML" class="btn btn-purple flex-grow sm:flex-grow-0">🖥️ Gestão de PCs</a>
+             
+        </div>
+        
+        <div class="bg-slate-800 rounded-2xl shadow-2xl p-6 border border-slate-700">
+            <div id="nav-buttons" class="flex border-b border-slate-700 mb-4">
+                <button class="flex-1 py-2 px-4 text-sm font-semibold text-slate-300 hover:bg-slate-700/50 rounded-t-lg" onclick="mostrarTarefas('Aberto', this)">Abertos</button>
+                <button class="flex-1 py-2 px-4 text-sm font-semibold text-slate-300 hover:bg-slate-700/50 rounded-t-lg" onclick="mostrarTarefas('Em Andamento', this)">Em Andamento</button>
+                <button class="flex-1 py-2 px-4 text-sm font-semibold text-slate-300 hover:bg-slate-700/50 rounded-t-lg" onclick="mostrarTarefas('Resolvido', this)">Finalizados</button>
+            </div>
+            <div id="lista-tarefas" class="space-y-4">Carregando tarefas...</div>
+        </div>
+    </main>
+
+    <script>
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        let tecnicoEmail = null;
+
+        // Listener para autenticação
+        auth.onAuthStateChanged(user => {
+            if (!user) {
+                window.location.href = "login-tecnico.html";
+                return;
+            }
+            tecnicoEmail = user.email;
+            // Carrega a aba "Aberto" por padrão
+            document.querySelector('#nav-buttons button').click();
+        });
+
+        // Função principal para mostrar as tarefas (Chamados e Agendamentos)
+        function mostrarTarefas(statusFiltro, el) {
+             // Estilo do botão ativo
+            document.querySelectorAll('#nav-buttons button').forEach(btn => btn.classList.remove('nav-button-active'));
+            el.classList.add('nav-button-active');
+
+            const lista = document.getElementById("lista-tarefas");
+            lista.innerHTML = "<p class='text-center text-slate-400'>Carregando tarefas...</p>";
+
+            // Mapeia os status entre as coleções
+            let statusChamado = statusFiltro;
+            let statusAgendamento = statusFiltro;
+            if (statusFiltro === 'Em Andamento') {
+                statusAgendamento = 'Em Atendimento';
+            } else if (statusFiltro === 'Resolvido') {
+                statusAgendamento = 'Finalizado';
+            }
+
+            let chamadosHtml = '';
+            let agendamentosHtml = '';
+            let chamadosCarregados = false;
+            let agendamentosCarregados = false;
+            let unsubscribeChamados;
+            let unsubscribeAgendamentos;
+
+            // Função para renderizar tudo quando ambas as buscas terminarem
+            const renderAll = () => {
+                if (!chamadosCarregados || !agendamentosCarregados) return;
+
+                if (chamadosHtml === '' && agendamentosHtml === '') {
+                    lista.innerHTML = `<div class='text-center p-8 bg-slate-700/50 rounded-lg'><p class='text-slate-400'>Nenhuma tarefa com status "${statusFiltro}" encontrada.</p></div>`;
+                } else {
+                    lista.innerHTML = chamadosHtml + agendamentosHtml;
+                }
+            };
+
+            // Busca por Chamados
+            if(unsubscribeChamados) unsubscribeChamados(); // Cancela listener anterior
+            unsubscribeChamados = db.collection("chamados").where("status", "==", statusChamado)
+                .onSnapshot(snapshot => {
+                    chamadosHtml = '';
+                    if (!snapshot.empty) {
+                        chamadosHtml += `<h2 class="text-xl font-semibold text-teal-300 mb-3 border-b border-slate-600 pb-2">Chamados</h2>`;
+                        snapshot.forEach(doc => {
+                            const c = doc.data();
+                            const criadoEm = formatarData(c.criadoEm);
+                            const id = doc.id;
+                            chamadosHtml += `
+                                <div class="bg-slate-700 border-l-4 border-teal-500 rounded-r-lg p-4 mb-4 shadow-lg">
+                                    <div class="flex justify-between items-start">
+                                        <p class="font-bold text-lg text-white">${c.empresa || c.nome} <span class="font-normal text-sm text-slate-400">- ${c.setor}</span></p>
+                                        <span class="text-xs text-slate-400">${criadoEm}</span>
+                                    </div>
+                                    <p class="mt-2 text-slate-300">${c.mensagem}</p>
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <button class="btn btn-teal-secondary" onclick="abrirChat('${id}')">💬 Chat</button>
+                                        <button class="btn btn-blue" onclick="mudarStatus('chamados', '${id}', 'Em Andamento')">▶️ Em Andamento</button>
+                                        <button class="btn btn-green" onclick="mudarStatus('chamados', '${id}', 'Resolvido')">✅ Finalizar</button>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+                    chamadosCarregados = true;
+                    renderAll();
+                });
+
+            // Busca por Agendamentos
+            if(unsubscribeAgendamentos) unsubscribeAgendamentos(); // Cancela listener anterior
+            unsubscribeAgendamentos = db.collection("agendamentos").where("status", "==", statusAgendamento)
+                .onSnapshot(snapshot => {
+                    agendamentosHtml = '';
+                    if (!snapshot.empty) {
+                        agendamentosHtml += `<h2 class="text-xl font-semibold text-teal-300 mt-6 mb-3 border-b border-slate-600 pb-2">Agendamentos</h2>`;
+                        snapshot.forEach(doc => {
+                            const a = doc.data();
+                            const id = doc.id;
+                            const dataAgendamento = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
+                            agendamentosHtml += `
+                                <div class="bg-slate-700 border-l-4 border-indigo-500 rounded-r-lg p-4 mb-4 shadow-lg">
+                                    <div class="flex justify-between items-start">
+                                        <p class="font-bold text-lg text-white">${a.cliente} <span class="font-normal text-sm text-slate-400">- ${a.servico}</span></p>
+                                        <span class="text-xs text-slate-400">Data: ${dataAgendamento}</span>
+                                    </div>
+                                    <p class="mt-2 text-slate-300">${a.problema}</p>
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <button class="btn btn-indigo" onclick="window.location.href='agenda.html'">📅 Ver na Agenda</button>
+                                        <button class="btn btn-blue" onclick="mudarStatus('agendamentos', '${id}', 'Em Atendimento')">▶️ Em Atendimento</button>
+                                        <button class="btn btn-green" onclick="mudarStatus('agendamentos', '${id}', 'Finalizado')">✅ Finalizar</button>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+                    agendamentosCarregados = true;
+                    renderAll();
+                });
+        }
+
+        // Função genérica para mudar o status em qualquer coleção
+        function mudarStatus(colecao, id, novoStatus) {
+            db.collection(colecao).doc(id).update({ status: novoStatus })
+                .then(() => {
+                    alert(`Status atualizado para: ${novoStatus}`);
+                })
+                .catch(error => {
+                    console.error("Erro ao mudar status:", error);
+                    alert("Erro ao atualizar status.");
+                });
+        }
+
+        // Funções auxiliares
+        function formatarData(timestamp) {
+            if (!timestamp || !timestamp.toDate) return "Data inválida";
+            const data = timestamp.toDate();
+            return data.toLocaleDateString("pt-BR") + " " + data.toLocaleTimeString("pt-BR");
+        }
+
+        function abrirChat(chamadoId) {
+            window.location.href = `chat-tecnico.html?id=${chamadoId}`;
+        }
+    </script>
+</body>
+</html>
+
