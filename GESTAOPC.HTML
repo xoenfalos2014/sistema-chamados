@@ -50,7 +50,7 @@
     <aside class="w-64 bg-white shadow-md flex flex-col z-0">
         <div class="p-4 border-b border-gray-200 bg-gray-50">
             <h2 class="font-semibold text-gray-700 mb-2">Clientes</h2>
-            <button onclick="openModal('clientModal')" class="w-full bg-secondary hover:bg-gray-800 text-white py-2 rounded text-sm transition shadow flex items-center justify-center gap-2">
+            <button onclick="openAddClientModal()" class="w-full bg-secondary hover:bg-gray-800 text-white py-2 rounded text-sm transition shadow flex items-center justify-center gap-2">
                 <i class="fas fa-plus"></i> Novo Cliente
             </button>
         </div>
@@ -74,7 +74,7 @@
                     <input type="text" id="searchInput" onkeyup="filterComputers()" placeholder="Buscar PC, Setor..." class="pl-10 pr-4 py-2 border rounded-lg text-sm w-48 md:w-64">
                 </div>
 
-                <button onclick="openModal('computerModal')" class="bg-primary hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow flex items-center gap-2">
+                <button onclick="openAddComputerModal()" class="bg-primary hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow flex items-center gap-2">
                     <i class="fas fa-laptop-medical"></i> <span class="hidden sm:inline">Adicionar PC</span>
                 </button>
             </div>
@@ -93,7 +93,7 @@
 <!-- Modal Cliente -->
 <div id="clientModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
     <div class="bg-white rounded-lg shadow-xl w-96 p-6 card-enter">
-        <h3 class="text-lg font-bold mb-4">Novo Cliente</h3>
+        <h3 id="clientModalTitle" class="text-lg font-bold mb-4">Novo Cliente</h3>
         <input type="text" id="newClientName" placeholder="Nome da Empresa" class="w-full border p-2 rounded mb-4">
         <div class="flex justify-end gap-2">
             <button onclick="closeModal('clientModal')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
@@ -106,7 +106,7 @@
 <div id="computerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
     <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 card-enter">
 
-        <h3 class="text-lg font-bold mb-4 text-gray-800 border-b pb-2">Novo Computador</h3>
+        <h3 id="computerModalTitle" class="text-lg font-bold mb-4 text-gray-800 border-b pb-2">Novo Computador</h3>
 
         <div class="grid grid-cols-2 gap-4 mb-3">
             <div>
@@ -149,7 +149,7 @@
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import {
         getFirestore, collection, addDoc, deleteDoc, doc,
-        onSnapshot
+        onSnapshot, updateDoc, query, where, limit, getDocs
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -224,6 +224,111 @@
         ["pcName","pcSetor","pcConfig","pcAnyId","pcAnyPass"].forEach(id => document.getElementById(id).value = "");
     };
 
+    // ====== EDIÇÃO / EXCLUSÃO (Clientes e Computadores) ======
+    let editingClientId = null;
+    let editingComputerId = null;
+
+    window.openAddClientModal = () => {
+        editingClientId = null;
+        document.getElementById("clientModalTitle").innerText = "Novo Cliente";
+        document.getElementById("newClientName").value = "";
+        const btn = document.getElementById("btnSaveClient");
+        btn.innerText = "Salvar";
+        btn.onclick = window.addClient;
+        openModal("clientModal");
+    };
+
+    window.editClient = (clientId) => {
+        const client = (window.updateClientsList && window.selectedClientId !== undefined) ? null : null; // placeholder to avoid linter
+        // Puxa da lista já carregada na UI (renderClients usa localData; aqui usamos o DOM como fallback)
+        const found = window.__clientsCache?.find?.(c => c.id === clientId);
+        const name = found?.name || "";
+        editingClientId = clientId;
+        document.getElementById("clientModalTitle").innerText = "Editar Empresa";
+        document.getElementById("newClientName").value = name;
+        const btn = document.getElementById("btnSaveClient");
+        btn.innerText = "Salvar alterações";
+        btn.onclick = window.saveClientEdit;
+        openModal("clientModal");
+    };
+
+    window.saveClientEdit = async () => {
+        if (!editingClientId) return;
+        const name = document.getElementById("newClientName").value.trim();
+        if (!name) return alert("Digite o nome da empresa.");
+        await updateDoc(doc(db, "clientes", editingClientId), { name, updatedAt: new Date().toISOString() });
+        closeModal("clientModal");
+        editingClientId = null;
+    };
+
+    window.deleteClient = async (clientId) => {
+        // Opção 2: bloquear exclusão se tiver PCs
+        const pcsQ = query(collection(db, "computadores"), where("clientId", "==", clientId), limit(1));
+        const pcsSnap = await getDocs(pcsQ);
+        if (!pcsSnap.empty) {
+            return alert("Não dá pra excluir: essa empresa tem computadores cadastrados. Apague/realocar os PCs primeiro.");
+        }
+        if (!confirm("Excluir esta empresa? Essa ação não pode ser desfeita.")) return;
+        await deleteDoc(doc(db, "clientes", clientId));
+        if (window.selectedClientId === clientId) {
+            window.selectedClientId = null;
+        }
+    };
+
+    window.openAddComputerModal = () => {
+        if (!window.selectedClientId) return alert("Selecione um cliente.");
+        editingComputerId = null;
+        document.getElementById("computerModalTitle").innerText = "Novo Computador";
+        const btn = document.getElementById("btnSavePc");
+        btn.innerText = "Salvar PC";
+        btn.onclick = window.addComputer;
+
+        ["pcName","pcSetor","pcConfig","pcAnyId","pcAnyPass"].forEach(id => document.getElementById(id).value = "");
+        openModal("computerModal");
+    };
+
+    window.editComputer = (pcId) => {
+        const found = window.__computersCache?.find?.(p => p.id === pcId);
+        if (!found) return alert("Computador não encontrado na lista.");
+        editingComputerId = pcId;
+
+        document.getElementById("computerModalTitle").innerText = "Editar Computador";
+        document.getElementById("pcName").value = found.name || "";
+        document.getElementById("pcSetor").value = found.sector || "";
+        document.getElementById("pcConfig").value = found.config || "";
+        document.getElementById("pcAnyId").value = found.anyId || "";
+        document.getElementById("pcAnyPass").value = found.anyPass || "";
+
+        const btn = document.getElementById("btnSavePc");
+        btn.innerText = "Salvar alterações";
+        btn.onclick = window.saveComputerEdit;
+
+        openModal("computerModal");
+    };
+
+    window.saveComputerEdit = async () => {
+        if (!editingComputerId) return;
+        const name = document.getElementById("pcName").value.trim();
+        const sector = document.getElementById("pcSetor").value.trim();
+        const config = document.getElementById("pcConfig").value.trim();
+        const anyId = document.getElementById("pcAnyId").value.toString().trim();
+        const anyPass = document.getElementById("pcAnyPass").value.trim();
+
+        if (!name || !anyId) return alert("Nome e AnyDesk ID são obrigatórios.");
+        await updateDoc(doc(db, "computadores", editingComputerId), {
+            name, sector, config, anyId, anyPass,
+            updatedAt: new Date().toISOString()
+        });
+        closeModal("computerModal");
+        editingComputerId = null;
+    };
+
+    window.deleteComputer = async (pcId) => {
+        if (!confirm("Excluir este computador?")) return;
+        await deleteDoc(doc(db, "computadores", pcId));
+    };
+
+
 </script>
 
 <script>
@@ -232,11 +337,13 @@
 
     window.updateClientsList = (clients) => {
         localData.clients = clients;
+        window.__clientsCache = clients;
         renderClients();
     };
 
     window.updateComputersList = (computers) => {
         localData.computers = computers;
+        window.__computersCache = computers;
         if (window.selectedClientId) renderComputers();
     };
 
@@ -250,12 +357,35 @@
         }
 
         localData.clients.forEach(client => {
-            const btn = document.createElement("button");
-            btn.className = "w-full text-left px-4 py-3 rounded mb-1 hover:bg-gray-100";
-            btn.innerHTML = client.name;
-            btn.onclick = () => selectClient(client.id);
+            const row = document.createElement("div");
+            row.className = "w-full flex items-center justify-between px-3 py-2 rounded mb-1 hover:bg-gray-100 border border-transparent hover:border-gray-200";
 
-            list.appendChild(btn);
+            const nameBtn = document.createElement("button");
+            nameBtn.className = "flex-1 text-left pr-2";
+            nameBtn.innerHTML = `<span class="font-medium text-gray-800">${client.name}</span>`;
+            nameBtn.onclick = () => selectClient(client.id);
+
+            const actions = document.createElement("div");
+            actions.className = "flex items-center gap-2";
+
+            const editBtn = document.createElement("button");
+            editBtn.className = "text-gray-500 hover:text-gray-900 px-2 py-1 rounded";
+            editBtn.title = "Editar empresa";
+            editBtn.innerHTML = '<i class="fas fa-pen"></i>';
+            editBtn.onclick = (e) => { e.stopPropagation(); window.editClient(client.id); };
+
+            const delBtn = document.createElement("button");
+            delBtn.className = "text-red-500 hover:text-red-700 px-2 py-1 rounded";
+            delBtn.title = "Excluir empresa";
+            delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+            delBtn.onclick = (e) => { e.stopPropagation(); window.deleteClient(client.id); };
+
+            actions.appendChild(editBtn);
+            actions.appendChild(delBtn);
+
+            row.appendChild(nameBtn);
+            row.appendChild(actions);
+            list.appendChild(row);
         });
     }
 
@@ -293,6 +423,15 @@
                     </div>
                     <div class="bg-gray-50 p-2 mt-2 rounded">
                         <strong>Senha:</strong> ${pc.anyPass}
+                    </div>
+
+                    <div class="flex justify-end gap-2 mt-3">
+                        <button class="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm" onclick="editComputer('${pc.id}')">
+                            <i class="fas fa-pen"></i> Editar
+                        </button>
+                        <button class="px-3 py-1 rounded bg-red-50 hover:bg-red-100 text-red-700 text-sm" onclick="deleteComputer('${pc.id}')">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>
                     </div>
                 </div>`).join("")}
             </div>`;
