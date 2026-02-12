@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor TI - Cloud Edition V2</title>
+    <title>Gestor TI - Cloud Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
@@ -12,9 +12,8 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#ef4444', // Vermelho AnyDesk
-                        secondary: '#1f2937', // Cinza escuro
-                        accent: '#3b82f6' // Azul ações
+                        primary: '#ef4444',
+                        secondary: '#1f2937',
                     }
                 }
             }
@@ -26,404 +25,213 @@
         .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
         .card-enter { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Scrollbar personalizada */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-        .blur-pass { filter: blur(4px); transition: filter 0.2s; cursor: pointer; }
-        .blur-pass:hover { filter: blur(0); }
-        .no-blur { filter: none !important; }
+        .loader { border: 4px solid #f3f3f3; border-radius: 50%; border-top: 4px solid #ef4444; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="text-gray-800 h-screen flex flex-col overflow-hidden">
 
-<!-- TELA DE LOGIN (Integrada) -->
-<div id="loginScreen" class="fixed inset-0 bg-gray-900 z-50 flex items-center justify-center">
-    <div class="bg-white p-8 rounded-lg shadow-2xl w-96 text-center card-enter">
-        <div class="mb-6">
-            <i class="fas fa-shield-alt text-primary text-5xl"></i>
-        </div>
-        <h2 class="text-2xl font-bold mb-2">Acesso Técnico</h2>
-        <p id="loginStatusText" class="text-gray-500 mb-6 text-sm">A carregar ambiente seguro...</p>
-        
-        <div id="loginLoading" class="flex justify-center">
-             <i class="fas fa-circle-notch fa-spin text-primary text-2xl"></i>
-        </div>
-
-        <button id="manualLoginBtn" onclick="handleLogin()" class="hidden w-full bg-secondary hover:bg-gray-800 text-white py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2">
-            <i class="fas fa-sign-in-alt"></i> Entrar no Sistema
-        </button>
-        <p class="mt-4 text-xs text-gray-400">Ambiente seguro • Cloud Edition</p>
-    </div>
-</div>
-
-<!-- HEADER -->
 <header class="bg-secondary text-white shadow-lg z-10">
     <div class="container mx-auto px-4 py-3 flex justify-between items-center">
         <div class="flex items-center gap-3">
-            <div class="bg-primary p-2 rounded text-white">
-                <i class="fas fa-server"></i>
-            </div>
+            <i class="fas fa-cloud text-primary text-2xl"></i>
             <div>
                 <h1 class="text-xl font-bold tracking-wide leading-none">Gestor WG INFO</h1>
                 <span class="text-xs text-gray-400 flex items-center gap-1">
-                    <span id="connectionStatus" class="w-2 h-2 rounded-full bg-red-500"></span>
-                    <span id="connectionText">Desconectado</span>
+                    <span id="connectionStatus" class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                    <span id="connectionText">Conectando...</span>
                 </span>
             </div>
-        </div>
-        <div>
-            <button onclick="handleLogout()" class="text-xs text-gray-400 hover:text-white transition">
-                <i class="fas fa-sign-out-alt"></i> Sair
-            </button>
         </div>
     </div>
 </header>
 
 <div class="flex flex-1 overflow-hidden">
-    <!-- SIDEBAR (Clientes) -->
-    <aside class="w-72 bg-white shadow-md flex flex-col z-0 border-r border-gray-200">
+    <aside class="w-64 bg-white shadow-md flex flex-col z-0">
         <div class="p-4 border-b border-gray-200 bg-gray-50">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="font-bold text-gray-700 uppercase text-xs tracking-wider">Clientes</h2>
-                <span id="clientCount" class="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">0</span>
-            </div>
-            <button onclick="openModal('clientModal')" class="w-full bg-white border-2 border-dashed border-gray-300 hover:border-secondary hover:text-secondary text-gray-500 py-2 rounded text-sm transition flex items-center justify-center gap-2 font-medium">
+            <h2 class="font-semibold text-gray-700 mb-2">Clientes</h2>
+            <button onclick="openModal('clientModal')" class="w-full bg-secondary hover:bg-gray-800 text-white py-2 rounded text-sm transition shadow flex items-center justify-center gap-2">
                 <i class="fas fa-plus"></i> Novo Cliente
             </button>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-2 space-y-1" id="clientList">
-            <div class="text-center mt-10 text-gray-400 text-sm">
-                <i class="fas fa-spinner fa-spin mb-2"></i><br>Carregando...
-            </div>
+        <div class="flex-1 overflow-y-auto p-2 space-y-1 relative" id="clientList">
+            <div class="flex justify-center mt-10"><div class="loader"></div></div>
         </div>
     </aside>
 
-    <!-- MAIN CONTENT (Computadores) -->
     <main class="flex-1 flex flex-col bg-gray-100 overflow-hidden relative">
 
-        <!-- Toolbar Superior -->
-        <div class="bg-white p-4 shadow-sm border-b border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="bg-white p-4 shadow-sm border-b border-gray-200 flex justify-between items-center">
             <div>
-                <h2 id="currentClientTitle" class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-arrow-left text-gray-300 md:hidden"></i>
-                    Selecione um Cliente
-                </h2>
+                <h2 id="currentClientTitle" class="text-2xl font-bold text-gray-800">Selecione um Cliente</h2>
                 <p id="currentClientSubtitle" class="text-sm text-gray-500">Gerencie os acessos remotos</p>
             </div>
 
-            <div id="computerActions" class="hidden flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
-                <div class="relative w-full md:w-auto">
-                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                    <input type="text" id="searchInput" onkeyup="renderComputers()" placeholder="Buscar por Nome, Setor ou ID..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-secondary">
+            <div id="computerActions" class="hidden flex items-center">
+                <div class="relative inline-block mr-2">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
+                    <input type="text" id="searchInput" onkeyup="filterComputers()" placeholder="Buscar PC, Setor..." class="pl-10 pr-4 py-2 border rounded-lg text-sm w-48 md:w-64">
                 </div>
 
-                <button onclick="openModal('computerModal')" class="bg-primary hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow flex items-center justify-center gap-2 w-full md:w-auto transition">
-                    <i class="fas fa-laptop-medical"></i> <span class="font-medium">Adicionar PC</span>
-                </button>
-                
-                <button onclick="deleteCurrentClient()" class="bg-gray-200 hover:bg-red-100 hover:text-red-600 text-gray-600 px-3 py-2 rounded-lg shadow transition" title="Excluir Cliente">
-                    <i class="fas fa-trash-alt"></i>
+                <button onclick="openModal('computerModal')" class="bg-primary hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow flex items-center gap-2">
+                    <i class="fas fa-laptop-medical"></i> <span class="hidden sm:inline">Adicionar PC</span>
                 </button>
             </div>
         </div>
 
-        <!-- Área de Grid -->
         <div class="flex-1 overflow-y-auto p-6" id="mainContent">
-            <!-- Estado Vazio Inicial -->
-            <div class="h-full flex flex-col items-center justify-center text-gray-400 opacity-60">
-                <i class="fas fa-cloud text-8xl mb-4 text-gray-300"></i>
-                <p class="text-xl font-light">Selecione um cliente ao lado</p>
+            <div class="text-center text-gray-400 mt-20">
+                <i class="fas fa-cloud-upload-alt text-6xl mb-4 opacity-50"></i>
+                <p class="text-xl">Seus dados agora estão seguros na nuvem.</p>
+                <p class="text-sm mt-2">Selecione um cliente para começar.</p>
             </div>
         </div>
     </main>
 </div>
 
-<!-- MODAL CLIENTE -->
-<div id="clientModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 backdrop-blur-sm">
-    <div class="bg-white rounded-xl shadow-2xl w-96 p-6 card-enter">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-bold text-gray-800">Cadastrar Empresa</h3>
-            <button onclick="closeModal('clientModal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
-        </div>
-        
-        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nome da Empresa</label>
-        <input type="text" id="newClientName" placeholder="Ex: Escritório Advocacia" class="w-full border border-gray-300 p-3 rounded-lg mb-6 focus:outline-none focus:border-secondary">
-        
+<!-- Modal Cliente -->
+<div id="clientModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-96 p-6 card-enter">
+        <h3 class="text-lg font-bold mb-4">Novo Cliente</h3>
+        <input type="text" id="newClientName" placeholder="Nome da Empresa" class="w-full border p-2 rounded mb-4">
         <div class="flex justify-end gap-2">
-            <button onclick="closeModal('clientModal')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
-            <button onclick="addClient()" id="btnSaveClient" class="px-6 py-2 bg-secondary text-white rounded-lg hover:bg-gray-900 shadow-lg">Salvar</button>
+            <button onclick="closeModal('clientModal')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+            <button onclick="addClient()" id="btnSaveClient" class="px-4 py-2 bg-secondary text-white rounded hover:bg-gray-800">Salvar</button>
         </div>
     </div>
 </div>
 
-<!-- MODAL PC -->
-<div id="computerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 backdrop-blur-sm">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 card-enter">
+<!-- Modal PC -->
+<div id="computerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 card-enter">
 
-        <div class="flex justify-between items-center mb-4 border-b pb-4">
-            <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <i class="fas fa-desktop text-primary"></i> Novo Acesso
-            </h3>
-            <button onclick="closeModal('computerModal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
-        </div>
+        <h3 class="text-lg font-bold mb-4 text-gray-800 border-b pb-2">Novo Computador</h3>
 
-        <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nome / Usuário</label>
-                    <input type="text" id="pcName" class="w-full border p-2 rounded-lg focus:ring-1 focus:ring-primary outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Setor</label>
-                    <input type="text" id="pcSetor" class="w-full border p-2 rounded-lg focus:ring-1 focus:ring-primary outline-none">
-                </div>
+        <div class="grid grid-cols-2 gap-4 mb-3">
+            <div>
+                <label class="block text-xs font-bold">Nome do PC / Usuário</label>
+                <input type="text" id="pcName" class="w-full border p-2 rounded">
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Observações / Config</label>
-                <input type="text" id="pcConfig" placeholder="Ex: i5, 8GB, SSD" class="w-full border p-2 rounded-lg focus:ring-1 focus:ring-primary outline-none">
-            </div>
-
-            <div class="bg-red-50 p-4 rounded-lg border border-red-100">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-red-500 uppercase mb-1">AnyDesk ID</label>
-                        <input type="text" id="pcAnyId" placeholder="000 000 000" class="w-full border border-red-200 p-2 rounded bg-white font-mono text-center">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-red-500 uppercase mb-1">Senha de Acesso</label>
-                        <input type="text" id="pcAnyPass" class="w-full border border-red-200 p-2 rounded bg-white font-mono text-center">
-                    </div>
-                </div>
+                <label class="block text-xs font-bold">Setor</label>
+                <input type="text" id="pcSetor" class="w-full border p-2 rounded">
             </div>
         </div>
 
-        <div class="flex justify-end gap-2 mt-6">
-            <button onclick="closeModal('computerModal')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancelar</button>
-            <button onclick="addComputer()" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-red-600 shadow-md">Salvar Acesso</button>
+        <div class="mb-3">
+            <label class="block text-xs font-bold">Configuração</label>
+            <input type="text" id="pcConfig" class="w-full border p-2 rounded">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 bg-red-50 p-3 rounded-lg mb-4">
+            <div>
+                <label class="block text-xs font-bold text-red-500">AnyDesk ID</label>
+                <input type="number" id="pcAnyId" class="w-full border p-2 font-mono">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-red-500">Senha</label>
+                <input type="text" id="pcAnyPass" class="w-full border p-2 font-mono">
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-2">
+            <button onclick="closeModal('computerModal')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
+            <button onclick="addComputer()" id="btnSavePc" class="px-4 py-2 bg-primary text-white rounded">Salvar PC</button>
         </div>
     </div>
 </div>
 
-<!-- Notification Toast -->
-<div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50">
-    <span id="toastMsg">Mensagem</span>
-</div>
-
-<!-- Lógica Firebase e App -->
+<!-- Firebase -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInAnonymously, signOut, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import {
         getFirestore, collection, addDoc, deleteDoc, doc,
-        onSnapshot, query, orderBy
+        onSnapshot
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // --- CONFIGURAÇÃO (Dinâmica ou Default) ---
-    const firebaseConfig = JSON.parse(
-        typeof __firebase_config !== 'undefined' 
-        ? __firebase_config 
-        : '{"apiKey":"DEMO","authDomain":"demo.firebaseapp.com","projectId":"demo"}'
-    );
-    
-    // Fallback para ID do App se não estiver no ambiente Canvas
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app';
+    const firebaseConfig = {
+        apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
+        authDomain: "sistema-chamados-99e49.firebaseapp.com",
+        projectId: "sistema-chamados-99e49"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Variáveis Globais de Estado
-    window.db = db;
-    window.auth = auth;
-    window.appId = appId;
-    window.collectionClients = null;
-    window.collectionComputers = null;
-    window.unsubscribeClients = null;
-    window.unsubscribeComputers = null;
-    
-    // --- AUTENTICAÇÃO ---
-    // Tenta autenticar automaticamente ao carregar
-    const initAuth = async () => {
-        try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        } catch (error) {
-            console.error("Erro na auto-autenticação:", error);
-            // Se falhar, mostra botão de login manual
-            document.getElementById("loginLoading").classList.add("hidden");
-            document.getElementById("manualLoginBtn").classList.remove("hidden");
-            document.getElementById("loginStatusText").innerText = "Necessária ação manual.";
-        }
-    };
-    initAuth();
+    let currentUser = null;
 
     onAuthStateChanged(auth, (user) => {
-        const loginScreen = document.getElementById("loginScreen");
-        const statusDot = document.getElementById("connectionStatus");
-        const statusText = document.getElementById("connectionText");
-
-        if (user) {
-            // Usuário Logado
-            loginScreen.classList.add("hidden");
-            statusDot.classList.replace("bg-red-500", "bg-green-500");
-            statusText.innerText = "Conectado";
-            
-            // CORREÇÃO CRÍTICA: Usar caminho de utilizador PRIVADO para evitar erros de permissão
-            // artifacts/{appId}/users/{userId}/data/{collectionName}
-            const basePath = `artifacts/${appId}/users/${user.uid}/data`;
-            window.collectionClients = collection(db, `${basePath}/clientes`);
-            window.collectionComputers = collection(db, `${basePath}/computadores`);
-
-            subscribeToData();
+        if (!user) {
+            window.location.href = "login-tecnico.html";
         } else {
-            // Usuário Deslogado
-            loginScreen.classList.remove("hidden");
-            statusDot.classList.replace("bg-green-500", "bg-red-500");
-            statusText.innerText = "Aguardando Login";
+            currentUser = user;
+            subscribeToData();
         }
     });
 
-    window.handleLogin = async () => {
-        try {
-            await signInAnonymously(auth);
-        } catch (error) {
-            console.error("Erro ao logar", error);
-            showToast("Erro ao conectar: " + error.message);
-        }
-    };
-
-    window.handleLogout = () => {
-        signOut(auth);
-        window.location.reload(); 
-    };
-
-    // --- LÓGICA DE DADOS ---
     function subscribeToData() {
-        // Limpar listeners anteriores se existirem
-        if (window.unsubscribeClients) window.unsubscribeClients();
-        if (window.unsubscribeComputers) window.unsubscribeComputers();
+        const clientsRef = collection(db, "clientes");
+        const computersRef = collection(db, "computadores");
 
-        // Listener Clientes (com tratamento de erro)
-        window.unsubscribeClients = onSnapshot(window.collectionClients, (snapshot) => {
+        onSnapshot(clientsRef, (snapshot) => {
             const clients = [];
             snapshot.forEach(doc => clients.push({ id: doc.id, ...doc.data() }));
-            clients.sort((a, b) => a.name.localeCompare(b.name));
             window.updateClientsList(clients);
-        }, (error) => {
-            console.error("Erro ao ler clientes:", error);
-            showToast("Erro de permissão ou conexão ao carregar clientes.");
         });
 
-        // Listener Computadores (com tratamento de erro)
-        window.unsubscribeComputers = onSnapshot(window.collectionComputers, (snapshot) => {
+        onSnapshot(computersRef, (snapshot) => {
             const computers = [];
             snapshot.forEach(doc => computers.push({ id: doc.id, ...doc.data() }));
             window.updateComputersList(computers);
-        }, (error) => {
-            console.error("Erro ao ler computadores:", error);
-            // Não mostramos toast aqui para não spamar se for o mesmo erro
         });
     }
 
-    // --- FUNÇÕES DE AÇÃO (Expostas para o HTML) ---
     window.addClient = async () => {
-        const nameInput = document.getElementById("newClientName");
-        const name = nameInput.value.trim();
-        
-        if (!name) return showToast("Digite o nome da empresa.");
+        const name = document.getElementById("newClientName").value;
+        if (!name) return alert("Digite o nome do cliente.");
 
-        const btn = document.getElementById("btnSaveClient");
-        const originalText = btn.innerText;
-        btn.innerText = "Salvando...";
-        btn.disabled = true;
+        await addDoc(collection(db, "clientes"), {
+            name,
+            createdAt: new Date().toISOString()
+        });
 
-        try {
-            await addDoc(window.collectionClients, {
-                name,
-                createdAt: new Date().toISOString()
-            });
-            nameInput.value = "";
-            closeModal("clientModal");
-            showToast("Cliente cadastrado com sucesso!");
-        } catch (e) {
-            console.error(e);
-            showToast("Erro ao salvar: " + e.message);
-        } finally {
-            btn.innerText = originalText;
-            btn.disabled = false;
-        }
+        document.getElementById("newClientName").value = "";
+        closeModal("clientModal");
     };
 
     window.addComputer = async () => {
-        if (!window.selectedClientId) return showToast("Selecione um cliente primeiro.");
+        if (!window.selectedClientId) return alert("Selecione um cliente.");
 
-        const name = document.getElementById("pcName").value;
-        const anyId = document.getElementById("pcAnyId").value;
-        
-        if (!name || !anyId) return showToast("Nome e ID são obrigatórios.");
+        const name = pcName.value;
+        const sector = pcSetor.value;
+        const config = pcConfig.value;
+        const anyId = pcAnyId.value;
+        const anyPass = pcAnyPass.value;
 
-        try {
-            await addDoc(window.collectionComputers, {
-                clientId: window.selectedClientId,
-                name: document.getElementById("pcName").value,
-                sector: document.getElementById("pcSetor").value,
-                config: document.getElementById("pcConfig").value,
-                anyId: document.getElementById("pcAnyId").value,
-                anyPass: document.getElementById("pcAnyPass").value,
-                createdAt: new Date().toISOString()
-            });
-            
-            closeModal("computerModal");
-            // Limpar form
-            document.querySelectorAll("#computerModal input").forEach(i => i.value = "");
-            showToast("Computador adicionado!");
-        } catch (e) {
-            console.error(e);
-            showToast("Erro ao salvar: " + e.message);
-        }
+        if (!name || !anyId) return alert("Nome e AnyDesk ID são obrigatórios.");
+
+        await addDoc(collection(db, "computadores"), {
+            clientId: window.selectedClientId,
+            name, sector, config, anyId, anyPass,
+            createdAt: new Date().toISOString()
+        });
+
+        closeModal("computerModal");
+        ["pcName","pcSetor","pcConfig","pcAnyId","pcAnyPass"].forEach(id => document.getElementById(id).value = "");
     };
 
-    window.deleteItem = async (collectionName, id) => {
-        if(!confirm("Tem certeza que deseja excluir?")) return;
-        
-        try {
-            const col = collectionName === 'clientes' ? window.collectionClients : window.collectionComputers;
-            await deleteDoc(doc(col, id));
-            showToast("Item removido.");
-            
-            if(collectionName === 'clientes' && window.selectedClientId === id) {
-                 document.getElementById("mainContent").innerHTML = `
-                    <div class="h-full flex flex-col items-center justify-center text-gray-400 opacity-60">
-                        <i class="fas fa-trash text-6xl mb-4"></i>
-                        <p>Cliente removido.</p>
-                    </div>`;
-                 document.getElementById("currentClientTitle").innerText = "Selecione um Cliente";
-                 document.getElementById("computerActions").classList.add("hidden");
-                 window.selectedClientId = null;
-            }
-        } catch(e) {
-            showToast("Erro ao excluir: " + e.message);
-        }
-    };
 </script>
 
 <script>
-    // --- LÓGICA DE UI (Frontend puro) ---
     let localData = { clients: [], computers: [] };
     window.selectedClientId = null;
 
     window.updateClientsList = (clients) => {
         localData.clients = clients;
-        document.getElementById("clientCount").innerText = clients.length;
         renderClients();
     };
 
@@ -437,167 +245,70 @@
         list.innerHTML = "";
 
         if (localData.clients.length === 0) {
-            list.innerHTML = `
-                <div class="flex flex-col items-center justify-center mt-10 text-gray-400">
-                    <i class="fas fa-folder-open text-3xl mb-2 opacity-50"></i>
-                    <p class="text-xs">Nenhum cliente</p>
-                </div>`;
+            list.innerHTML = '<div class="text-center text-gray-400 mt-4">Nenhum cliente.</div>';
             return;
         }
 
         localData.clients.forEach(client => {
-            const isActive = client.id === window.selectedClientId;
-            const btn = document.createElement("div");
-            
-            // Estilo condicional (ativo/inativo)
-            const baseClass = "group flex justify-between items-center px-4 py-3 rounded-lg mb-2 cursor-pointer transition border-l-4";
-            const activeClass = isActive ? "bg-white border-primary shadow-sm" : "bg-transparent border-transparent hover:bg-gray-200";
-            
-            btn.className = `${baseClass} ${activeClass}`;
-            
-            btn.innerHTML = `
-                <div class="font-medium text-sm ${isActive ? 'text-gray-800' : 'text-gray-600'} truncate flex-1" onclick="selectClient('${client.id}')">
-                    ${client.name}
-                </div>
-                <i class="fas fa-chevron-right text-xs ${isActive ? 'text-primary' : 'text-transparent group-hover:text-gray-400'}"></i>
-            `;
+            const btn = document.createElement("button");
+            btn.className = "w-full text-left px-4 py-3 rounded mb-1 hover:bg-gray-100";
+            btn.innerHTML = client.name;
+            btn.onclick = () => selectClient(client.id);
+
             list.appendChild(btn);
         });
     }
 
-    window.selectClient = (id) => {
+    function selectClient(id) {
         window.selectedClientId = id;
         const client = localData.clients.find(c => c.id === id);
 
-        // Atualizar UI
-        renderClients(); // Para atualizar o highlight da lista
-        
-        document.getElementById("currentClientTitle").innerText = client.name;
-        document.getElementById("currentClientSubtitle").innerText = "Gerenciamento de Pontos de Acesso";
+        currentClientTitle.innerText = client.name;
+        currentClientSubtitle.innerText = "Computadores cadastrados";
+
         document.getElementById("computerActions").classList.remove("hidden");
-        document.getElementById("computerActions").classList.add("flex");
-        
-        // Limpar busca ao trocar de cliente
-        document.getElementById("searchInput").value = "";
-        
+
         renderComputers();
     }
 
-    window.renderComputers = () => {
+    function renderComputers() {
         const container = document.getElementById("mainContent");
-        const searchTerm = document.getElementById("searchInput").value.toLowerCase();
 
-        // 1. Filtrar por cliente
-        let list = localData.computers.filter(pc => pc.clientId === window.selectedClientId);
-
-        // 2. Filtrar por busca (Nome, Setor ou ID)
-        if (searchTerm) {
-            list = list.filter(pc => 
-                (pc.name && pc.name.toLowerCase().includes(searchTerm)) ||
-                (pc.sector && pc.sector.toLowerCase().includes(searchTerm)) ||
-                (pc.anyId && pc.anyId.includes(searchTerm))
-            );
-        }
+        const list = localData.computers.filter(pc => pc.clientId === window.selectedClientId);
 
         if (list.length === 0) {
-            if (searchTerm) {
-                container.innerHTML = `<div class="text-center text-gray-400 mt-20"><i class="fas fa-search mb-2 text-2xl"></i><br>Nenhum resultado para "${searchTerm}"</div>`;
-            } else {
-                container.innerHTML = `
-                    <div class="text-center text-gray-400 mt-20 border-2 border-dashed border-gray-300 rounded-xl p-10">
-                        <i class="fas fa-laptop text-4xl mb-4 text-gray-300"></i>
-                        <p>Nenhum computador cadastrado.</p>
-                        <button onclick="openModal('computerModal')" class="text-primary hover:underline text-sm mt-2">Cadastrar o primeiro</button>
-                    </div>`;
-            }
+            container.innerHTML = `<div class="text-center text-gray-400 mt-10">Nenhum computador para este cliente.</div>`;
             return;
         }
 
-        container.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
+        container.innerHTML =
+            `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 ${list.map(pc => `
-                <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition duration-200 border border-gray-100 overflow-hidden flex flex-col group relative">
-                    
-                    <button onclick="window.deleteItem('computadores', '${pc.id}')" class="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition p-2 z-10">
-                        <i class="fas fa-trash"></i>
-                    </button>
-
-                    <div class="p-4 flex-1">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="bg-red-100 text-red-600 rounded-full w-10 h-10 flex items-center justify-center shrink-0">
-                                <i class="fas fa-desktop"></i>
-                            </div>
-                            <span class="bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded-full uppercase font-bold tracking-wider">${pc.sector || 'Geral'}</span>
-                        </div>
-                        
-                        <h4 class="font-bold text-gray-800 text-lg leading-tight mb-1 truncate" title="${pc.name}">${pc.name}</h4>
-                        <p class="text-xs text-gray-400 truncate mb-4 h-4">${pc.config || ''}</p>
-
-                        <div class="space-y-2">
-                            <!-- ID Box -->
-                            <div class="bg-gray-50 p-2 rounded flex justify-between items-center border border-gray-100 group/id">
-                                <div>
-                                    <p class="text-[10px] text-gray-400 uppercase font-bold">AnyDesk ID</p>
-                                    <p class="font-mono font-bold text-gray-700 select-all">${formatAnyId(pc.anyId)}</p>
-                                </div>
-                                <button onclick="copyToClipboard('${pc.anyId}')" class="text-gray-400 hover:text-primary p-1" title="Copiar">
-                                    <i class="far fa-copy"></i>
-                                </button>
-                            </div>
-
-                            <!-- Password Box -->
-                            <div class="bg-gray-50 p-2 rounded flex justify-between items-center border border-gray-100">
-                                <div class="overflow-hidden">
-                                    <p class="text-[10px] text-gray-400 uppercase font-bold">Senha</p>
-                                    <p class="font-mono text-gray-700 blur-pass" onclick="this.classList.toggle('no-blur')">${pc.anyPass || '---'}</p>
-                                </div>
-                                <i class="fas fa-eye text-gray-300 text-xs ml-2"></i>
-                            </div>
-                        </div>
+                <div class="bg-white rounded-lg shadow p-4 border">
+                    <h4 class="font-bold text-gray-800 text-lg">${pc.name}</h4>
+                    <p class="text-gray-500 text-sm">${pc.sector}</p>
+                    <p class="text-xs mt-2">${pc.config}</p>
+                    <div class="bg-gray-50 p-2 mt-3 rounded">
+                        <strong>ID:</strong> ${pc.anyId}
                     </div>
-                    <div class="bg-gray-50 px-4 py-2 border-t border-gray-100 text-xs text-gray-400 flex justify-between">
-                        <span>${new Date(pc.createdAt).toLocaleDateString()}</span>
-                        <span>WG INFO</span>
+                    <div class="bg-gray-50 p-2 mt-2 rounded">
+                        <strong>Senha:</strong> ${pc.anyPass}
                     </div>
                 </div>`).join("")}
             </div>`;
     }
 
-    // --- Helpers ---
-    function formatAnyId(id) {
-        if(!id) return '';
-        // Tenta formatar como 000 000 000 se tiver 9 digitos
-        const clean = id.replace(/\D/g, '');
-        if(clean.length === 9) {
-            return `${clean.substr(0,3)} ${clean.substr(3,3)} ${clean.substr(6,3)}`;
-        }
-        return id;
+    function filterComputers() {
+        renderComputers();
     }
 
-    window.copyToClipboard = (text) => {
-        navigator.clipboard.writeText(text).then(() => {
-            showToast("Copiado para a área de transferência!");
-        });
+    function openModal(id) {
+        document.getElementById(id).classList.remove("hidden");
     }
 
-    window.deleteCurrentClient = () => {
-        if(window.selectedClientId) {
-            window.deleteItem('clientes', window.selectedClientId);
-        }
+    function closeModal(id) {
+        document.getElementById(id).classList.add("hidden");
     }
-
-    function showToast(msg) {
-        const t = document.getElementById("toast");
-        document.getElementById("toastMsg").innerText = msg;
-        t.classList.remove("translate-y-20", "opacity-0");
-        setTimeout(() => {
-            t.classList.add("translate-y-20", "opacity-0");
-        }, 3000);
-    }
-
-    window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
-    window.closeModal = (id) => document.getElementById(id).classList.add("hidden");
-
 </script>
 
 </body>
