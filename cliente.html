@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área do Cliente - WG Informática</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200">
+
+    <header class="bg-slate-800 shadow-lg p-4 text-center">
+        <h1 class="text-xl font-bold text-white">Área do Cliente</h1>
+    </header>
+
+    <div class="container mx-auto p-4 md:p-6 max-w-4xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <div class="bg-slate-800 p-6 rounded-lg shadow-lg">
+                <h2 class="text-lg font-semibold text-white mb-4">Abertura de Chamado</h2>
+                <form id="form-chamado" class="space-y-4">
+                    <input id="nome" placeholder="Seu nome" required class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    <input id="email" placeholder="Seu e-mail" required class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    <input id="empresa" placeholder="Empresa" required class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    <input id="setor" placeholder="Setor" required class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                    <textarea id="mensagem" placeholder="Descreva o problema" required rows="4" class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"></textarea>
+                    
+                    <button type="button" onclick="getSolutions()" class="w-full flex justify-center items-center gap-2 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-indigo-500 transition-colors">
+                        ✨ Ver Possíveis Soluções com IA
+                    </button>
+                    
+                    <label class="flex items-center text-sm text-slate-400">
+                        <input type="checkbox" id="lgpd-consentimento" required class="h-4 w-4 rounded bg-slate-700 border-slate-600 text-teal-500 focus:ring-teal-500">
+                        <span class="ml-2">Eu li e concordo com a <a href="politica-privacidade.html" target="_blank" class="text-teal-400 hover:underline">Política de Privacidade</a>.</span>
+                    </label>
+
+                    <button type="submit" class="w-full bg-teal-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-teal-500 transition-colors shadow-lg">Enviar Chamado</button>
+                </form>
+            </div>
+
+            <div>
+                <h2 class="text-lg font-semibold text-white mb-4">Seus Chamados Anteriores</h2>
+                <div id="lista-chamados" class="space-y-3">
+                    <p class="text-slate-400">Carregando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ai-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 rounded-lg shadow-2xl p-6 max-w-lg w-full border border-slate-700">
+            <h3 class="text-lg font-bold text-white mb-3">💡 Possíveis Soluções</h3>
+            <div id="ai-solutions" class="text-slate-300 text-sm max-h-80 overflow-y-auto pr-2"></div>
+            <button onclick="closeModal()" class="mt-4 w-full bg-slate-600 text-white font-semibold py-2 rounded-lg hover:bg-slate-500 transition-colors">Fechar</button>
+        </div>
+    </div>
+    
+    <iframe name="gas_silent" style="display:none"></iframe>
+
+    <script>
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        let currentUserUid = null;
+
+        auth.onAuthStateChanged(user => {
+            if (!user) {
+                window.location.href = "login-cliente.html";
+                return;
+            }
+            
+            currentUserUid = user.uid;
+            const userEmail = user.email;
+            document.getElementById("email").value = userEmail;
+
+            db.collection("usuarios").doc(user.uid).get().then(doc => {
+                if (doc.exists) {
+                    document.getElementById("nome").value = doc.data().nome || '';
+                }
+            });
+
+            db.collection("chamados").where("usuarioId", "==", user.uid)
+                .orderBy("criadoEm", "desc")
+                .onSnapshot(snapshot => {
+                    const lista = document.getElementById("lista-chamados");
+                    lista.innerHTML = "";
+                    if (snapshot.empty) {
+                        lista.innerHTML = "<p class='text-slate-400'>Você ainda não abriu chamados.</p>";
+                    } else {
+                        snapshot.forEach(doc => {
+                            const c = doc.data();
+                            const criadoEm = c.criadoEm ? c.criadoEm.toDate().toLocaleString('pt-BR') : 'Data inválida';
+                            const card = document.createElement('div');
+                            card.className = "bg-slate-800 p-4 rounded-lg shadow-md border-l-4 border-teal-500";
+                            card.innerHTML = `
+                                <p class="text-xs text-slate-400">${criadoEm} - Status: <span class="font-semibold">${c.status}</span></p>
+                                <p class="text-slate-300 mt-1"><b>${c.setor}</b> — ${c.mensagem}</p>
+                                <button class="mt-2 bg-teal-700 text-white font-semibold px-3 py-1 rounded-md hover:bg-teal-600 transition-colors text-sm" onclick="abrirChat('${doc.id}')">💬 Chat</button>
+                            `;
+                            lista.appendChild(card);
+                        }, (err) => {
+                    console.error('Erro ao ler chamados do cliente:', err);
+                });
+                    }
+                });
+        });
+
+        document.getElementById("form-chamado").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            if (!document.getElementById("lgpd-consentimento").checked) {
+                alert("Você precisa aceitar a Política de Privacidade para continuar.");
+                return;
+            }
+
+            const nome = document.getElementById("nome").value;
+            const email = document.getElementById("email").value;
+            const setor = document.getElementById("setor").value;
+            const mensagem = document.getElementById("mensagem").value;
+            const empresa = document.getElementById("empresa").value;
+            const chamadoId = db.collection("chamados").doc().id;
+
+            const chamadoData = {
+                id: chamadoId,
+                nome,
+                email,
+                empresa,
+                setor,
+                mensagem,
+                status: "Aberto",
+                usuarioId: currentUserUid,
+                                ultimaMensagemEm: firebase.firestore.FieldValue.serverTimestamp(),
+                ultimaMensagemPor: "cliente",
+                naoLidasStaff: 1,
+                criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await db.collection("chamados").doc(chamadoId).set(chamadoData);
+
+            // === DISPARO DE E-MAIL RESTAURADO ===
+            try {
+                const idCurto = chamadoId.slice(0, 6).toUpperCase();
+                const base = location.origin;
+                await enviarEmailSilencioso({
+                    para: EMAILS_TECNICOS.join(','),
+                    cc: EMAILS_ADMIN.join(','),
+                    assunto: `🔔 Novo chamado #${idCurto} – ${empresa}`,
+                    html: montarHtmlNovoChamado({
+                        id: chamadoId,
+                        idCurto,
+                        cliente: nome,
+                        email: email,
+                        empresa,
+                        setor,
+                        descricao: mensagem,
+                        status: 'Aberto',
+                        linkTecnico: `${base}/tecnico.html?chamado=${chamadoId}`,
+                        linkAdmin: `${base}/admin.html?chamado=${chamadoId}`,
+                        linkChat: `${base}/chat-cliente.html?id=${chamadoId}`
+                    }),
+                    replyTo: email || ''
+                });
+            } catch (err) {
+                console.error('Falha ao disparar e-mail do novo chamado:', err);
+            }
+
+            alert("Chamado enviado com sucesso!");
+            document.getElementById("form-chamado").reset();
+            document.getElementById("email").value = auth.currentUser.email; // Preenche o e-mail novamente
+        });
+
+        function abrirChat(chamadoId) {
+            window.location.href = `chat-cliente.html?id=${chamadoId}`;
+        }
+
+        // Funções da IA Gemini
+        const apiKey = "AIzaSyALJ6CJjviy4JFaxUAhbldZRrdd99twvSE";
+        
+        async function getSolutions() {
+            const problemDescription = document.getElementById('mensagem').value;
+            if (problemDescription.trim().length < 10) {
+                alert("Por favor, descreva o problema com mais detalhes antes de buscar soluções.");
+                return;
+            }
+
+            const modal = document.getElementById('ai-modal');
+            const solutionsDiv = document.getElementById('ai-solutions');
+            solutionsDiv.innerHTML = '<p>Analisando seu problema e buscando soluções... Por favor, aguarde.</p>';
+            modal.classList.remove('hidden');
+
+            const systemPrompt = `Você é um assistente de suporte técnico. Responda em português. 
+            Seu objetivo é fornecer soluções simples e passo a passo para problemas de informática que um usuário leigo possa seguir. 
+            Formate a resposta em HTML com títulos (<h3>) e listas ordenadas (<ol><li>).
+            Se o problema for muito vago, peça mais detalhes. Se parecer complexo (ex: hardware queimado), recomende abrir o chamado para um técnico.`;
+
+            const userQuery = `Meu problema é: "${problemDescription}". Me dê algumas possíveis soluções que eu mesmo possa tentar.`;
+
+            if (!apiKey) {
+                solutionsDiv.innerHTML = "<p class='text-red-400'>A chave da API do Gemini não foi configurada. A funcionalidade de IA está desativada.</p>";
+                return;
+            }
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const payload = {
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                contents: [{ parts: [{ text: userQuery }] }],
+            };
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    solutionsDiv.innerHTML = candidate.content.parts[0].text;
+                } else {
+                    throw new Error("Resposta da IA inválida ou vazia.");
+                }
+            } catch (error) {
+                console.error("Erro ao chamar a API Gemini:", error);
+                solutionsDiv.innerHTML = "<p class='text-red-400'>Desculpe, não foi possível obter sugestões no momento. Tente novamente mais tarde.</p>";
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('ai-modal').classList.add('hidden');
+        }
+    </script>
+    
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbz2U9j696QVojXt00lnsfcLO2rUgDA8AptLlTbPsRuAO8KrrOCDpHE-Cx8FYMeXf4F86A/exec";
+        const GAS_SECRET = "!Plokij789";
+
+        // LISTA ATUALIZADA: Inclui 'leonardo@suporteworkgroup.com.br' e mantém todos os outros.
+        const EMAILS_TECNICOS = [
+            "xoenfalos2014@gmail.com",
+            "kassyo@suporteworkgroup.com.br",
+            "douglasmalaquias23@gmail.com",
+            "lfsgdas@gmail.com",
+            "malaquias@suporteworkgroup.com.br",
+            "rlkbubu70@gmail.com",
+            "leonardo@suporteworkgroup.com.br" // Adicionado o e-mail de Leonardo
+        ];
+        
+        // E-MAILS DE ADMINISTRAÇÃO (CC) - Mantidos para o CC
+        const EMAILS_ADMIN = [
+            "xoenfalos2014@gmail.com",
+            "kassyo@suporteworkgroup.com.br"
+        ];
+
+        function enviarEmailSilencioso({ para, cc, assunto, html, replyTo, nomeRemetente="WG Informática" }) {
+            return new Promise((resolve) => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `${GAS_URL}?token=${encodeURIComponent(GAS_SECRET)}`;
+                form.target = 'gas_silent';
+                form.style.display = 'none';
+
+                const fields = { para, cc, assunto, html, replyTo, nomeRemetente };
+                Object.entries(fields).forEach(([k,v])=>{
+                    if (!v) return;
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = k;
+                    input.value = v;
+                    form.appendChild(input);
+                });
+
+                const iframe = document.querySelector('iframe[name="gas_silent"]');
+                const onLoad = () => { 
+                    iframe.removeEventListener('load', onLoad); 
+                    try { form.remove(); } catch(e) {} 
+                    resolve(); 
+                };
+                iframe.addEventListener('load', onLoad, { once: true });
+
+                document.body.appendChild(form);
+                form.submit();
+                setTimeout(() => { 
+                    try { form.remove(); } catch(e) {} 
+                    resolve(); 
+                }, 2000); 
+            });
+        }
+
+        function esc(s){ return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+        function nl2br(s){ return (s||'').replace(/\n/g,'<br>'); }
+        function agoraBR(){
+            const d = new Date();
+            const pad = (n) => n < 10 ? '0' + n : n;
+            return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+        function montarHtmlNovoChamado(ch){
+            return `
+                <div style="font:14px Arial,Helvetica,sans-serif; color: #333;">
+                  <div style="background-color:#f4f4f4; padding:20px; border-radius:8px;">
+                    <h2 style="margin:0 0 16px; color:#0d9488;">🔔 Novo Chamado Recebido</h2>
+                    <p><b>Cliente:</b> ${esc(ch.cliente)}</p>
+                    <p><b>Empresa:</b> ${esc(ch.empresa)}</p>
+                    <p><b>Setor:</b> ${esc(ch.setor)}</p>
+                    <p><b>E-mail para resposta:</b> ${esc(ch.email)}</p>
+                    <p><b>Descrição do Problema:</b><br>${nl2br(esc(ch.descricao))}</p>
+                    <p><b>Status:</b> ${esc(ch.status||'Aberto')} • <b>Abertura:</b> ${agoraBR()}</p>
+                    <hr style="border:none; border-top:1px solid #ddd; margin:16px 0;">
+                    <p><strong>Ações Rápidas:</strong></p>
+                    <p>
+                        <a href="${esc(ch.linkTecnico||'#')}" target="_blank" style="background-color:#0d9488; color:white; padding:8px 12px; text-decoration:none; border-radius:5px; margin-right:10px;">Ver no Painel Técnico</a>
+                        <a href="${esc(ch.linkChat||'#')}" target="_blank" style="background-color:#0f766e; color:white; padding:8px 12px; text-decoration:none; border-radius:5px;">Ir para o Chat</a>
+                    </p>
+                  </div>
+                  <p style="color:#999; font-size:12px; margin-top:15px;">WG Informática • Notificação automática</p>
+                </div>`;
+        }
+    </script>
+
+</body>
+</html>
