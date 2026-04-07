@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ordem de Serviço - WG Informática</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .watermark {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.05;
+      pointer-events: none;
+    }
+    .watermark img { width: 320px; }
+    @media print {
+      .no-print { display:none !important; }
+      body { background:#fff !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+  <div class="max-w-6xl mx-auto px-4 py-6">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 no-print">
+      <div>
+        <h1 class="text-3xl font-bold text-slate-900">Ordem de Serviço</h1>
+        <p class="text-slate-600">Cadastro, edição, PDF e envio rápido para atendimento.</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a href="painel_os.html" class="px-4 py-2 rounded-xl bg-slate-800 text-white hover:bg-slate-700">Voltar ao painel</a>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2">
+        <div id="osPrint" class="relative bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
+          <div class="watermark"><img src="img/logo-wg.png" alt="Logo WG"></div>
+          <div class="relative p-6 md:p-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b border-slate-200 pb-6">
+              <div class="flex items-center gap-4">
+                <img src="img/logo-wg.png" alt="WG Informática" class="w-20 h-20 object-contain rounded-2xl bg-white border border-slate-200 p-2">
+                <div>
+                  <h2 class="text-xl md:text-2xl font-bold">WG INFORMÁTICA</h2>
+                  <p class="text-sm text-slate-600">SUPORTE E MANUTENÇÃO DE COMPUTADORES LTDA</p>
+                  <p class="text-xs text-slate-500 mt-1">CNPJ: 18.227.202/0001-36 • Rua Doutor Feliciano Sodré, 182, Centro • São Gonçalo/RJ</p>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3 min-w-[280px]">
+                <div class="bg-slate-100 rounded-2xl p-3 border border-slate-200">
+                  <div class="text-xs text-slate-500 uppercase">Número OS</div>
+                  <div class="text-lg font-bold" id="numeroOSView">Novo</div>
+                </div>
+                <div class="bg-slate-100 rounded-2xl p-3 border border-slate-200">
+                  <div class="text-xs text-slate-500 uppercase">Status</div>
+                  <div class="text-lg font-bold" id="statusView">Aberto</div>
+                </div>
+              </div>
+            </div>
+
+            <form id="osForm" class="mt-6 space-y-6">
+              <input type="hidden" id="docId">
+              <input type="hidden" id="chamadoId">
+              <input type="hidden" id="numeroOS">
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold mb-2">Cliente</label>
+                  <input id="cliente" class="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500" required>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-2">Empresa</label>
+                  <input id="empresa" class="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-2">Setor</label>
+                  <input id="setor" class="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-2">E-mail</label>
+                  <input id="email" type="email" class="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-2">Técnico</label>
+                  <input id="tecnico" class="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500" placeholder="Qualquer técnico da equipe pode atender">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-2">Status</label>
+                  <select id="status" class="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500">
+                    <option>Aberto</option>
+                    <option>Em andamento</option>
+                    <option>Pendente</option>
+                    <option>Finalizado</option>
+                    <option>Cancelado</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-2">Data e hora</label>
+                  <input id="data" class="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500">
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold mb-2">ID do chamado vinculado</label>
+                  <input id="chamadoIdVisual" class="w-full rounded-2xl border border-slate-300 px-4 py-3 bg-slate-50 outline-none" readonly>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold mb-2">Defeito reclamado / descrição</label>
+                <textarea id="mensagem" rows="5" class="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold mb-2">Serviço realizado</label>
+                <textarea id="servico" rows="5" class="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold mb-2">Observações</label>
+                <textarea id="observacao" rows="4" class="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="block text-sm font-semibold">Assinatura do cliente</label>
+                  <button type="button" id="limparAssinatura" class="no-print text-sm px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300">Limpar</button>
+                </div>
+                <div class="rounded-2xl border border-slate-300 bg-white p-3">
+                  <canvas id="assinatura" class="w-full rounded-xl bg-slate-50" height="180"></canvas>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-4 no-print">
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 p-5">
+          <h3 class="text-lg font-bold mb-4">Ações rápidas</h3>
+          <div class="grid grid-cols-1 gap-3">
+            <button id="btnSalvar" class="px-4 py-3 rounded-2xl bg-sky-600 text-white font-semibold hover:bg-sky-700">Salvar OS</button>
+            <button id="btnPdf" class="px-4 py-3 rounded-2xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700">Gerar PDF</button>
+            <button id="btnWhats" class="px-4 py-3 rounded-2xl bg-green-600 text-white font-semibold hover:bg-green-700">Enviar no WhatsApp</button>
+          </div>
+          <p class="text-xs text-slate-500 mt-4">Se a OS estiver vinculada a um chamado, o link do WhatsApp abre direto no chat técnico.</p>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 p-5">
+          <h3 class="text-lg font-bold mb-3">Resumo</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between gap-3"><span class="text-slate-500">Documento</span><strong id="resumoDocumento">Novo cadastro</strong></div>
+            <div class="flex justify-between gap-3"><span class="text-slate-500">Número</span><strong id="resumoNumero">-</strong></div>
+            <div class="flex justify-between gap-3"><span class="text-slate-500">Cliente</span><strong id="resumoCliente">-</strong></div>
+            <div class="flex justify-between gap-3"><span class="text-slate-500">Vínculo com chamado</span><strong id="resumoChamado">Não</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const params = new URLSearchParams(window.location.search);
+    const queryId = params.get('id') || '';
+    let loadedAsOs = false;
+
+    const fields = {
+      docId: document.getElementById('docId'),
+      chamadoId: document.getElementById('chamadoId'),
+      chamadoIdVisual: document.getElementById('chamadoIdVisual'),
+      numeroOS: document.getElementById('numeroOS'),
+      cliente: document.getElementById('cliente'),
+      empresa: document.getElementById('empresa'),
+      setor: document.getElementById('setor'),
+      email: document.getElementById('email'),
+      tecnico: document.getElementById('tecnico'),
+      mensagem: document.getElementById('mensagem'),
+      servico: document.getElementById('servico'),
+      observacao: document.getElementById('observacao'),
+      status: document.getElementById('status'),
+      data: document.getElementById('data')
+    };
+
+    function fmtDate(value) {
+      if (!value) return new Date().toLocaleString('pt-BR');
+      if (typeof value === 'string') return value;
+      if (value.seconds) return new Date(value.seconds * 1000).toLocaleString('pt-BR');
+      if (value.toDate) return value.toDate().toLocaleString('pt-BR');
+      try { return new Date(value).toLocaleString('pt-BR'); } catch { return ''; }
+    }
+
+    function updateResumo() {
+      document.getElementById('numeroOSView').textContent = fields.numeroOS.value || 'Novo';
+      document.getElementById('statusView').textContent = fields.status.value || 'Aberto';
+      document.getElementById('resumoDocumento').textContent = fields.docId.value || 'Novo cadastro';
+      document.getElementById('resumoNumero').textContent = fields.numeroOS.value || '-';
+      document.getElementById('resumoCliente').textContent = fields.cliente.value || '-';
+      document.getElementById('resumoChamado').textContent = fields.chamadoId.value ? 'Sim' : 'Não';
+      fields.chamadoIdVisual.value = fields.chamadoId.value || '';
+    }
+
+    async function gerarProximoNumeroOS() {
+      const ref = db.collection('contadores').doc('ordens_servico');
+      return db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        let atual = 0;
+        if (snap.exists) atual = Number(snap.data().ultimoNumero || 0);
+        const proximo = atual + 1;
+        tx.set(ref, { ultimoNumero: proximo, atualizadoEm: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        return `OS-${String(proximo).padStart(6, '0')}`;
+      });
+    }
+
+    function normalizarDados(dados = {}) {
+      return {
+        chamadoId: dados.chamadoId || queryId || '',
+        numeroOS: dados.numeroOS || '',
+        cliente: dados.cliente || dados.nome || '',
+        empresa: dados.empresa || '',
+        setor: dados.setor || '',
+        email: dados.email || '',
+        tecnico: dados.tecnico || '',
+        mensagem: dados.mensagem || dados.defeito || dados.problema || '',
+        servico: dados.servico || dados.servicoRealizado || '',
+        observacao: dados.observacao || '',
+        status: dados.status || 'Aberto',
+        data: fmtDate(dados.data || dados.criadoEm || dados.abertoEm),
+        assinaturaDataUrl: dados.assinaturaDataUrl || dados.assinatura || ''
+      };
+    }
+
+    function preencherFormulario(dados) {
+      fields.chamadoId.value = dados.chamadoId || '';
+      fields.numeroOS.value = dados.numeroOS || '';
+      fields.cliente.value = dados.cliente || '';
+      fields.empresa.value = dados.empresa || '';
+      fields.setor.value = dados.setor || '';
+      fields.email.value = dados.email || '';
+      fields.tecnico.value = dados.tecnico || '';
+      fields.mensagem.value = dados.mensagem || '';
+      fields.servico.value = dados.servico || '';
+      fields.observacao.value = dados.observacao || '';
+      fields.status.value = dados.status || 'Aberto';
+      fields.data.value = dados.data || new Date().toLocaleString('pt-BR');
+      if (dados.assinaturaDataUrl) carregarAssinatura(dados.assinaturaDataUrl);
+      updateResumo();
+    }
+
+    async function carregarInicial() {
+      fields.data.value = new Date().toLocaleString('pt-BR');
+      updateResumo();
+      if (!queryId) return;
+
+      const osDoc = await db.collection('ordens_servico').doc(queryId).get();
+      if (osDoc.exists) {
+        loadedAsOs = true;
+        fields.docId.value = osDoc.id;
+        const dados = normalizarDados(osDoc.data());
+        preencherFormulario(dados);
+        return;
+      }
+
+      const chamadoDoc = await db.collection('chamados').doc(queryId).get();
+      if (chamadoDoc.exists) {
+        fields.chamadoId.value = chamadoDoc.id;
+        const dados = normalizarDados(chamadoDoc.data());
+        preencherFormulario(dados);
+      }
+    }
+
+    async function salvarOS() {
+      const numeroOS = fields.numeroOS.value || await gerarProximoNumeroOS();
+      fields.numeroOS.value = numeroOS;
+      const payload = {
+        numeroOS,
+        chamadoId: fields.chamadoId.value || '',
+        cliente: fields.cliente.value || '',
+        empresa: fields.empresa.value || '',
+        setor: fields.setor.value || '',
+        email: fields.email.value || '',
+        tecnico: fields.tecnico.value || '',
+        mensagem: fields.mensagem.value || '',
+        servico: fields.servico.value || '',
+        observacao: fields.observacao.value || '',
+        status: fields.status.value || 'Aberto',
+        data: fields.data.value || new Date().toLocaleString('pt-BR'),
+        assinaturaDataUrl: getCanvasData(),
+        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+        criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      if (fields.docId.value) {
+        delete payload.criadoEm;
+        await db.collection('ordens_servico').doc(fields.docId.value).set(payload, { merge: true });
+        alert('OS atualizada com sucesso.');
+      } else {
+        const ref = await db.collection('ordens_servico').add(payload);
+        fields.docId.value = ref.id;
+        alert(`OS salva com sucesso: ${numeroOS}`);
+        const newUrl = `${location.pathname}?id=${ref.id}`;
+        window.history.replaceState({}, '', newUrl);
+      }
+      updateResumo();
+    }
+
+    async function gerarPDF() {
+      updateResumo();
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      const node = document.getElementById('osPrint');
+      const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff' });
+      const imgData = canvas.toDataURL('image/png');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgHeight = (imgProps.height * pageWidth) / imgProps.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, imgHeight);
+      pdf.save(`${fields.numeroOS.value || 'ordem_servico'}.pdf`);
+    }
+
+    function getBaseUrl() {
+      return location.origin || 'https://wginfo.netlify.app';
+    }
+
+    function enviarWhatsApp() {
+      const numeroOS = fields.numeroOS.value || 'OS-SEM-NUMERO';
+      const cliente = fields.cliente.value || '';
+      const empresa = fields.empresa.value || '';
+      const defeito = fields.mensagem.value || '';
+      const status = fields.status.value || 'Aberto';
+      const chamadoId = fields.chamadoId.value || '';
+      const docId = fields.docId.value || queryId || '';
+
+      let link = `${getBaseUrl()}/ordem_servico.html?id=${docId}`;
+      if (chamadoId) link = `${getBaseUrl()}/chat-tecnico.html?chamadoId=${encodeURIComponent(chamadoId)}`;
+
+      const mensagem = `Novo atendimento disponível.%0A%0AOS: ${encodeURIComponent(numeroOS)}%0ACliente: ${encodeURIComponent(cliente)}%0AEmpresa: ${encodeURIComponent(empresa)}%0AProblema: ${encodeURIComponent(defeito)}%0AStatus: ${encodeURIComponent(status)}%0A%0AAbrir atendimento:%0A${encodeURIComponent(link)}`;
+      window.open(`https://wa.me/?text=${mensagem}`, '_blank');
+    }
+
+    const canvas = document.getElementById('assinatura');
+    const ctx = canvas.getContext('2d');
+    let desenhando = false;
+
+    function resizeCanvas() {
+      const ratio = Math.max(window.devicePixelRatio || 1, 1);
+      const cssWidth = canvas.offsetWidth || canvas.parentElement.offsetWidth;
+      const cssHeight = 180;
+      const image = getCanvasData();
+      canvas.width = cssWidth * ratio;
+      canvas.height = cssHeight * ratio;
+      canvas.style.height = `${cssHeight}px`;
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.scale(ratio, ratio);
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#0f172a';
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0,0,cssWidth,cssHeight);
+      if (image && image.startsWith('data:image')) carregarAssinatura(image);
+    }
+
+    function pos(evt) {
+      const rect = canvas.getBoundingClientRect();
+      const touch = evt.touches ? evt.touches[0] : evt;
+      return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+    }
+
+    function startDraw(evt) {
+      desenhando = true;
+      const p = pos(evt);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      evt.preventDefault();
+    }
+    function moveDraw(evt) {
+      if (!desenhando) return;
+      const p = pos(evt);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      evt.preventDefault();
+    }
+    function endDraw() { desenhando = false; }
+    function limparAssinatura() {
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
+    function getCanvasData() {
+      try { return canvas.toDataURL('image/png'); } catch { return ''; }
+    }
+    function carregarAssinatura(dataUrl) {
+      if (!dataUrl) return;
+      const img = new Image();
+      img.onload = () => {
+        const w = canvas.offsetWidth || 600;
+        const h = 180;
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(0,0,w,h);
+        ctx.drawImage(img, 0, 0, w, h);
+      };
+      img.src = dataUrl;
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', moveDraw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
+    canvas.addEventListener('touchstart', startDraw, { passive:false });
+    canvas.addEventListener('touchmove', moveDraw, { passive:false });
+    canvas.addEventListener('touchend', endDraw);
+
+    ['input','change'].forEach(ev => {
+      document.getElementById('osForm').addEventListener(ev, updateResumo);
+    });
+    document.getElementById('btnSalvar').addEventListener('click', salvarOS);
+    document.getElementById('btnPdf').addEventListener('click', gerarPDF);
+    document.getElementById('btnWhats').addEventListener('click', enviarWhatsApp);
+    document.getElementById('limparAssinatura').addEventListener('click', limparAssinatura);
+    window.addEventListener('resize', resizeCanvas);
+
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        alert('Faça login para acessar a ordem de serviço.');
+        location.href = 'login-tecnico.html';
+        return;
+      }
+      resizeCanvas();
+      await carregarInicial();
+      updateResumo();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Ordens de Serviço - WG Informática</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+  <div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <div>
+        <h1 class="text-3xl font-bold text-slate-900">Painel de Ordens de Serviço</h1>
+        <p class="text-slate-600">Visualize, filtre, envie no WhatsApp e abra a OS para atendimento.</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a href="tecnico.html" class="px-4 py-2 rounded-2xl bg-slate-800 text-white hover:bg-slate-700">Voltar</a>
+        <a href="ordem_servico.html" class="px-4 py-2 rounded-2xl bg-sky-600 text-white hover:bg-sky-700">Nova OS</a>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-3xl shadow border border-slate-200 p-5"><div class="text-sm text-slate-500">Total de OS</div><div id="cardTotal" class="text-3xl font-bold">0</div></div>
+      <div class="bg-white rounded-3xl shadow border border-slate-200 p-5"><div class="text-sm text-slate-500">Abertas</div><div id="cardAberto" class="text-3xl font-bold text-sky-700">0</div></div>
+      <div class="bg-white rounded-3xl shadow border border-slate-200 p-5"><div class="text-sm text-slate-500">Em andamento</div><div id="cardAndamento" class="text-3xl font-bold text-amber-600">0</div></div>
+      <div class="bg-white rounded-3xl shadow border border-slate-200 p-5"><div class="text-sm text-slate-500">Finalizadas</div><div id="cardFinalizado" class="text-3xl font-bold text-emerald-600">0</div></div>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow border border-slate-200 p-4 mb-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <input id="busca" placeholder="Buscar por OS, cliente, empresa, técnico ou chamado" class="rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500">
+        <select id="filtroStatus" class="rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:ring-2 focus:ring-sky-500">
+          <option value="">Todos os status</option>
+          <option value="Aberto">Aberto</option>
+          <option value="Em andamento">Em andamento</option>
+          <option value="Pendente">Pendente</option>
+          <option value="Finalizado">Finalizado</option>
+          <option value="Cancelado">Cancelado</option>
+        </select>
+        <button id="btnAtualizar" class="rounded-2xl bg-slate-800 text-white px-4 py-3 hover:bg-slate-700">Atualizar</button>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow border border-slate-200 overflow-hidden">
+      <div class="overflow-auto">
+        <table class="min-w-full">
+          <thead class="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Nº OS</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Cliente</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Técnico</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Status</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Chamado</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Data</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="lista-os" class="divide-y divide-slate-200"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    let osCache = [];
+
+    function badge(status) {
+      const map = {
+        'Aberto': 'bg-sky-100 text-sky-700',
+        'Em andamento': 'bg-amber-100 text-amber-700',
+        'Pendente': 'bg-orange-100 text-orange-700',
+        'Finalizado': 'bg-emerald-100 text-emerald-700',
+        'Cancelado': 'bg-rose-100 text-rose-700'
+      };
+      const cls = map[status] || 'bg-slate-100 text-slate-700';
+      return `<span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold ${cls}">${status || 'Sem status'}</span>`;
+    }
+
+    function getBaseUrl() { return location.origin || 'https://wginfo.netlify.app'; }
+
+    function montarMensagem(os) {
+      const link = os.chamadoId
+        ? `${getBaseUrl()}/chat-tecnico.html?chamadoId=${encodeURIComponent(os.chamadoId)}`
+        : `${getBaseUrl()}/ordem_servico.html?id=${encodeURIComponent(os.id)}`;
+
+      return `Novo atendimento disponível.\n\nOS: ${os.numeroOS || 'OS sem número'}\nCliente: ${os.cliente || ''}\nEmpresa: ${os.empresa || ''}\nProblema: ${os.mensagem || os.defeito || ''}\nStatus: ${os.status || 'Aberto'}\n\nAbrir atendimento:\n${link}`;
+    }
+
+    function enviarWhatsApp(id) {
+      const os = osCache.find(item => item.id === id);
+      if (!os) return;
+      window.open(`https://wa.me/?text=${encodeURIComponent(montarMensagem(os))}`, '_blank');
+    }
+
+    function visualizar(id) {
+      window.location.href = `ordem_servico.html?id=${encodeURIComponent(id)}`;
+    }
+
+    function gerarPDF(id) {
+      window.open(`ordem_servico.html?id=${encodeURIComponent(id)}`, '_blank');
+    }
+
+    async function excluir(id) {
+      if (!confirm('Tem certeza que deseja excluir esta OS?')) return;
+      await db.collection('ordens_servico').doc(id).delete();
+      await carregarOS();
+      alert('OS excluída com sucesso.');
+    }
+
+    function atualizarCards(lista) {
+      document.getElementById('cardTotal').textContent = lista.length;
+      document.getElementById('cardAberto').textContent = lista.filter(x => (x.status || '') === 'Aberto').length;
+      document.getElementById('cardAndamento').textContent = lista.filter(x => (x.status || '') === 'Em andamento').length;
+      document.getElementById('cardFinalizado').textContent = lista.filter(x => (x.status || '') === 'Finalizado').length;
+    }
+
+    function render(lista) {
+      const termo = (document.getElementById('busca').value || '').toLowerCase().trim();
+      const status = document.getElementById('filtroStatus').value;
+      const tbody = document.getElementById('lista-os');
+      tbody.innerHTML = '';
+
+      const filtrada = lista.filter(item => {
+        const texto = [item.numeroOS, item.cliente, item.empresa, item.tecnico, item.chamadoId, item.data].join(' ').toLowerCase();
+        const okBusca = !termo || texto.includes(termo);
+        const okStatus = !status || item.status === status;
+        return okBusca && okStatus;
+      });
+
+      if (!filtrada.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-500">Nenhuma OS encontrada.</td></tr>`;
+        atualizarCards(lista);
+        return;
+      }
+
+      filtrada.forEach(os => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50';
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-semibold">${os.numeroOS || '(sem número)'}</td>
+          <td class="px-4 py-3">${os.cliente || ''}<div class="text-xs text-slate-500">${os.empresa || ''}</div></td>
+          <td class="px-4 py-3">${os.tecnico || 'Equipe técnica'}</td>
+          <td class="px-4 py-3">${badge(os.status || 'Aberto')}</td>
+          <td class="px-4 py-3 text-sm">${os.chamadoId || '-'}</td>
+          <td class="px-4 py-3 text-sm">${os.data || '-'}</td>
+          <td class="px-4 py-3">
+            <div class="flex flex-wrap gap-2">
+              <button onclick="visualizar('${os.id}')" class="px-3 py-2 rounded-xl bg-sky-600 text-white text-sm hover:bg-sky-700">Abrir</button>
+              <button onclick="gerarPDF('${os.id}')" class="px-3 py-2 rounded-xl bg-emerald-600 text-white text-sm hover:bg-emerald-700">PDF</button>
+              <button onclick="enviarWhatsApp('${os.id}')" class="px-3 py-2 rounded-xl bg-green-600 text-white text-sm hover:bg-green-700">WhatsApp</button>
+              <button onclick="excluir('${os.id}')" class="px-3 py-2 rounded-xl bg-rose-600 text-white text-sm hover:bg-rose-700">Excluir</button>
+            </div>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+
+      atualizarCards(lista);
+    }
+
+    async function carregarOS() {
+      const snapshot = await db.collection('ordens_servico').orderBy('criadoEm', 'desc').get().catch(async () => db.collection('ordens_servico').get());
+      osCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      render(osCache);
+    }
+
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        alert('Faça login para acessar o painel de OS.');
+        location.href = 'login-tecnico.html';
+        return;
+      }
+      await carregarOS();
+    });
+
+    document.getElementById('busca').addEventListener('input', () => render(osCache));
+    document.getElementById('filtroStatus').addEventListener('change', () => render(osCache));
+    document.getElementById('btnAtualizar').addEventListener('click', carregarOS);
+  </script>
+</body>
+</html>
