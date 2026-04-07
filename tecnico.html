@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Técnico - WG Informática</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/wg-theme.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+</head>
+<body class="wg-app">
+  <div class="wg-shell">
+    <header class="wg-topbar">
+      <div class="wg-brand">
+        <img src="img/logo-wg.png" alt="WG Informática">
+        <div>
+          <h1>Painel do Técnico</h1>
+          <p>Chamados, agenda e acessos rápidos com uma cara mais forte de produto.</p>
+        </div>
+      </div>
+      <nav class="wg-actions">
+        <a href="relatorio_tecnico.html" class="wg-btn ghost">Relatório técnico</a>
+        <a href="relatorios_salvos.html" class="wg-btn ghost">Relatórios salvos</a>
+        <a href="rotina.html" class="wg-btn ghost">Rotina</a>
+        <a href="agenda.html" class="wg-btn secondary">Agenda</a>
+        <a href="GESTAOPC.HTML" class="wg-btn primary">Gestão de PCs</a>
+      </nav>
+    </header>
+
+    <section class="wg-grid cards">
+      <div class="wg-card pad wg-stat"><h3>Chamados abertos</h3><strong id="stat-abertos">0</strong><span>Fila atual</span></div>
+      <div class="wg-card pad wg-stat"><h3>Em andamento</h3><strong id="stat-andamento">0</strong><span>Atendimentos ativos</span></div>
+      <div class="wg-card pad wg-stat"><h3>Finalizados</h3><strong id="stat-finalizados">0</strong><span>Concluídos</span></div>
+      <div class="wg-card pad wg-stat"><h3>Agendamentos</h3><strong id="stat-agenda">0</strong><span>Total monitorado</span></div>
+    </section>
+
+    <section class="wg-card pad">
+      <div class="wg-section-title">
+        <div>
+          <h2>Fila de atendimento</h2>
+          <p>Troque o status sem sair da listagem.</p>
+        </div>
+        <div class="wg-nav" id="nav-buttons">
+          <button class="wg-chip active" onclick="mostrarTarefas('Aberto', this)">Abertos</button>
+          <button class="wg-chip" onclick="mostrarTarefas('Em Andamento', this)">Em andamento</button>
+          <button class="wg-chip" onclick="mostrarTarefas('Resolvido', this)">Finalizados</button>
+        </div>
+      </div>
+      <div id="lista-tarefas" class="wg-list"><div class="wg-empty">Carregando tarefas...</div></div>
+    </section>
+  </div>
+
+<script>
+const db = firebase.firestore();
+const auth = firebase.auth();
+let tecnicoEmail = null;
+let snapChamados = [];
+let snapAgendamentos = [];
+
+auth.onAuthStateChanged(user => {
+  if (!user) {
+    window.location.href = 'login-tecnico.html';
+    return;
+  }
+  tecnicoEmail = user.email;
+  observarStats();
+  document.querySelector('#nav-buttons .wg-chip.active').click();
+});
+
+function observarStats() {
+  db.collection('chamados').onSnapshot(snapshot => {
+    snapChamados = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    atualizarCards();
+  });
+  db.collection('agendamentos').onSnapshot(snapshot => {
+    snapAgendamentos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    atualizarCards();
+  });
+}
+
+function atualizarCards() {
+  document.getElementById('stat-abertos').textContent = snapChamados.filter(x => x.status === 'Aberto').length;
+  document.getElementById('stat-andamento').textContent = snapChamados.filter(x => x.status === 'Em Andamento').length + snapAgendamentos.filter(x => x.status === 'Em Atendimento').length;
+  document.getElementById('stat-finalizados').textContent = snapChamados.filter(x => x.status === 'Resolvido').length + snapAgendamentos.filter(x => x.status === 'Finalizado').length;
+  document.getElementById('stat-agenda').textContent = snapAgendamentos.length;
+}
+
+function mostrarTarefas(statusFiltro, el) {
+  document.querySelectorAll('#nav-buttons .wg-chip').forEach(btn => btn.classList.remove('active'));
+  el.classList.add('active');
+
+  const lista = document.getElementById('lista-tarefas');
+  lista.innerHTML = '<div class="wg-empty">Carregando tarefas...</div>';
+
+  let statusChamado = statusFiltro;
+  let statusAgendamento = statusFiltro;
+  if (statusFiltro === 'Em Andamento') statusAgendamento = 'Em Atendimento';
+  if (statusFiltro === 'Resolvido') statusAgendamento = 'Finalizado';
+
+  let htmlChamados = '';
+  let htmlAgendamentos = '';
+  let carregouChamados = false;
+  let carregouAg = false;
+
+  const renderizar = () => {
+    if (!carregouChamados || !carregouAg) return;
+    const conteudo = htmlChamados + htmlAgendamentos;
+    lista.innerHTML = conteudo || `<div class="wg-empty">Nenhuma tarefa com status ${statusFiltro}.</div>`;
+  };
+
+  db.collection('chamados').where('status', '==', statusChamado).onSnapshot(snapshot => {
+    htmlChamados = '';
+    if (!snapshot.empty) {
+      htmlChamados += '<div class="wg-kicker">Chamados</div>';
+      snapshot.forEach(doc => {
+        const c = doc.data();
+        htmlChamados += `
+          <article class="wg-ticket">
+            <div class="wg-ticket-top">
+              <div>
+                <h3>${esc(c.empresa || c.nome || 'Cliente')}</h3>
+                <small>${esc(c.setor || '')} ${c.email ? '• ' + esc(c.email) : ''}</small>
+              </div>
+              <span class="wg-badge ${classeStatus(c.status)}">${esc(c.status || 'Aberto')}</span>
+            </div>
+            <p>${esc(c.mensagem || '')}</p>
+            <small>${formatarData(c.criadoEm)}</small>
+            <div class="wg-footer-actions">
+              <button class="wg-btn small ghost" onclick="abrirChat('${doc.id}')">Chat</button>
+              <button class="wg-btn small secondary" onclick="mudarStatus('chamados', '${doc.id}', 'Em Andamento')">Em andamento</button>
+              <button class="wg-btn small primary" onclick="mudarStatus('chamados', '${doc.id}', 'Resolvido')">Finalizar</button>
+              <button class="wg-btn small warn" onclick="window.location.href='ordem_servico.html?chamado=${doc.id}'">Abrir OS</button>
+            </div>
+          </article>`;
+      });
+    }
+    carregouChamados = true;
+    renderizar();
+  });
+
+  db.collection('agendamentos').where('status', '==', statusAgendamento).onSnapshot(snapshot => {
+    htmlAgendamentos = '';
+    if (!snapshot.empty) {
+      htmlAgendamentos += '<div class="wg-kicker">Agendamentos</div>';
+      snapshot.forEach(doc => {
+        const a = doc.data();
+        htmlAgendamentos += `
+          <article class="wg-ticket">
+            <div class="wg-ticket-top">
+              <div>
+                <h3>${esc(a.cliente || 'Cliente')}</h3>
+                <small>${esc(a.servico || '')}</small>
+              </div>
+              <span class="wg-badge ${classeStatus(a.status)}">${esc(a.status || '')}</span>
+            </div>
+            <p>${esc(a.problema || '')}</p>
+            <small>${formatarDataAgenda(a.data)}</small>
+            <div class="wg-footer-actions">
+              <button class="wg-btn small ghost" onclick="window.location.href='agenda.html'">Ver agenda</button>
+              <button class="wg-btn small secondary" onclick="mudarStatus('agendamentos', '${doc.id}', 'Em Atendimento')">Em atendimento</button>
+              <button class="wg-btn small primary" onclick="mudarStatus('agendamentos', '${doc.id}', 'Finalizado')">Finalizar</button>
+            </div>
+          </article>`;
+      });
+    }
+    carregouAg = true;
+    renderizar();
+  });
+}
+
+function mudarStatus(colecao, id, novoStatus) {
+  db.collection(colecao).doc(id).update({ status: novoStatus })
+    .catch(error => alert('Erro ao atualizar status: ' + error.message));
+}
+function formatarData(timestamp) {
+  if (!timestamp) return 'Data não informada';
+  if (timestamp.toDate) return timestamp.toDate().toLocaleString('pt-BR');
+  const data = new Date(timestamp);
+  return Number.isNaN(data.getTime()) ? 'Data inválida' : data.toLocaleString('pt-BR');
+}
+function formatarDataAgenda(valor) {
+  if (!valor) return 'Data não informada';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return new Date(valor + 'T00:00:00').toLocaleDateString('pt-BR');
+  return valor;
+}
+function abrirChat(chamadoId) { window.location.href = `chat-tecnico.html?id=${chamadoId}`; }
+function classeStatus(status='') {
+  const s = String(status).toLowerCase();
+  if (s.includes('andamento') || s.includes('atendimento')) return 'status-andamento';
+  if (s.includes('final') || s.includes('resolvido')) return 'status-finalizado';
+  return 'status-aberto';
+}
+function esc(v='') { return String(v).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+</script>
+</body>
+</html>
