@@ -2,100 +2,123 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WG Informática - Ambiente de Teste</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WG Informática - Portal de Comunicação</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: 'Poppins', sans-serif; }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            /* Previne o layout de quebrar em telemóveis quando o teclado abre */
+            height: 100dvh; 
+            overflow: hidden;
+        }
         
         /* Ocultar telas inativas */
         .view-hidden { display: none !important; }
         
         /* Scrollbar customizada */
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
         
-        /* Botões do Painel */
-        .btn { padding: 0.5rem 1rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; text-align: center; }
-        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
-        .btn-dark { background-color: #0d9488; color: white; }
-        .btn-green { background-color: #16a34a; color: white; }
-        .btn-blue { background-color: #2563eb; color: white; }
-        .btn-purple { background-color: #9333ea; color: white; }
-        .btn-indigo { background-color: #4f46e5; color: white; }
-        .btn-teal-secondary { background-color: #1f2937; color: #ccfbf1; border: 1px solid #14b8a6; }
-        .nav-button-active { background-color: #14b8a6; color: white; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
-        
-        /* Fundo do Chat */
+        /* Fundo do Chat e do Dashboard Moderno */
         .chat-bg {
             background-color: #0f172a;
             background-image: radial-gradient(#1e293b 1px, transparent 1px);
             background-size: 20px 20px;
         }
+
+        /* Classes para transição suave no Mobile */
+        .mobile-hide { display: none !important; }
+        @media (min-width: 640px) {
+            .mobile-hide { display: flex !important; }
+        }
+
+        /* Áudio Player Customizado (mantém o visual escuro) */
+        audio {
+            height: 36px;
+            border-radius: 8px;
+            outline: none;
+        }
+        audio::-webkit-media-controls-panel {
+            background-color: #cbd5e1;
+        }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-200 min-h-screen overflow-hidden flex flex-col">
+<body class="bg-slate-900 text-slate-200 flex flex-col chat-bg">
 
     <!-- ========================================== -->
     <!-- TELA 1: LOGIN                              -->
     <!-- ========================================== -->
     <div id="view-login" class="flex-1 flex items-center justify-center p-4 overflow-y-auto view-hidden">
-        <div class="w-full max-w-sm bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-700">
-            <div class="flex justify-center mb-6">
+        <div class="w-full max-w-sm bg-slate-800 rounded-3xl shadow-2xl p-8 border border-slate-700 relative overflow-hidden">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="flex justify-center mb-6 relative z-10">
                 <div class="bg-slate-900 p-4 rounded-full border border-slate-700 shadow-inner">
-                    <i data-lucide="monitor" class="w-12 h-12 text-teal-500"></i>
+                    <i data-lucide="shield-check" class="w-12 h-12 text-teal-500"></i>
                 </div>
             </div>
-            <div>
-                <h2 class="text-xl font-bold text-center mb-4 text-slate-100">Login do Técnico</h2>
+            <div class="relative z-10">
+                <h2 class="text-2xl font-bold text-center mb-2 text-slate-100">Portal WG</h2>
+                <p class="text-center text-sm text-slate-400 mb-6">Acesso exclusivo para equipe</p>
+                
                 <form class="space-y-4" id="formLogin">
-                    <input class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500" id="email" placeholder="Email" required="" type="email"/>
-                    <input class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500" id="senha" placeholder="Senha" required="" type="password"/>
-                    <button class="w-full bg-teal-600 text-white font-semibold py-3 rounded-lg hover:bg-teal-500 transition-colors" type="submit" id="btnLogin">Entrar</button>
+                    <div>
+                        <div class="relative">
+                            <i data-lucide="mail" class="absolute left-3 top-3.5 text-slate-400 w-5 h-5"></i>
+                            <input class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900 text-white border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors" id="email" placeholder="E-mail corporativo" required="" type="email"/>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="relative">
+                            <i data-lucide="lock" class="absolute left-3 top-3.5 text-slate-400 w-5 h-5"></i>
+                            <input class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900 text-white border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors" id="senha" placeholder="Senha" required="" type="password"/>
+                        </div>
+                    </div>
+                    <button class="w-full bg-teal-600 text-white font-semibold py-3.5 rounded-xl hover:bg-teal-500 transition-all transform hover:-translate-y-0.5 shadow-lg shadow-teal-500/25 mt-2" type="submit" id="btnLogin">Entrar no Sistema</button>
                 </form>
             </div>
         </div>
     </div>
 
     <!-- ========================================== -->
-    <!-- TELA 2: PAINEL DO TÉCNICO                  -->
+    <!-- TELA 2: PORTAL DE BOAS VINDAS (DASHBOARD)  -->
     <!-- ========================================== -->
-    <div id="view-dashboard" class="flex-1 flex flex-col overflow-y-auto view-hidden">
-        <header class="bg-slate-800 shadow-lg shrink-0">
+    <div id="view-dashboard" class="flex-1 flex flex-col overflow-y-auto view-hidden relative">
+        <header class="bg-slate-800/80 backdrop-blur-md shadow-lg shrink-0 border-b border-slate-700 sticky top-0 z-20">
             <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-white">Painel do Técnico</h1>
-                <button id="btnLogout" class="text-slate-400 hover:text-red-400 transition-colors flex items-center gap-2 text-sm font-semibold">
-                    <i data-lucide="log-out" class="w-4 h-4"></i> Sair
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
+                        <i data-lucide="monitor" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-white">WG Informática</h1>
+                </div>
+                <button id="btnLogout" class="text-slate-400 hover:text-red-400 transition-colors flex items-center gap-2 text-sm font-semibold bg-slate-900/50 px-4 py-2 rounded-lg border border-slate-700/50">
+                    <i data-lucide="log-out" class="w-4 h-4 mobile-icon-only"></i> <span class="hidden sm:inline">Sair</span>
                 </button>
             </div>
         </header>
 
-        <main class="max-w-4xl w-full mx-auto py-6 sm:px-6 lg:px-8 flex-1">
-            <div class="flex justify-center flex-wrap gap-2 mb-6 p-2 bg-slate-800 rounded-xl">
-                 <button class="btn btn-dark flex-grow sm:flex-grow-0" onclick="alert('Página não implementada neste teste.')">📑 Relatório</button>
-                 <button class="btn btn-dark flex-grow sm:flex-grow-0" onclick="alert('Página não implementada neste teste.')">📂 Salvos</button>
-                 <button class="btn btn-dark flex-grow sm:flex-grow-0" onclick="alert('Página não implementada neste teste.')">📋 Rotina</button>
-                 <button class="btn btn-dark flex-grow sm:flex-grow-0" onclick="alert('Página não implementada neste teste.')">📅 Agenda</button>
-                 <button class="btn btn-purple flex-grow sm:flex-grow-0" onclick="alert('Página não implementada neste teste.')">🖥️ Gestão de PCs</button>
-                 
-                 <!-- Botão de Chat com Sinalizador Global -->
-                 <button class="btn btn-teal-secondary flex-grow sm:flex-grow-0 shadow-lg relative" onclick="appState.switchView('view-chat')">
-                    💬 Chat da Equipe
-                    <span id="globalChatBadge" class="hidden absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center animate-bounce shadow-md border-2 border-slate-800">0</span>
-                 </button>
-            </div>
-            
-            <div class="bg-slate-800 rounded-2xl shadow-2xl p-6 border border-slate-700">
-                <div id="nav-buttons" class="flex border-b border-slate-700 mb-4">
-                    <button class="flex-1 py-2 px-4 text-sm font-semibold text-slate-300 hover:bg-slate-700/50 rounded-t-lg nav-button-active" onclick="appState.mostrarTarefas('Aberto', this)">Abertos</button>
-                    <button class="flex-1 py-2 px-4 text-sm font-semibold text-slate-300 hover:bg-slate-700/50 rounded-t-lg" onclick="appState.mostrarTarefas('Em Andamento', this)">Em Andamento</button>
-                    <button class="flex-1 py-2 px-4 text-sm font-semibold text-slate-300 hover:bg-slate-700/50 rounded-t-lg" onclick="appState.mostrarTarefas('Resolvido', this)">Finalizados</button>
+        <main class="w-full max-w-lg mx-auto py-8 sm:py-12 px-4 flex-1 flex flex-col items-center justify-center relative z-10">
+            <div class="bg-slate-800 p-8 sm:p-10 rounded-3xl shadow-2xl border border-slate-700 text-center w-full relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-40 h-40 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-slate-700">
+                    <i data-lucide="user" class="w-10 h-10 text-teal-400"></i>
                 </div>
-                <div id="lista-tarefas" class="space-y-4">Carregando tarefas...</div>
+                
+                <h2 class="text-2xl sm:text-3xl font-bold text-white mb-2" id="welcomeMessage">Olá, Equipe!</h2>
+                <p class="text-slate-400 mb-8 sm:mb-10 text-sm sm:text-base">Acesse o canal de comunicação exclusiva em tempo real.</p>
+
+                <button class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 px-6 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-teal-500/20 flex items-center justify-center gap-3 text-lg relative group" onclick="appState.switchView('view-chat')">
+                    <i data-lucide="message-circle" class="w-6 h-6 group-hover:animate-pulse"></i>
+                    Chat da Equipe
+                    <span id="globalChatBadge" class="hidden absolute -top-3 -right-3 bg-red-500 text-white text-sm font-bold rounded-full h-8 w-8 flex items-center justify-center animate-bounce shadow-md border-4 border-slate-800">0</span>
+                </button>
             </div>
         </main>
     </div>
@@ -103,99 +126,99 @@
     <!-- ========================================== -->
     <!-- TELA 3: CHAT DA EQUIPE                     -->
     <!-- ========================================== -->
-    <div id="view-chat" class="flex-1 flex flex-col overflow-hidden view-hidden">
-        <header class="bg-slate-800 shadow-lg shrink-0 border-b border-slate-700">
-            <div class="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+    <div id="view-chat" class="flex-1 flex flex-col h-full overflow-hidden view-hidden relative">
+        <header class="bg-slate-800/90 backdrop-blur-md shadow-lg shrink-0 border-b border-slate-700 z-20">
+            <div class="max-w-7xl mx-auto py-3 px-4 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <button onclick="appState.switchView('view-dashboard')" class="p-2 hover:bg-slate-700 rounded-full transition-colors text-slate-300">
-                        <i data-lucide="arrow-left"></i>
+                        <i data-lucide="home" class="w-5 h-5"></i>
                     </button>
-                    <h1 class="text-xl font-bold text-white">Comunicação Interna</h1>
+                    <h1 class="text-lg sm:text-xl font-bold text-white">Chat WG</h1>
                 </div>
-                <div class="text-sm text-teal-400 font-semibold" id="currentUserDisplay">Carregando...</div>
+                <div class="text-xs sm:text-sm px-3 py-1 bg-slate-900 rounded-full border border-slate-700 text-teal-400 font-medium flex items-center gap-2" id="currentUserDisplay">
+                    <div class="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></div>
+                    Conectado
+                </div>
             </div>
         </header>
 
-        <main class="flex-1 flex overflow-hidden max-w-7xl w-full mx-auto sm:py-4 sm:px-4">
-            <div class="flex w-full bg-slate-800 sm:rounded-2xl shadow-2xl border border-slate-700 overflow-hidden">
+        <main class="flex-1 flex overflow-hidden w-full max-w-7xl mx-auto relative">
+            <div class="flex w-full h-full bg-slate-800/90 backdrop-blur-sm sm:rounded-b-3xl shadow-2xl border-x border-b border-slate-700 overflow-hidden relative">
                 
                 <!-- Barra Lateral (Contatos) -->
-                <div id="sidebar" class="w-full sm:w-80 md:w-96 flex flex-col border-r border-slate-700 bg-slate-800 transition-all duration-300">
-                    <div class="p-4 border-b border-slate-700 bg-slate-800/50">
+                <div id="sidebar" class="w-full sm:w-80 md:w-96 flex flex-col border-r border-slate-700 bg-slate-900/50 absolute sm:relative h-full z-10 transition-transform duration-300">
+                    <div class="p-3 sm:p-4 border-b border-slate-700 bg-slate-800/80">
                         <div class="relative">
                             <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
-                            <input type="text" id="searchInput" placeholder="Buscar técnico..." 
-                                   class="w-full bg-slate-900 text-white pl-10 pr-4 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500">
+                            <input type="text" id="searchInput" placeholder="Buscar parceiro..." 
+                                   class="w-full bg-slate-900 text-white pl-10 pr-4 py-2 rounded-xl border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors text-sm">
                         </div>
                     </div>
                     <div class="flex-1 overflow-y-auto" id="techList">
-                        <div class="p-8 text-center text-slate-500 text-sm">Carregando equipe...</div>
+                        <div class="p-8 text-center text-slate-500 text-sm flex flex-col items-center">
+                            <i data-lucide="loader" class="w-8 h-8 animate-spin mb-2"></i>
+                            Carregando equipe...
+                        </div>
                     </div>
                 </div>
 
                 <!-- Área do Chat -->
-                <div id="chatArea" class="hidden sm:flex flex-1 flex-col relative chat-bg">
-                    <div class="bg-slate-800 p-3 flex items-center gap-3 border-b border-slate-700 z-10">
-                        <button id="backToListBtn" class="sm:hidden p-2 text-slate-300 hover:bg-slate-700 rounded-full">
-                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                <div id="chatArea" class="w-full flex-1 flex flex-col relative bg-slate-900/30 mobile-hide h-full z-0 transition-opacity">
+                    <!-- Cabeçalho do Chat Ativo -->
+                    <div class="bg-slate-800/95 p-3 flex items-center gap-3 border-b border-slate-700 z-10 backdrop-blur-md shadow-sm shrink-0">
+                        <button id="backToListBtn" class="sm:hidden p-2 text-slate-300 hover:bg-slate-700 rounded-full transition-colors">
+                            <i data-lucide="chevron-left" class="w-6 h-6"></i>
                         </button>
-                        <div class="w-10 h-10 bg-teal-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-inner" id="activeTechAvatar">?</div>
-                        <div>
-                            <h2 class="font-semibold text-white" id="activeTechName">Selecione um técnico</h2>
-                            <p class="text-xs text-slate-400" id="activeTechRole">Aguardando...</p>
+                        <div class="relative">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-teal-500 to-teal-700 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-inner border border-teal-400/20" id="activeTechAvatar">?</div>
+                            <div id="activeTechStatusDot" class="hidden absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-slate-800 rounded-full"></div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h2 class="font-semibold text-white tracking-wide truncate" id="activeTechName">Selecione um contato</h2>
+                            <p class="text-xs text-slate-400 truncate" id="activeTechRole">Aguardando...</p>
                         </div>
                     </div>
 
-                    <div class="flex-1 overflow-y-auto p-4 space-y-4 z-10" id="messagesContainer">
+                    <!-- Mensagens -->
+                    <div class="flex-1 overflow-y-auto p-4 space-y-3 z-10 scroll-smooth" id="messagesContainer">
                         <div class="flex h-full items-center justify-center text-center">
                             <div>
-                                <div class="bg-slate-800 p-4 rounded-full inline-block mb-4">
+                                <div class="bg-slate-800 p-5 rounded-full inline-block mb-4 border border-slate-700 shadow-xl">
                                     <i data-lucide="message-square-text" class="w-12 h-12 text-teal-500"></i>
                                 </div>
-                                <h3 class="text-lg font-medium text-white mb-2">Comunicação Segura WG</h3>
+                                <h3 class="text-xl font-medium text-white mb-2">Comunicação Segura</h3>
                                 <p class="text-slate-400 text-sm max-w-xs mx-auto">
-                                    Selecione um técnico na lista lateral para iniciar uma conversa privada em tempo real.
+                                    Selecione um membro da equipe para enviar mensagens.
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-slate-800 p-3 flex items-center gap-2 border-t border-slate-700 z-10">
-                        <form id="messageForm" class="flex-1 flex gap-2 w-full">
-                            <button type="button" id="btnImproveMsg" onclick="appState.melhorarMensagem()" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50 border border-purple-500 shadow-md shadow-purple-500/20" title="Melhorar mensagem com IA">
-                                ✨
+                    <!-- Input Area -->
+                    <div class="bg-slate-800/95 p-2 sm:p-4 border-t border-slate-700 z-10 backdrop-blur-md shrink-0">
+                        <form id="messageForm" class="flex gap-2 w-full max-w-4xl mx-auto relative items-end">
+                            <button type="button" id="btnImproveMsg" onclick="appState.melhorarMensagem()" class="bg-slate-700 hover:bg-purple-600/90 text-purple-400 hover:text-white h-[44px] w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 border border-slate-600 shadow-md shrink-0" title="Melhorar com IA">
+                                <i data-lucide="sparkles" class="w-5 h-5"></i>
                             </button>
-                            <input type="text" id="messageInput" disabled
-                                placeholder="Digite sua mensagem..." 
-                                class="flex-1 bg-slate-900 text-white px-4 py-3 rounded-lg border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50">
+                            
+                            <!-- Botão de Áudio -->
+                            <button type="button" id="btnRecordAudio" onclick="appState.toggleRecording()" class="bg-slate-700 hover:bg-red-600/90 text-slate-300 hover:text-white h-[44px] w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 border border-slate-600 shadow-md shrink-0" title="Gravar Áudio (Máx 15s)">
+                                <i data-lucide="mic" class="w-5 h-5"></i>
+                            </button>
+                            
+                            <textarea id="messageInput" disabled rows="1"
+                                placeholder="Digite a mensagem..." 
+                                class="flex-1 bg-slate-900 text-white px-4 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50 shadow-inner resize-none min-h-[44px] max-h-24 overflow-y-auto leading-relaxed"></textarea>
+                                
                             <button type="submit" id="sendBtn" disabled
-                                class="bg-teal-600 hover:bg-teal-500 text-white p-3 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
-                                <i data-lucide="send" class="w-5 h-5"></i>
+                                class="bg-teal-600 hover:bg-teal-500 text-white h-[44px] w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shrink-0">
+                                <i data-lucide="send" class="w-5 h-5 ml-1"></i>
                             </button>
                         </form>
                     </div>
                 </div>
             </div>
         </main>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- MODAL DE IA (GEMINI)                       -->
-    <!-- ========================================== -->
-    <div id="aiModal" class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center hidden backdrop-blur-sm">
-        <div class="bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-700 p-6 m-4 flex flex-col max-h-[85vh]">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-teal-400 flex items-center gap-2">
-                    ✨ Assistente IA (Gemini)
-                </h3>
-                <button onclick="appState.closeAiModal()" class="text-slate-400 hover:text-white transition-colors">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-            <div id="aiModalContent" class="text-slate-200 overflow-y-auto whitespace-pre-wrap flex-1 text-sm bg-slate-900/50 p-5 rounded-xl border border-slate-700/50 leading-relaxed">
-                Carregando...
-            </div>
-        </div>
     </div>
 
     <!-- ========================================== -->
@@ -208,7 +231,6 @@
 
         lucide.createIcons();
 
-        // --- Firebase Config ---
         const firebaseConfig = {
           apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
           authDomain: "sistema-chamados-99e49.firebaseapp.com",
@@ -220,78 +242,197 @@
         const db = getFirestore(app);
 
         // --- Configuração da IA Gemini ---
-        const apiKey = ""; // A chave é injetada no momento da execução
-        const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+        const apiKey = ""; 
         
-        async function fetchWithRetry(url, options, maxRetries = 5) {
-            let retries = 0;
-            const delays = [1000, 2000, 4000, 8000, 16000];
-            while (retries < maxRetries) {
-                try {
-                    const response = await fetch(url, options);
-                    if (!response.ok) throw new Error(`HTTP erro! status: ${response.status}`);
-                    return await response.json();
-                } catch (error) {
-                    if (retries === maxRetries - 1) throw error;
-                    await delay(delays[retries]);
-                    retries++;
-                }
-            }
-        }
-
         async function callGeminiAPI(prompt) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const payload = { contents: [{ parts: [{ text: prompt }] }] };
             try {
-                const data = await fetchWithRetry(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                return data.candidates?.[0]?.content?.parts?.[0]?.text || "Não foi possível gerar uma resposta.";
+                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "Erro ao gerar.";
             } catch (error) {
-                return "Erro ao conectar com a inteligência artificial. Verifique a conexão.";
+                return "Erro de conexão.";
             }
         }
 
-        // Som de Notificação
         const playNotificationSound = () => {
             try {
-                // Audio curto e suave (ding)
                 const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                audio.play().catch(e => console.log("Áudio bloqueado pelo navegador até haver interação"));
+                audio.play().catch(() => {});
             } catch (e) {}
         };
+
+        // Auto-ajuste do tamanho do textarea
+        const msgInput = document.getElementById('messageInput');
+        msgInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
 
         // --- Estado Global ---
         window.appState = {
             currentUser: null,
             selectedTechId: null,
             allMessages: [],
-            unreadCounts: {}, // Armazena mensagens não lidas { techId: count }
-            unsubChamados: null,
-            unsubAgendamentos: null,
+            unreadCounts: {}, 
             unsubMessages: null,
+            usersData: {}, 
+            isTypingTimer: null,
             
-            // Navegação entre as telas
+            // Variáveis de Gravação de Áudio
+            isRecording: false,
+            mediaRecorder: null,
+            audioChunks: [],
+            recordingTimer: null,
+            recordingInterval: null,
+            
             switchView: (viewId) => {
-                document.getElementById('view-login').classList.add('view-hidden');
-                document.getElementById('view-dashboard').classList.add('view-hidden');
-                document.getElementById('view-chat').classList.add('view-hidden');
-                
+                document.querySelectorAll('div[id^="view-"]').forEach(el => el.classList.add('view-hidden'));
                 document.getElementById(viewId).classList.remove('view-hidden');
-                
-                if(viewId === 'view-dashboard') appState.mostrarTarefas('Aberto', document.querySelector('.nav-button-active'));
-                if(viewId === 'view-chat') appState.initChat(); // Apenas renderiza a lista de técnicos
+                if(viewId === 'view-chat') appState.initChat();
             },
 
-            // ===============================================
-            // OUVINTE GLOBAL DE MENSAGENS (Ativo mesmo fora do chat)
-            // ===============================================
-            startGlobalMessageListener: () => {
-                if (appState.unsubMessages) return; // Evita duplicação
+            // --- Lógica de Presença ---
+            updatePresence: async (isOnline) => {
+                if (!appState.currentUser) return;
+                try {
+                    await updateDoc(doc(db, "usuarios", appState.currentUser.uid), {
+                        isOnline: isOnline,
+                        lastActive: Date.now()
+                    });
+                } catch(e) { console.log("Sem permissão para atualizar presença."); }
+            },
 
-                // Solicita permissão de notificação no navegador logo após o login
+            setTypingStatus: async (isTyping) => {
+                if (!appState.currentUser) return;
+                try {
+                    await updateDoc(doc(db, "usuarios", appState.currentUser.uid), {
+                        typingTo: isTyping ? appState.selectedTechId : null
+                    });
+                } catch(e) {}
+            },
+
+            handleTyping: () => {
+                if(!appState.selectedTechId) return;
+                appState.setTypingStatus(true);
+                clearTimeout(appState.isTypingTimer);
+                appState.isTypingTimer = setTimeout(() => {
+                    appState.setTypingStatus(false);
+                }, 2000);
+            },
+
+            // --- Gravação de Áudio ---
+            toggleRecording: async () => {
+                if (!appState.selectedTechId) {
+                    alert("Selecione um contato primeiro.");
+                    return;
+                }
+                if (appState.isRecording) {
+                    appState.stopRecording();
+                } else {
+                    appState.startRecording();
+                }
+            },
+
+            startRecording: async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    appState.mediaRecorder = new MediaRecorder(stream);
+                    appState.audioChunks = [];
+                    appState.isRecording = true;
+
+                    const btn = document.getElementById('btnRecordAudio');
+                    btn.innerHTML = '<i data-lucide="square" class="w-5 h-5 animate-pulse text-red-500"></i>';
+                    btn.classList.add('border-red-500', 'bg-red-500/20');
+                    lucide.createIcons();
+
+                    const input = document.getElementById('messageInput');
+                    input.disabled = true;
+                    input.value = '';
+
+                    let secondsLeft = 15;
+                    input.placeholder = `Gravando áudio... 00:${secondsLeft}`;
+                    appState.recordingInterval = setInterval(() => {
+                        secondsLeft--;
+                        if(secondsLeft >= 0) {
+                            input.placeholder = `Gravando áudio... 00:${secondsLeft.toString().padStart(2, '0')}`;
+                        }
+                    }, 1000);
+
+                    appState.mediaRecorder.ondataavailable = e => {
+                        if (e.data.size > 0) appState.audioChunks.push(e.data);
+                    };
+
+                    appState.mediaRecorder.onstop = () => {
+                        clearInterval(appState.recordingInterval);
+                        
+                        if (appState.audioChunks.length === 0) return;
+
+                        const mimeType = appState.mediaRecorder.mimeType || 'audio/webm';
+                        const audioBlob = new Blob(appState.audioChunks, { type: mimeType });
+                        
+                        const reader = new FileReader();
+                        reader.readAsDataURL(audioBlob);
+                        reader.onloadend = async () => {
+                            const base64Audio = reader.result;
+                            try {
+                                await addDoc(collection(db, 'chat_equipe'), {
+                                    text: "🎵 Mensagem de Áudio", 
+                                    audioData: base64Audio,
+                                    senderId: appState.currentUser.uid,
+                                    receiverId: appState.selectedTechId,
+                                    participants: [appState.currentUser.uid, appState.selectedTechId],
+                                    timestamp: Date.now(),
+                                    read: false,
+                                    // DATA DE EXPIRAÇÃO PARA O FIREBASE APAGAR (24 horas depois)
+                                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) 
+                                });
+                            } catch (e) {
+                                console.error(e);
+                                alert("Falha ao enviar áudio. Limite de tamanho excedido ou erro de conexão.");
+                            }
+                        };
+                    };
+
+                    appState.mediaRecorder.start();
+
+                    appState.recordingTimer = setTimeout(() => {
+                        if (appState.isRecording) appState.stopRecording();
+                    }, 15000);
+
+                } catch (err) {
+                    console.error("Erro microfone:", err);
+                    alert("Permissão de microfone negada ou recurso não suportado neste dispositivo.");
+                }
+            },
+
+            stopRecording: () => {
+                if (!appState.isRecording) return;
+                appState.isRecording = false;
+                
+                clearTimeout(appState.recordingTimer);
+                clearInterval(appState.recordingInterval);
+                
+                if (appState.mediaRecorder && appState.mediaRecorder.state !== 'inactive') {
+                    appState.mediaRecorder.stop();
+                    appState.mediaRecorder.stream.getTracks().forEach(track => track.stop()); 
+                }
+
+                const btn = document.getElementById('btnRecordAudio');
+                btn.innerHTML = '<i data-lucide="mic" class="w-5 h-5"></i>';
+                btn.classList.remove('border-red-500', 'bg-red-500/20');
+                lucide.createIcons();
+
+                const input = document.getElementById('messageInput');
+                input.disabled = false;
+                input.placeholder = "Digite a mensagem...";
+            },
+
+            // --- Ouvinte de Mensagens (Com Filtro de 24h na Tela) ---
+            startGlobalMessageListener: () => {
+                if (appState.unsubMessages) return;
+
                 if ("Notification" in window && Notification.permission === "default") {
                     Notification.requestPermission();
                 }
@@ -301,9 +442,18 @@
 
                 appState.unsubMessages = onSnapshot(qMsg, (snapshot) => {
                     appState.allMessages = [];
-                    snapshot.forEach(doc => appState.allMessages.push({ id: doc.id, ...doc.data() }));
+                    // Calcula a data de 24 horas atrás em milissegundos
+                    const timeLimit = Date.now() - (24 * 60 * 60 * 1000); 
+
+                    snapshot.forEach(doc => {
+                        const msgData = doc.data();
+                        
+                        // FILTRO NA TELA: Só mostra a mensagem se ela tiver sido enviada nas últimas 24h
+                        if (msgData.timestamp >= timeLimit) {
+                            appState.allMessages.push({ id: doc.id, ...msgData });
+                        }
+                    });
                     
-                    // CORREÇÃO: Normaliza os timestamps (evita bug de mensagens não aparecerem se houver formatos de data antigos)
                     const getTime = (ts) => (ts && ts.toDate) ? ts.toDate().getTime() : (ts || 0);
                     appState.allMessages.sort((a, b) => getTime(a.timestamp) - getTime(b.timestamp));
 
@@ -311,24 +461,17 @@
                         snapshot.docChanges().forEach(change => {
                             if (change.type === "added") {
                                 const msg = change.doc.data();
-                                
-                                // Nova mensagem recebida (não enviada por mim)
-                                if (msg.senderId !== appState.currentUser.uid) {
-                                    
-                                    // Verifica se o chat dessa pessoa já está aberto e visível
+                                // Só notifica se a mensagem for recente (evita notificações de msg antigas ao logar)
+                                if (msg.senderId !== appState.currentUser.uid && msg.timestamp >= timeLimit) {
                                     const isViewingChat = !document.getElementById('view-chat').classList.contains('view-hidden');
                                     const isChattingWithSender = appState.selectedTechId === msg.senderId;
+                                    const isMobileHidden = document.getElementById('chatArea').classList.contains('mobile-hide');
                                     
-                                    if (!(isViewingChat && isChattingWithSender)) {
-                                        // 1. Toca som
+                                    if (!(isViewingChat && isChattingWithSender && !isMobileHidden)) {
                                         playNotificationSound();
-                                        
-                                        // 2. Desktop Push Notification
                                         if ("Notification" in window && Notification.permission === "granted") {
-                                            new Notification("WG Suporte: Nova Mensagem", { body: msg.text });
+                                            new Notification("Nova Mensagem WG", { body: msg.text });
                                         }
-
-                                        // 3. Atualiza contadores de não lidas
                                         appState.unreadCounts[msg.senderId] = (appState.unreadCounts[msg.senderId] || 0) + 1;
                                         appState.updateBadges();
                                     }
@@ -338,28 +481,20 @@
                     }
                     isFirstLoad = false;
 
-                    // Se a aba do chat estiver aberta com alguém selecionado, re-renderiza
                     if (appState.selectedTechId) {
                         appState.renderMessages();
                     }
                 });
             },
 
-            // Atualiza os emblemas visuais (bolinhas vermelhas)
             updateBadges: () => {
-                // Badge Global no Dashboard
                 const totalUnread = Object.values(appState.unreadCounts).reduce((a, b) => a + b, 0);
                 const globalBadge = document.getElementById('globalChatBadge');
                 if (globalBadge) {
-                    if (totalUnread > 0) {
-                        globalBadge.innerText = totalUnread;
-                        globalBadge.classList.remove('hidden');
-                    } else {
-                        globalBadge.classList.add('hidden');
-                    }
+                    globalBadge.innerText = totalUnread > 99 ? '99+' : totalUnread;
+                    totalUnread > 0 ? globalBadge.classList.remove('hidden') : globalBadge.classList.add('hidden');
                 }
 
-                // Badges na lista de técnicos (se a tela estiver carregada)
                 Object.entries(appState.unreadCounts).forEach(([techId, count]) => {
                     const techDiv = document.getElementById(`tech-item-${techId}`);
                     if (techDiv) {
@@ -367,7 +502,7 @@
                         if (count > 0) {
                             if (!badge) {
                                 badge = document.createElement('div');
-                                badge.className = 'unread-badge w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white ml-auto shadow-lg animate-pulse';
+                                badge.className = 'unread-badge w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white ml-auto shadow-md';
                                 techDiv.appendChild(badge);
                             }
                             badge.innerText = count;
@@ -378,205 +513,133 @@
                 });
             },
 
-            // Marca conversa como lida
-            markAsRead: (techId) => {
-                if (appState.unreadCounts[techId]) {
-                    appState.unreadCounts[techId] = 0;
-                    appState.updateBadges();
-                }
-            },
-
-            // --- Lógica do Dashboard ---
-            mostrarTarefas: (statusFiltro, el) => {
-                if(el) {
-                    document.querySelectorAll('#nav-buttons button').forEach(btn => btn.classList.remove('nav-button-active'));
-                    el.classList.add('nav-button-active');
-                }
-                const lista = document.getElementById("lista-tarefas");
-                lista.innerHTML = "<p class='text-center text-slate-400'>Buscando no banco de dados...</p>";
-
-                let statusAgendamento = statusFiltro;
-                if (statusFiltro === 'Em Andamento') statusAgendamento = 'Em Atendimento';
-                else if (statusFiltro === 'Resolvido') statusAgendamento = 'Finalizado';
-
-                let chamadosHtml = ''; let agendamentosHtml = '';
-                let chamadosReady = false; let agendamentosReady = false;
-
-                const renderAll = () => {
-                    if (!chamadosReady || !agendamentosReady) return;
-                    if (chamadosHtml === '' && agendamentosHtml === '') {
-                        lista.innerHTML = `<div class='text-center p-8 bg-slate-700/50 rounded-lg'><p class='text-slate-400'>Nenhuma tarefa com status "${statusFiltro}" encontrada.</p></div>`;
-                    } else {
-                        lista.innerHTML = chamadosHtml + agendamentosHtml;
-                    }
-                };
-
-                // Busca Chamados
-                if(appState.unsubChamados) appState.unsubChamados();
-                const qChamados = query(collection(db, "chamados"), where("status", "==", statusFiltro));
-                appState.unsubChamados = onSnapshot(qChamados, (snapshot) => {
-                    chamadosHtml = '';
-                    if (!snapshot.empty) {
-                        chamadosHtml += `<h2 class="text-xl font-semibold text-teal-300 mb-3 border-b border-slate-600 pb-2">Chamados</h2>`;
-                        snapshot.forEach(d => {
-                            const c = d.data();
-                            const data = c.criadoEm ? new Date(c.criadoEm.toDate ? c.criadoEm.toDate() : c.criadoEm).toLocaleDateString("pt-BR") : "N/A";
-                            const msgSegura = (c.mensagem || 'Sem descrição').replace(/['"\n\r]/g, ' ');
-                            chamadosHtml += `
-                                <div class="bg-slate-700 border-l-4 border-teal-500 rounded-r-lg p-4 mb-4 shadow-sm">
-                                    <div class="flex justify-between items-start">
-                                        <p class="font-bold text-lg text-white">${c.empresa || c.nome} <span class="font-normal text-sm text-slate-400">- ${c.setor}</span></p>
-                                        <span class="text-xs text-slate-400">${data}</span>
-                                    </div>
-                                    <p class="mt-2 text-slate-300">${c.mensagem || 'Sem descrição'}</p>
-                                    <div class="mt-4 flex flex-wrap gap-2">
-                                        <button class="btn btn-purple text-xs shadow-lg shadow-purple-500/20" onclick="appState.sugerirSolucao('${msgSegura}')">✨ Sugerir Solução</button>
-                                        <button class="btn btn-teal-secondary text-xs" onclick="alert('Chat com cliente abre em outra janela.')">💬 Chat Cliente</button>
-                                        <button class="btn btn-blue text-xs" onclick="appState.mudarStatus('chamados', '${d.id}', 'Em Andamento')">▶️ Em Andamento</button>
-                                        <button class="btn btn-green text-xs" onclick="appState.mudarStatus('chamados', '${d.id}', 'Resolvido')">✅ Finalizar</button>
-                                    </div>
-                                </div>`;
-                        });
-                    }
-                    chamadosReady = true; renderAll();
-                });
-
-                // Busca Agendamentos
-                if(appState.unsubAgendamentos) appState.unsubAgendamentos();
-                const qAgendamentos = query(collection(db, "agendamentos"), where("status", "==", statusAgendamento));
-                appState.unsubAgendamentos = onSnapshot(qAgendamentos, (snapshot) => {
-                    agendamentosHtml = '';
-                    if (!snapshot.empty) {
-                        agendamentosHtml += `<h2 class="text-xl font-semibold text-teal-300 mt-6 mb-3 border-b border-slate-600 pb-2">Agendamentos</h2>`;
-                        snapshot.forEach(d => {
-                            const a = d.data();
-                            const dataAge = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
-                            agendamentosHtml += `
-                                <div class="bg-slate-700 border-l-4 border-indigo-500 rounded-r-lg p-4 mb-4 shadow-sm">
-                                    <div class="flex justify-between items-start">
-                                        <p class="font-bold text-lg text-white">${a.cliente} <span class="font-normal text-sm text-slate-400">- ${a.servico}</span></p>
-                                        <span class="text-xs text-slate-400">Data: ${dataAge}</span>
-                                    </div>
-                                    <p class="mt-2 text-slate-300">${a.problema}</p>
-                                    <div class="mt-4 flex flex-wrap gap-2">
-                                        <button class="btn btn-blue text-xs" onclick="appState.mudarStatus('agendamentos', '${d.id}', 'Em Atendimento')">▶️ Em Atendimento</button>
-                                        <button class="btn btn-green text-xs" onclick="appState.mudarStatus('agendamentos', '${d.id}', 'Finalizado')">✅ Finalizar</button>
-                                    </div>
-                                </div>`;
-                        });
-                    }
-                    agendamentosReady = true; renderAll();
-                });
-            },
-
-            mudarStatus: async (colecao, id, novoStatus) => {
-                try {
-                    await updateDoc(doc(db, colecao, id), { status: novoStatus });
-                    alert(`Status atualizado para: ${novoStatus}`);
-                } catch(e) {
-                    alert("Erro ao atualizar.");
-                }
-            },
-
             // --- IA Gemini ---
-            showAiModal: (htmlContent) => {
-                document.getElementById('aiModalContent').innerHTML = htmlContent;
-                document.getElementById('aiModal').classList.remove('hidden');
-                lucide.createIcons();
-            },
-            closeAiModal: () => {
-                document.getElementById('aiModal').classList.add('hidden');
-            },
-            sugerirSolucao: async (problemaReportado) => {
-                appState.showAiModal('<div class="flex flex-col items-center justify-center py-10"><i data-lucide="loader" class="w-10 h-10 text-purple-500 animate-spin mb-4"></i><p class="text-slate-400 animate-pulse">A IA está diagnosticando o problema...</p></div>');
-                
-                const prompt = `Atue como um Especialista Sênior de Suporte de TI. Um usuário relatou o seguinte problema em um chamado de assistência técnica: "${problemaReportado}". 
-                Responda em português com:
-                1. A possível causa raiz do problema de forma resumida.
-                2. Uma lista de 3 passos práticos, técnicos e diretos para o técnico de suporte investigar e resolver o caso. Use formatação limpa e objetiva.`;
-                
-                const resposta = await callGeminiAPI(prompt);
-                appState.showAiModal(resposta);
-            },
             melhorarMensagem: async () => {
                 const input = document.getElementById('messageInput');
                 const textoOriginal = input.value.trim();
                 
                 if (!textoOriginal) {
-                    alert('Digite algum texto no campo antes de usar a IA.');
+                    alert('Digite algo para a IA melhorar.');
                     return;
                 }
 
                 const btn = document.getElementById('btnImproveMsg');
-                const conteudoOriginalBtn = btn.innerHTML;
+                const iconeOriginal = btn.innerHTML;
                 
-                btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i>`;
+                btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin text-purple-300"></i>`;
                 btn.disabled = true;
 
-                const prompt = `Reescreva a seguinte mensagem de suporte técnico corporativo. Torne-a muito educada, profissional e clara, mas mantenha-a curta para o contexto de um chat. Retorne APENAS a mensagem reescrita final, sem aspas, sem formatação markdown extra e sem comentários adicionais: "${textoOriginal}"`;
-                
+                const prompt = `Reescreva esta mensagem de suporte técnico corporativo de forma profissional, educada e direta. Retorne APENAS o texto: "${textoOriginal}"`;
                 const resposta = await callGeminiAPI(prompt);
-                input.value = resposta.trim().replace(/^"|"$/g, '');
                 
-                btn.innerHTML = conteudoOriginalBtn;
+                if (!resposta.includes('Erro')) {
+                    input.value = resposta.trim().replace(/^"|"$/g, '');
+                    input.style.height = 'auto';
+                    input.style.height = (input.scrollHeight) + 'px';
+                }
+                
+                btn.innerHTML = iconeOriginal;
                 btn.disabled = false;
                 lucide.createIcons();
             },
 
-            // --- Lógica do Chat (Apenas Listagem) ---
+            // --- Lógica do Chat ---
             initChat: () => {
                 const techListEl = document.getElementById('techList');
-                // Busca EXCLUSIVAMENTE técnicos (exclui admins se eles estiverem com outra role)
-                const q = query(collection(db, "usuarios"), where("tipo", "==", "tecnico"));
+                const q = query(collection(db, "usuarios"), where("tipo", "in", ["tecnico", "admin", "administrador"]));
                 
                 onSnapshot(q, (snapshot) => {
                     techListEl.innerHTML = '';
-                    if (snapshot.empty) {
-                        techListEl.innerHTML = '<div class="p-4 text-center text-slate-500">Nenhum técnico encontrado.</div>';
-                        return;
-                    }
-                    snapshot.forEach(doc => {
-                        const tech = doc.data();
-                        const techId = doc.id;
+                    if (snapshot.empty) return;
+                    
+                    snapshot.forEach(docSnap => {
+                        const tech = docSnap.data();
+                        const techId = docSnap.id;
+                        appState.usersData[techId] = tech; 
+
                         if (techId === appState.currentUser.uid) return;
 
                         const nome = tech.nome || tech.email.split('@')[0];
+                        const roleLabel = (tech.tipo === 'admin' || tech.tipo === 'administrador') ? 'Admin WG' : 'Técnico WG';
+                        const isOnline = tech.isOnline;
+
                         const div = document.createElement('div');
                         div.id = `tech-item-${techId}`;
-                        div.className = "tech-item flex items-center gap-3 p-4 cursor-pointer hover:bg-slate-700/50 transition border-b border-slate-700/50";
+                        div.className = "tech-item flex items-center gap-3 p-3 sm:p-4 cursor-pointer hover:bg-slate-800 transition-colors border-b border-slate-700/30 group";
                         div.onclick = () => appState.selectTechnician(techId, nome);
+                        
                         div.innerHTML = `
-                            <div class="w-12 h-12 bg-teal-700 text-white rounded-full flex items-center justify-center font-bold text-lg shrink-0">${nome.charAt(0).toUpperCase()}</div>
+                            <div class="relative">
+                                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-slate-700 text-teal-300 rounded-full flex items-center justify-center font-bold text-base sm:text-lg shrink-0 border border-slate-600">${nome.charAt(0).toUpperCase()}</div>
+                                ${isOnline ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-slate-900 rounded-full"></div>' : ''}
+                            </div>
                             <div class="flex-1 min-w-0">
-                                <h3 class="text-slate-200 font-medium truncate tech-name">${nome}</h3>
-                                <p class="text-xs text-slate-400 capitalize">${tech.tipo || 'Técnico'}</p>
+                                <h3 class="text-slate-200 font-medium truncate tech-name text-sm sm:text-base">${nome}</h3>
+                                <p class="text-[11px] sm:text-xs text-slate-500 tech-role ${tech.typingTo === appState.currentUser.uid ? 'text-teal-400 font-medium italic' : ''}">
+                                    ${tech.typingTo === appState.currentUser.uid ? 'Digitando...' : roleLabel}
+                                </p>
                             </div>`;
                         techListEl.appendChild(div);
                     });
                     
-                    // Atualiza as bolinhas vermelhas ao carregar a lista
                     appState.updateBadges();
+                    appState.updateActiveHeader();
                 });
+            },
+
+            updateActiveHeader: () => {
+                if (!appState.selectedTechId) return;
+                const tech = appState.usersData[appState.selectedTechId];
+                if (!tech) return;
+
+                const roleEl = document.getElementById('activeTechRole');
+                const dotEl = document.getElementById('activeTechStatusDot');
+
+                if (tech.typingTo === appState.currentUser.uid) {
+                    roleEl.innerHTML = '<span class="text-teal-400 font-medium italic">Digitando...</span>';
+                    dotEl.classList.remove('hidden');
+                } else if (tech.isOnline) {
+                    roleEl.innerHTML = '<span class="text-teal-400">Online</span>';
+                    dotEl.classList.remove('hidden');
+                } else {
+                    dotEl.classList.add('hidden');
+                    if (tech.lastActive) {
+                        const timeStr = new Date(tech.lastActive).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+                        roleEl.innerHTML = `Visto por último às ${timeStr}`;
+                    } else {
+                        roleEl.innerHTML = 'Offline';
+                    }
+                }
             },
 
             selectTechnician: (techId, nome) => {
                 appState.selectedTechId = techId;
                 document.getElementById('activeTechName').innerText = nome;
                 document.getElementById('activeTechAvatar').innerText = nome.charAt(0).toUpperCase();
-                document.getElementById('activeTechRole').innerText = "Técnico WG";
                 
-                // Remove a bolinha vermelha e zera notificações deste usuário
-                appState.markAsRead(techId);
+                appState.updateActiveHeader();
+                
+                if (appState.unreadCounts[techId]) {
+                    appState.unreadCounts[techId] = 0;
+                    appState.updateBadges();
+                }
 
                 const input = document.getElementById('messageInput');
                 const btn = document.getElementById('sendBtn');
-                input.disabled = false; btn.disabled = false; input.focus();
+                const btnMic = document.getElementById('btnRecordAudio');
+                
+                input.disabled = false; 
+                btn.disabled = false;
+                btnMic.disabled = false;
 
+                const sidebar = document.getElementById('sidebar');
+                const chatArea = document.getElementById('chatArea');
+                
                 if (window.innerWidth < 640) {
-                    document.getElementById('sidebar').classList.add('hidden');
-                    document.getElementById('chatArea').classList.remove('hidden');
-                    document.getElementById('chatArea').classList.add('flex');
+                    sidebar.classList.add('mobile-hide');
+                    chatArea.classList.remove('mobile-hide');
                 }
+                
                 appState.renderMessages();
             },
 
@@ -585,57 +648,115 @@
                 const msgs = appState.allMessages.filter(msg => msg.participants.includes(appState.selectedTechId));
                 
                 if (msgs.length === 0) {
-                    container.innerHTML = `<div class="flex justify-center mt-4 mb-4"><div class="bg-slate-800 text-slate-400 text-xs px-4 py-2 rounded-lg">Conversa protegida.</div></div>`;
+                    container.innerHTML = `
+                        <div class="flex justify-center mt-6">
+                            <div class="bg-slate-800/80 border border-slate-700 text-slate-400 text-xs px-6 py-2 rounded-full shadow-sm flex items-center gap-2 backdrop-blur-sm">
+                                <i data-lucide="lock" class="w-3 h-3"></i> Conversa protegida de ponta a ponta
+                            </div>
+                        </div>`;
+                    lucide.createIcons();
                     return;
                 }
 
                 container.innerHTML = '';
-                msgs.forEach(msg => {
+                msgs.forEach((msg, index) => {
                     const isMine = msg.senderId === appState.currentUser.uid;
-                    // Normaliza a data para exibição correta
+                    
+                    if (!isMine && !msg.read) {
+                        updateDoc(doc(db, 'chat_equipe', msg.id), { read: true }).catch(()=>{});
+                    }
+
                     const dataAtual = msg.timestamp && msg.timestamp.toDate ? msg.timestamp.toDate() : new Date(msg.timestamp);
                     const time = isNaN(dataAtual) ? "" : dataAtual.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
                     
+                    const prevMsg = index > 0 ? msgs[index - 1] : null;
+                    const sameSender = prevMsg && prevMsg.senderId === msg.senderId;
+                    const marginClass = sameSender ? 'mb-1' : 'mb-4 mt-2';
+
                     const wrapper = document.createElement('div');
-                    wrapper.className = `flex ${isMine ? 'justify-end' : 'justify-start'} mb-3`;
-                    const bubbleClass = isMine ? 'bg-teal-600 text-white rounded-tr-none' : 'bg-slate-700 text-slate-200 rounded-tl-none';
+                    wrapper.className = `flex ${isMine ? 'justify-end' : 'justify-start'} ${marginClass}`;
+                    
+                    const bubbleClass = isMine 
+                        ? 'bg-teal-700 text-white rounded-l-2xl rounded-tr-2xl' 
+                        : 'bg-slate-700 text-slate-100 rounded-r-2xl rounded-tl-2xl';
+
+                    let checks = '';
+                    if (isMine) {
+                        if (msg.read) {
+                            checks = '<i data-lucide="check-check" class="w-3.5 h-3.5 text-blue-400"></i>'; 
+                        } else {
+                            checks = '<i data-lucide="check" class="w-3.5 h-3.5 text-slate-300"></i>'; 
+                        }
+                    }
+
+                    // Renderiza Texto ou Áudio
+                    let contentHtml = '';
+                    if (msg.audioData) {
+                        contentHtml = `
+                            <div class="flex items-center gap-2 pb-2 min-w-[200px]">
+                                <i data-lucide="mic" class="w-4 h-4 text-slate-300/80 shrink-0"></i>
+                                <audio controls src="${msg.audioData}" class="w-full h-8 outline-none custom-audio"></audio>
+                            </div>
+                        `;
+                    } else {
+                        contentHtml = `<p class="text-[14px] sm:text-[15px] break-words leading-relaxed pb-3">${msg.text}</p>`;
+                    }
+
                     wrapper.innerHTML = `
-                        <div class="max-w-[80%] sm:max-w-[65%] rounded-xl px-4 py-2 shadow-md relative ${bubbleClass}">
-                            <p class="text-sm break-words mb-3">${msg.text}</p>
-                            <span class="absolute bottom-1 right-2 text-[10px] opacity-70 flex items-center gap-1">
-                                ${time} ${isMine ? '<i data-lucide="check" class="w-3 h-3"></i>' : ''}
-                            </span>
+                        <div class="max-w-[85%] sm:max-w-[75%] px-3 sm:px-4 py-2 shadow-md relative group ${bubbleClass} ${sameSender ? (isMine ? 'rounded-tr-md' : 'rounded-tl-md') : ''}">
+                            ${contentHtml}
+                            <div class="absolute bottom-1 right-2 flex items-center gap-1 opacity-80">
+                                <span class="text-[9px] sm:text-[10px]">${time}</span>
+                                ${checks}
+                            </div>
                         </div>`;
                     container.appendChild(wrapper);
                 });
                 lucide.createIcons();
                 
-                // Força o scroll para a última mensagem
                 setTimeout(() => {
-                    container.scrollTop = container.scrollHeight;
+                    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
                 }, 100);
             }
         };
 
-        // --- Event Listeners ---
+        // --- Event Listeners Globais ---
         
+        document.getElementById('messageInput').addEventListener('input', appState.handleTyping);
+        
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                appState.updatePresence(true);
+            } else {
+                appState.updatePresence(false);
+                appState.setTypingStatus(false);
+            }
+        });
+        window.addEventListener('beforeunload', () => {
+            appState.updatePresence(false);
+        });
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const userDoc = await getDoc(doc(db, "usuarios", user.uid));
                 const userData = userDoc.exists() ? userDoc.data() : { tipo: 'tecnico' };
                 
-                if (userData.tipo === "tecnico" || userData.tipo === "admin") {
+                if (userData.tipo === "tecnico" || userData.tipo === "admin" || userData.tipo === "administrador") {
                     appState.currentUser = { uid: user.uid, nome: userData.nome || user.email.split('@')[0], ...userData };
-                    document.getElementById('currentUserDisplay').innerText = `Logado como: ${appState.currentUser.nome}`;
                     
-                    // INICIA O OUVINTE GLOBAL ASSIM QUE LOGA
+                    const primeiroNome = appState.currentUser.nome.split(' ')[0];
+                    document.getElementById('welcomeMessage').innerText = `Olá, ${primeiroNome}!`;
+                    document.getElementById('currentUserDisplay').innerHTML = `<div class="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></div> ${primeiroNome}`;
+                    
+                    appState.updatePresence(true); 
                     appState.startGlobalMessageListener(); 
                     appState.switchView('view-dashboard');
                 } else {
-                    alert("Acesso negado.");
+                    alert("Acesso restrito apenas para a equipe técnica.");
                     signOut(auth);
                 }
             } else {
+                appState.updatePresence(false); 
                 if (appState.unsubMessages) {
                     appState.unsubMessages();
                     appState.unsubMessages = null;
@@ -649,23 +770,34 @@
             const email = document.getElementById("email").value;
             const senha = document.getElementById("senha").value;
             const btn = document.getElementById("btnLogin");
-            btn.innerText = "Carregando...";
+            
+            const textoOriginal = btn.innerText;
+            btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin mx-auto"></i>`;
+            
             try {
                 await signInWithEmailAndPassword(auth, email, senha);
             } catch (err) {
                 alert("Erro ao fazer login. Verifique as credenciais.");
-                btn.innerText = "Entrar";
+                btn.innerText = textoOriginal;
             }
         });
 
         document.getElementById('messageForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Se estiver gravando, clique no enter/enviar vai parar e enviar o áudio
+            if (appState.isRecording) {
+                appState.stopRecording();
+                return;
+            }
+
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             if (!text || !appState.selectedTechId) return;
 
             input.value = '';
-            input.focus(); // Mantém o teclado aberto no mobile
+            input.style.height = 'auto'; 
+            appState.setTypingStatus(false);
             
             try {
                 await addDoc(collection(db, 'chat_equipe'), {
@@ -673,31 +805,42 @@
                     senderId: appState.currentUser.uid,
                     receiverId: appState.selectedTechId,
                     participants: [appState.currentUser.uid, appState.selectedTechId],
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    read: false,
+                    // DATA DE EXPIRAÇÃO PARA O FIREBASE APAGAR (24 horas depois)
+                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
                 });
             } catch (e) {
-                console.error(e);
                 alert("Falha ao enviar a mensagem. Verifique a conexão.");
             }
         });
 
         document.getElementById("btnLogout").addEventListener("click", () => {
+            appState.updatePresence(false);
             signOut(auth);
         });
 
         document.getElementById('backToListBtn').addEventListener('click', () => {
             appState.selectedTechId = null;
-            document.getElementById('sidebar').classList.remove('hidden');
-            document.getElementById('chatArea').classList.add('hidden');
-            document.getElementById('chatArea').classList.remove('flex');
+            appState.updateActiveHeader();
+            document.getElementById('sidebar').classList.remove('mobile-hide');
+            document.getElementById('chatArea').classList.add('mobile-hide');
         });
 
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
             document.querySelectorAll('.tech-item').forEach(item => {
                 const name = item.querySelector('.tech-name').innerText.toLowerCase();
-                item.style.display = name.includes(term) ? 'flex' : 'none';
+                const role = item.querySelector('.tech-role').innerText.toLowerCase();
+                item.style.display = (name.includes(term) || role.includes(term)) ? 'flex' : 'none';
             });
+        });
+
+        document.getElementById('messageInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('messageForm').dispatchEvent(new Event('submit'));
+            }
         });
 
     </script>
