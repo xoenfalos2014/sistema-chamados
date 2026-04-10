@@ -1,8 +1,0 @@
-{
-  "name": "Chat WG",
-  "short_name": "ChatWG",
-  "start_url": "/chat.html",
-  "display": "standalone",
-  "background_color": "#075E54",
-  "theme_color": "#075E54"
-}
