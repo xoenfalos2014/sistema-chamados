@@ -97,8 +97,8 @@
                     </div>
                     <h1 class="text-xl font-bold text-white">WG Informática</h1>
                 </div>
-                <button id="btnLogout" class="text-slate-400 hover:text-red-400 transition-colors flex items-center gap-2 text-sm font-semibold bg-slate-900/50 px-4 py-2 rounded-lg border border-slate-700/50">
-                    <i data-lucide="log-out" class="w-4 h-4 mobile-icon-only"></i> <span class="hidden sm:inline">Sair</span>
+                <button id="btnLogout" class="text-slate-300 hover:text-red-400 transition-colors flex items-center gap-2 text-sm font-semibold bg-slate-900/50 px-4 py-2 rounded-lg border border-slate-700/50">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> <span>Sair</span>
                 </button>
             </div>
         </header>
@@ -129,11 +129,12 @@
     <div id="view-chat" class="flex-1 flex flex-col h-full overflow-hidden view-hidden relative">
         <header class="bg-slate-800/90 backdrop-blur-md shadow-lg shrink-0 border-b border-slate-700 z-20">
             <div class="max-w-7xl mx-auto py-3 px-4 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <button onclick="appState.switchView('view-dashboard')" class="p-2 hover:bg-slate-700 rounded-full transition-colors text-slate-300">
-                        <i data-lucide="home" class="w-5 h-5"></i>
+                <div class="flex items-center gap-2">
+                    <button onclick="appState.switchView('view-dashboard')" class="flex items-center gap-2 px-3 py-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-300 bg-slate-800 border border-slate-600 shadow-sm">
+                        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        <span class="text-sm font-semibold">Voltar</span>
                     </button>
-                    <h1 class="text-lg sm:text-xl font-bold text-white">Chat WG</h1>
+                    <h1 class="text-lg sm:text-xl font-bold text-white ml-2">Chat WG</h1>
                 </div>
                 <div class="text-xs sm:text-sm px-3 py-1 bg-slate-900 rounded-full border border-slate-700 text-teal-400 font-medium flex items-center gap-2" id="currentUserDisplay">
                     <div class="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></div>
@@ -166,8 +167,8 @@
                 <div id="chatArea" class="w-full flex-1 flex flex-col relative bg-slate-900/30 mobile-hide h-full z-0 transition-opacity">
                     <!-- Cabeçalho do Chat Ativo -->
                     <div class="bg-slate-800/95 p-3 flex items-center gap-3 border-b border-slate-700 z-10 backdrop-blur-md shadow-sm shrink-0">
-                        <button id="backToListBtn" class="sm:hidden p-2 text-slate-300 hover:bg-slate-700 rounded-full transition-colors">
-                            <i data-lucide="chevron-left" class="w-6 h-6"></i>
+                        <button id="backToListBtn" class="sm:hidden flex items-center gap-1 pr-2 text-slate-300 hover:text-white transition-colors">
+                            <i data-lucide="arrow-left" class="w-6 h-6"></i>
                         </button>
                         <div class="relative">
                             <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-teal-500 to-teal-700 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-inner border border-teal-400/20" id="activeTechAvatar">?</div>
@@ -197,12 +198,12 @@
                     <!-- Input Area -->
                     <div class="bg-slate-800/95 p-2 sm:p-4 border-t border-slate-700 z-10 backdrop-blur-md shrink-0">
                         <form id="messageForm" class="flex gap-2 w-full max-w-4xl mx-auto relative items-end">
+                            <!-- Botões Iniciais e Textarea -->
                             <button type="button" id="btnImproveMsg" onclick="appState.melhorarMensagem()" class="bg-slate-700 hover:bg-purple-600/90 text-purple-400 hover:text-white h-[44px] w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 border border-slate-600 shadow-md shrink-0" title="Melhorar com IA">
                                 <i data-lucide="sparkles" class="w-5 h-5"></i>
                             </button>
                             
-                            <!-- Botão de Áudio -->
-                            <button type="button" id="btnRecordAudio" onclick="appState.toggleRecording()" class="bg-slate-700 hover:bg-red-600/90 text-slate-300 hover:text-white h-[44px] w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 border border-slate-600 shadow-md shrink-0" title="Gravar Áudio (Máx 15s)">
+                            <button type="button" id="btnRecordAudio" onclick="appState.startRecording()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white h-[44px] w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 border border-slate-600 shadow-md shrink-0" title="Gravar Áudio (Máx 15s)">
                                 <i data-lucide="mic" class="w-5 h-5"></i>
                             </button>
                             
@@ -210,6 +211,17 @@
                                 placeholder="Digite a mensagem..." 
                                 class="flex-1 bg-slate-900 text-white px-4 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50 shadow-inner resize-none min-h-[44px] max-h-24 overflow-y-auto leading-relaxed"></textarea>
                                 
+                            <!-- NOVO UI DE GRAVAÇÃO (Oculto por Padrão) -->
+                            <div id="recordingUI" class="hidden flex-1 h-[44px] items-center justify-between bg-slate-900 border border-red-500/50 rounded-xl px-4 shadow-inner">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+                                    <span id="recordingTimer" class="text-red-400 font-mono font-medium tracking-wider">00:00 / 00:15</span>
+                                </div>
+                                <button type="button" onclick="appState.cancelRecording()" class="text-slate-400 hover:text-red-500 transition-colors p-1" title="Cancelar Gravação">
+                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+
                             <button type="submit" id="sendBtn" disabled
                                 class="bg-teal-600 hover:bg-teal-500 text-white h-[44px] w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shrink-0">
                                 <i data-lucide="send" class="w-5 h-5 ml-1"></i>
@@ -263,9 +275,13 @@
             } catch (e) {}
         };
 
-        // Auto-ajuste do tamanho do textarea
+        // Auto-ajuste do tamanho do textarea e habilitar/desabilitar botão Enviar
         const msgInput = document.getElementById('messageInput');
         msgInput.addEventListener('input', function() {
+            appState.handleTyping();
+            const btnSend = document.getElementById('sendBtn');
+            btnSend.disabled = this.value.trim() === '';
+            
             this.style.height = 'auto';
             this.style.height = (this.scrollHeight) + 'px';
         });
@@ -282,9 +298,9 @@
             
             // Variáveis de Gravação de Áudio
             isRecording: false,
+            isCancelled: false,
             mediaRecorder: null,
             audioChunks: [],
-            recordingTimer: null,
             recordingInterval: null,
             
             switchView: (viewId) => {
@@ -322,41 +338,42 @@
                 }, 2000);
             },
 
-            // --- Gravação de Áudio ---
-            toggleRecording: async () => {
+            // --- Gravação de Áudio Renovada ---
+            startRecording: async () => {
                 if (!appState.selectedTechId) {
                     alert("Selecione um contato primeiro.");
                     return;
                 }
-                if (appState.isRecording) {
-                    appState.stopRecording();
-                } else {
-                    appState.startRecording();
-                }
-            },
-
-            startRecording: async () => {
+                
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     appState.mediaRecorder = new MediaRecorder(stream);
                     appState.audioChunks = [];
                     appState.isRecording = true;
+                    appState.isCancelled = false; // Reset de flag
 
-                    const btn = document.getElementById('btnRecordAudio');
-                    btn.innerHTML = '<i data-lucide="square" class="w-5 h-5 animate-pulse text-red-500"></i>';
-                    btn.classList.add('border-red-500', 'bg-red-500/20');
-                    lucide.createIcons();
+                    // Alternar Interface para o Modo Gravador
+                    document.getElementById('btnImproveMsg').classList.add('hidden');
+                    document.getElementById('btnRecordAudio').classList.add('hidden');
+                    document.getElementById('messageInput').classList.add('hidden');
+                    
+                    const recUI = document.getElementById('recordingUI');
+                    recUI.classList.remove('hidden');
+                    recUI.classList.add('flex');
 
-                    const input = document.getElementById('messageInput');
-                    input.disabled = true;
-                    input.value = '';
+                    const btnSend = document.getElementById('sendBtn');
+                    btnSend.disabled = false;
+                    btnSend.classList.add('animate-pulse'); // Pisca para chamar atenção
 
-                    let secondsLeft = 15;
-                    input.placeholder = `Gravando áudio... 00:${secondsLeft}`;
+                    let secondsElapsed = 0;
+                    const timerDisplay = document.getElementById('recordingTimer');
+                    timerDisplay.innerText = `00:00 / 00:15`;
+
                     appState.recordingInterval = setInterval(() => {
-                        secondsLeft--;
-                        if(secondsLeft >= 0) {
-                            input.placeholder = `Gravando áudio... 00:${secondsLeft.toString().padStart(2, '0')}`;
+                        secondsElapsed++;
+                        timerDisplay.innerText = `00:${secondsElapsed.toString().padStart(2, '0')} / 00:15`;
+                        if(secondsElapsed >= 15) {
+                            appState.stopRecording(); // Para automaticamente e envia aos 15s
                         }
                     }, 1000);
 
@@ -366,7 +383,9 @@
 
                     appState.mediaRecorder.onstop = () => {
                         clearInterval(appState.recordingInterval);
-                        
+                        appState.resetRecordingUI();
+
+                        if (appState.isCancelled) return; // Se foi cancelado, aborta a gravação
                         if (appState.audioChunks.length === 0) return;
 
                         const mimeType = appState.mediaRecorder.mimeType || 'audio/webm';
@@ -385,7 +404,6 @@
                                     participants: [appState.currentUser.uid, appState.selectedTechId],
                                     timestamp: Date.now(),
                                     read: false,
-                                    // DATA DE EXPIRAÇÃO PARA O FIREBASE APAGAR (24 horas depois)
                                     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) 
                                 });
                             } catch (e) {
@@ -397,36 +415,52 @@
 
                     appState.mediaRecorder.start();
 
-                    appState.recordingTimer = setTimeout(() => {
-                        if (appState.isRecording) appState.stopRecording();
-                    }, 15000);
-
                 } catch (err) {
                     console.error("Erro microfone:", err);
                     alert("Permissão de microfone negada ou recurso não suportado neste dispositivo.");
                 }
             },
 
-            stopRecording: () => {
+            cancelRecording: () => {
                 if (!appState.isRecording) return;
-                appState.isRecording = false;
-                
-                clearTimeout(appState.recordingTimer);
-                clearInterval(appState.recordingInterval);
+                appState.isCancelled = true;
                 
                 if (appState.mediaRecorder && appState.mediaRecorder.state !== 'inactive') {
                     appState.mediaRecorder.stop();
                     appState.mediaRecorder.stream.getTracks().forEach(track => track.stop()); 
                 }
+                appState.resetRecordingUI();
+            },
 
-                const btn = document.getElementById('btnRecordAudio');
-                btn.innerHTML = '<i data-lucide="mic" class="w-5 h-5"></i>';
-                btn.classList.remove('border-red-500', 'bg-red-500/20');
-                lucide.createIcons();
+            stopRecording: () => {
+                if (!appState.isRecording) return;
+                appState.isRecording = false;
+                
+                if (appState.mediaRecorder && appState.mediaRecorder.state !== 'inactive') {
+                    appState.mediaRecorder.stop();
+                    appState.mediaRecorder.stream.getTracks().forEach(track => track.stop()); 
+                }
+            },
 
+            resetRecordingUI: () => {
+                appState.isRecording = false;
+                clearInterval(appState.recordingInterval);
+
+                document.getElementById('btnImproveMsg').classList.remove('hidden');
+                document.getElementById('btnRecordAudio').classList.remove('hidden');
+                document.getElementById('messageInput').classList.remove('hidden');
+                
+                const recUI = document.getElementById('recordingUI');
+                recUI.classList.add('hidden');
+                recUI.classList.remove('flex');
+                
+                const btnSend = document.getElementById('sendBtn');
+                btnSend.classList.remove('animate-pulse');
+                
                 const input = document.getElementById('messageInput');
-                input.disabled = false;
-                input.placeholder = "Digite a mensagem...";
+                if (input.value.trim() === '') {
+                    btnSend.disabled = true;
+                }
             },
 
             // --- Ouvinte de Mensagens (Com Filtro de 24h na Tela) ---
@@ -624,13 +658,16 @@
                     appState.updateBadges();
                 }
 
+                // Reseta estado se estivesse gravando e trocou de aba
+                if (appState.isRecording) {
+                    appState.cancelRecording();
+                }
+
                 const input = document.getElementById('messageInput');
-                const btn = document.getElementById('sendBtn');
-                const btnMic = document.getElementById('btnRecordAudio');
+                const btnRecord = document.getElementById('btnRecordAudio');
                 
                 input.disabled = false; 
-                btn.disabled = false;
-                btnMic.disabled = false;
+                btnRecord.disabled = false;
 
                 const sidebar = document.getElementById('sidebar');
                 const chatArea = document.getElementById('chatArea');
@@ -722,8 +759,6 @@
 
         // --- Event Listeners Globais ---
         
-        document.getElementById('messageInput').addEventListener('input', appState.handleTyping);
-        
         window.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
                 appState.updatePresence(true);
@@ -798,6 +833,9 @@
             input.value = '';
             input.style.height = 'auto'; 
             appState.setTypingStatus(false);
+            
+            // Desabilita o botão send imediatamente após limpar
+            document.getElementById('sendBtn').disabled = true;
             
             try {
                 await addDoc(collection(db, 'chat_equipe'), {
