@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WG Informática - Ambiente de Teste</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        
+        /* Ocultar telas inativas */
+        .view-hidden { display: none !important; }
+        
+        /* Scrollbar customizada */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        
+        /* Botões do Painel */
+        .btn { padding: 0.5rem 1rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; text-align: center; }
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        .btn-dark { background-color: #0d9488; color: white; }
+        .btn-green { background-color: #16a34a; color: white; }
+        .btn-blue { background-color: #2563eb; color: white; }
+        .btn-purple { background-color: #9333ea; color: white; }
+        .btn-indigo { background-color: #4f46e5; color: white; }
+        .btn-teal-secondary { background-color: #1f2937; color: #ccfbf1; border: 1px solid #14b8a6; }
+        .nav-button-active { background-color: #14b8a6; color: white; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+        
+        /* Fundo do Chat */
+        .chat-bg {
+            background-color: #0f172a;
+            background-image: radial-gradient(#1e293b 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen overflow-hidden flex flex-col">
+
+    <!-- ========================================== -->
+    <!-- TELA 1: LOGIN                              -->
+    <!-- ========================================== -->
+    <div id="view-login" class="flex-1 flex items-center justify-center p-4 overflow-y-auto view-hidden">
+        <div class="w-full max-w-sm bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-700">
+            <div class="flex justify-center mb-6">
+                <div class="bg-slate-900 p-4 rounded-full border border-slate-700 shadow-inner">
+                    <i data-lucide="monitor" class="w-12 h-12 text-teal-500"></i>
+                </div>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-center mb-4 text-slate-100">Login do Técnico</h2>
+                <form class="space-y-4" id="formLogin">
+                    <input class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500" id="email" placeholder="Email" required="" type="email"/>
+                    <input class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500" id="senha" placeholder="Senha" required="" type="password"/>
+                    <button class="w-full bg-teal-600 text-white font-semibold py-3 rounded-lg hover:bg-teal-500 transition-colors" type="submit" id="btnLogin">Entrar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TELA 2: PAINEL DO TÉCNICO                  -->
+    <!-- ========================================== -->
+    <div id="view-dashboard" class="flex-1 flex flex-col overflow-y-auto view-hidden">
+        <header class="bg-slate-800 shadow-lg shrink-0">
+            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-white">Painel do Técnico</h1>
+                <button id="btnLogout" class="text-slate-400 hover:text-red-400 transition-colors flex items-center gap-2 text-sm font-semibold">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> Sair
+                </button>
+            </div>
+        </header>
+
+        <main class="max-w-4xl w-full mx-auto py-6 sm:px-6 lg:px-8 flex-1">
+            <div class="flex justify-center flex-wrap gap-2 mb-6 p-2 bg-slate-800 rounded-xl">
+                 <button class="btn btn-dark flex-grow sm:flex-grow-0" onclick="alert('Página não implementada neste teste.')">📑 Relatório</button>
+                 <button class="btn btn-dark flex-grow sm:flex-grow-0" onclick="alert('Página não implementada neste teste.')">📂 Salvos</button>
+                 <button class="btn btn-dark flex-grow sm:flex-grow-0" onclick="alert('Página não implementada neste teste.')">📋 Rotina</button>
+                 <button class="btn btn-dark flex-grow sm:flex-grow-0" onclick="alert('Página não implementada neste teste.')">📅 Agenda</button>
+                 <button class="btn btn-purple flex-grow sm:flex-grow-0" onclick="alert('Página não implementada neste teste.')">🖥️ Gestão de PCs</button>
+                 
+                 <!-- Botão de Chat com Sinalizador Global -->
+                 <button class="btn btn-teal-secondary flex-grow sm:flex-grow-0 shadow-lg relative" onclick="appState.switchView('view-chat')">
+                    💬 Chat da Equipe
+                    <span id="globalChatBadge" class="hidden absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center animate-bounce shadow-md border-2 border-slate-800">0</span>
+                 </button>
+            </div>
+            
+            <div class="bg-slate-800 rounded-2xl shadow-2xl p-6 border border-slate-700">
+                <div id="nav-buttons" class="flex border-b border-slate-700 mb-4">
+                    <button class="flex-1 py-2 px-4 text-sm font-semibold text-slate-300 hover:bg-slate-700/50 rounded-t-lg nav-button-active" onclick="appState.mostrarTarefas('Aberto', this)">Abertos</button>
+                    <button class="flex-1 py-2 px-4 text-sm font-semibold text-slate-300 hover:bg-slate-700/50 rounded-t-lg" onclick="appState.mostrarTarefas('Em Andamento', this)">Em Andamento</button>
+                    <button class="flex-1 py-2 px-4 text-sm font-semibold text-slate-300 hover:bg-slate-700/50 rounded-t-lg" onclick="appState.mostrarTarefas('Resolvido', this)">Finalizados</button>
+                </div>
+                <div id="lista-tarefas" class="space-y-4">Carregando tarefas...</div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TELA 3: CHAT DA EQUIPE                     -->
+    <!-- ========================================== -->
+    <div id="view-chat" class="flex-1 flex flex-col overflow-hidden view-hidden">
+        <header class="bg-slate-800 shadow-lg shrink-0 border-b border-slate-700">
+            <div class="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <button onclick="appState.switchView('view-dashboard')" class="p-2 hover:bg-slate-700 rounded-full transition-colors text-slate-300">
+                        <i data-lucide="arrow-left"></i>
+                    </button>
+                    <h1 class="text-xl font-bold text-white">Comunicação Interna</h1>
+                </div>
+                <div class="text-sm text-teal-400 font-semibold" id="currentUserDisplay">Carregando...</div>
+            </div>
+        </header>
+
+        <main class="flex-1 flex overflow-hidden max-w-7xl w-full mx-auto sm:py-4 sm:px-4">
+            <div class="flex w-full bg-slate-800 sm:rounded-2xl shadow-2xl border border-slate-700 overflow-hidden">
+                
+                <!-- Barra Lateral (Contatos) -->
+                <div id="sidebar" class="w-full sm:w-80 md:w-96 flex flex-col border-r border-slate-700 bg-slate-800 transition-all duration-300">
+                    <div class="p-4 border-b border-slate-700 bg-slate-800/50">
+                        <div class="relative">
+                            <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
+                            <input type="text" id="searchInput" placeholder="Buscar técnico..." 
+                                   class="w-full bg-slate-900 text-white pl-10 pr-4 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500">
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto" id="techList">
+                        <div class="p-8 text-center text-slate-500 text-sm">Carregando equipe...</div>
+                    </div>
+                </div>
+
+                <!-- Área do Chat -->
+                <div id="chatArea" class="hidden sm:flex flex-1 flex-col relative chat-bg">
+                    <div class="bg-slate-800 p-3 flex items-center gap-3 border-b border-slate-700 z-10">
+                        <button id="backToListBtn" class="sm:hidden p-2 text-slate-300 hover:bg-slate-700 rounded-full">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                        </button>
+                        <div class="w-10 h-10 bg-teal-600 text-white rounded-full flex items-center justify-center font-bold text-lg shadow-inner" id="activeTechAvatar">?</div>
+                        <div>
+                            <h2 class="font-semibold text-white" id="activeTechName">Selecione um técnico</h2>
+                            <p class="text-xs text-slate-400" id="activeTechRole">Aguardando...</p>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto p-4 space-y-4 z-10" id="messagesContainer">
+                        <div class="flex h-full items-center justify-center text-center">
+                            <div>
+                                <div class="bg-slate-800 p-4 rounded-full inline-block mb-4">
+                                    <i data-lucide="message-square-text" class="w-12 h-12 text-teal-500"></i>
+                                </div>
+                                <h3 class="text-lg font-medium text-white mb-2">Comunicação Segura WG</h3>
+                                <p class="text-slate-400 text-sm max-w-xs mx-auto">
+                                    Selecione um técnico na lista lateral para iniciar uma conversa privada em tempo real.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800 p-3 flex items-center gap-2 border-t border-slate-700 z-10">
+                        <form id="messageForm" class="flex-1 flex gap-2 w-full">
+                            <button type="button" id="btnImproveMsg" onclick="appState.melhorarMensagem()" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-2 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50 border border-purple-500 shadow-md shadow-purple-500/20" title="Melhorar mensagem com IA">
+                                ✨
+                            </button>
+                            <input type="text" id="messageInput" disabled
+                                placeholder="Digite sua mensagem..." 
+                                class="flex-1 bg-slate-900 text-white px-4 py-3 rounded-lg border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50">
+                            <button type="submit" id="sendBtn" disabled
+                                class="bg-teal-600 hover:bg-teal-500 text-white p-3 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i data-lucide="send" class="w-5 h-5"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL DE IA (GEMINI)                       -->
+    <!-- ========================================== -->
+    <div id="aiModal" class="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center hidden backdrop-blur-sm">
+        <div class="bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-700 p-6 m-4 flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-teal-400 flex items-center gap-2">
+                    ✨ Assistente IA (Gemini)
+                </h3>
+                <button onclick="appState.closeAiModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div id="aiModalContent" class="text-slate-200 overflow-y-auto whitespace-pre-wrap flex-1 text-sm bg-slate-900/50 p-5 rounded-xl border border-slate-700/50 leading-relaxed">
+                Carregando...
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- LÓGICA DO APLICATIVO                       -->
+    <!-- ========================================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+        import { getFirestore, collection, query, where, onSnapshot, addDoc, getDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+
+        lucide.createIcons();
+
+        // --- Firebase Config ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
+          authDomain: "sistema-chamados-99e49.firebaseapp.com",
+          projectId: "sistema-chamados-99e49"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- Configuração da IA Gemini ---
+        const apiKey = ""; // A chave é injetada no momento da execução
+        const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+        
+        async function fetchWithRetry(url, options, maxRetries = 5) {
+            let retries = 0;
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            while (retries < maxRetries) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) throw new Error(`HTTP erro! status: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    if (retries === maxRetries - 1) throw error;
+                    await delay(delays[retries]);
+                    retries++;
+                }
+            }
+        }
+
+        async function callGeminiAPI(prompt) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = { contents: [{ parts: [{ text: prompt }] }] };
+            try {
+                const data = await fetchWithRetry(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "Não foi possível gerar uma resposta.";
+            } catch (error) {
+                return "Erro ao conectar com a inteligência artificial. Verifique a conexão.";
+            }
+        }
+
+        // Som de Notificação
+        const playNotificationSound = () => {
+            try {
+                // Audio curto e suave (ding)
+                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                audio.play().catch(e => console.log("Áudio bloqueado pelo navegador até haver interação"));
+            } catch (e) {}
+        };
+
+        // --- Estado Global ---
+        window.appState = {
+            currentUser: null,
+            selectedTechId: null,
+            allMessages: [],
+            unreadCounts: {}, // Armazena mensagens não lidas { techId: count }
+            unsubChamados: null,
+            unsubAgendamentos: null,
+            unsubMessages: null,
+            
+            // Navegação entre as telas
+            switchView: (viewId) => {
+                document.getElementById('view-login').classList.add('view-hidden');
+                document.getElementById('view-dashboard').classList.add('view-hidden');
+                document.getElementById('view-chat').classList.add('view-hidden');
+                
+                document.getElementById(viewId).classList.remove('view-hidden');
+                
+                if(viewId === 'view-dashboard') appState.mostrarTarefas('Aberto', document.querySelector('.nav-button-active'));
+                if(viewId === 'view-chat') appState.initChat(); // Apenas renderiza a lista de técnicos
+            },
+
+            // ===============================================
+            // OUVINTE GLOBAL DE MENSAGENS (Ativo mesmo fora do chat)
+            // ===============================================
+            startGlobalMessageListener: () => {
+                if (appState.unsubMessages) return; // Evita duplicação
+
+                // Solicita permissão de notificação no navegador logo após o login
+                if ("Notification" in window && Notification.permission === "default") {
+                    Notification.requestPermission();
+                }
+
+                const qMsg = query(collection(db, "chat_equipe"), where("participants", "array-contains", appState.currentUser.uid));
+                let isFirstLoad = true;
+
+                appState.unsubMessages = onSnapshot(qMsg, (snapshot) => {
+                    appState.allMessages = [];
+                    snapshot.forEach(doc => appState.allMessages.push({ id: doc.id, ...doc.data() }));
+                    
+                    // CORREÇÃO: Normaliza os timestamps (evita bug de mensagens não aparecerem se houver formatos de data antigos)
+                    const getTime = (ts) => (ts && ts.toDate) ? ts.toDate().getTime() : (ts || 0);
+                    appState.allMessages.sort((a, b) => getTime(a.timestamp) - getTime(b.timestamp));
+
+                    if (!isFirstLoad) {
+                        snapshot.docChanges().forEach(change => {
+                            if (change.type === "added") {
+                                const msg = change.doc.data();
+                                
+                                // Nova mensagem recebida (não enviada por mim)
+                                if (msg.senderId !== appState.currentUser.uid) {
+                                    
+                                    // Verifica se o chat dessa pessoa já está aberto e visível
+                                    const isViewingChat = !document.getElementById('view-chat').classList.contains('view-hidden');
+                                    const isChattingWithSender = appState.selectedTechId === msg.senderId;
+                                    
+                                    if (!(isViewingChat && isChattingWithSender)) {
+                                        // 1. Toca som
+                                        playNotificationSound();
+                                        
+                                        // 2. Desktop Push Notification
+                                        if ("Notification" in window && Notification.permission === "granted") {
+                                            new Notification("WG Suporte: Nova Mensagem", { body: msg.text });
+                                        }
+
+                                        // 3. Atualiza contadores de não lidas
+                                        appState.unreadCounts[msg.senderId] = (appState.unreadCounts[msg.senderId] || 0) + 1;
+                                        appState.updateBadges();
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    isFirstLoad = false;
+
+                    // Se a aba do chat estiver aberta com alguém selecionado, re-renderiza
+                    if (appState.selectedTechId) {
+                        appState.renderMessages();
+                    }
+                });
+            },
+
+            // Atualiza os emblemas visuais (bolinhas vermelhas)
+            updateBadges: () => {
+                // Badge Global no Dashboard
+                const totalUnread = Object.values(appState.unreadCounts).reduce((a, b) => a + b, 0);
+                const globalBadge = document.getElementById('globalChatBadge');
+                if (globalBadge) {
+                    if (totalUnread > 0) {
+                        globalBadge.innerText = totalUnread;
+                        globalBadge.classList.remove('hidden');
+                    } else {
+                        globalBadge.classList.add('hidden');
+                    }
+                }
+
+                // Badges na lista de técnicos (se a tela estiver carregada)
+                Object.entries(appState.unreadCounts).forEach(([techId, count]) => {
+                    const techDiv = document.getElementById(`tech-item-${techId}`);
+                    if (techDiv) {
+                        let badge = techDiv.querySelector('.unread-badge');
+                        if (count > 0) {
+                            if (!badge) {
+                                badge = document.createElement('div');
+                                badge.className = 'unread-badge w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white ml-auto shadow-lg animate-pulse';
+                                techDiv.appendChild(badge);
+                            }
+                            badge.innerText = count;
+                        } else if (badge) {
+                            badge.remove();
+                        }
+                    }
+                });
+            },
+
+            // Marca conversa como lida
+            markAsRead: (techId) => {
+                if (appState.unreadCounts[techId]) {
+                    appState.unreadCounts[techId] = 0;
+                    appState.updateBadges();
+                }
+            },
+
+            // --- Lógica do Dashboard ---
+            mostrarTarefas: (statusFiltro, el) => {
+                if(el) {
+                    document.querySelectorAll('#nav-buttons button').forEach(btn => btn.classList.remove('nav-button-active'));
+                    el.classList.add('nav-button-active');
+                }
+                const lista = document.getElementById("lista-tarefas");
+                lista.innerHTML = "<p class='text-center text-slate-400'>Buscando no banco de dados...</p>";
+
+                let statusAgendamento = statusFiltro;
+                if (statusFiltro === 'Em Andamento') statusAgendamento = 'Em Atendimento';
+                else if (statusFiltro === 'Resolvido') statusAgendamento = 'Finalizado';
+
+                let chamadosHtml = ''; let agendamentosHtml = '';
+                let chamadosReady = false; let agendamentosReady = false;
+
+                const renderAll = () => {
+                    if (!chamadosReady || !agendamentosReady) return;
+                    if (chamadosHtml === '' && agendamentosHtml === '') {
+                        lista.innerHTML = `<div class='text-center p-8 bg-slate-700/50 rounded-lg'><p class='text-slate-400'>Nenhuma tarefa com status "${statusFiltro}" encontrada.</p></div>`;
+                    } else {
+                        lista.innerHTML = chamadosHtml + agendamentosHtml;
+                    }
+                };
+
+                // Busca Chamados
+                if(appState.unsubChamados) appState.unsubChamados();
+                const qChamados = query(collection(db, "chamados"), where("status", "==", statusFiltro));
+                appState.unsubChamados = onSnapshot(qChamados, (snapshot) => {
+                    chamadosHtml = '';
+                    if (!snapshot.empty) {
+                        chamadosHtml += `<h2 class="text-xl font-semibold text-teal-300 mb-3 border-b border-slate-600 pb-2">Chamados</h2>`;
+                        snapshot.forEach(d => {
+                            const c = d.data();
+                            const data = c.criadoEm ? new Date(c.criadoEm.toDate ? c.criadoEm.toDate() : c.criadoEm).toLocaleDateString("pt-BR") : "N/A";
+                            const msgSegura = (c.mensagem || 'Sem descrição').replace(/['"\n\r]/g, ' ');
+                            chamadosHtml += `
+                                <div class="bg-slate-700 border-l-4 border-teal-500 rounded-r-lg p-4 mb-4 shadow-sm">
+                                    <div class="flex justify-between items-start">
+                                        <p class="font-bold text-lg text-white">${c.empresa || c.nome} <span class="font-normal text-sm text-slate-400">- ${c.setor}</span></p>
+                                        <span class="text-xs text-slate-400">${data}</span>
+                                    </div>
+                                    <p class="mt-2 text-slate-300">${c.mensagem || 'Sem descrição'}</p>
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <button class="btn btn-purple text-xs shadow-lg shadow-purple-500/20" onclick="appState.sugerirSolucao('${msgSegura}')">✨ Sugerir Solução</button>
+                                        <button class="btn btn-teal-secondary text-xs" onclick="alert('Chat com cliente abre em outra janela.')">💬 Chat Cliente</button>
+                                        <button class="btn btn-blue text-xs" onclick="appState.mudarStatus('chamados', '${d.id}', 'Em Andamento')">▶️ Em Andamento</button>
+                                        <button class="btn btn-green text-xs" onclick="appState.mudarStatus('chamados', '${d.id}', 'Resolvido')">✅ Finalizar</button>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+                    chamadosReady = true; renderAll();
+                });
+
+                // Busca Agendamentos
+                if(appState.unsubAgendamentos) appState.unsubAgendamentos();
+                const qAgendamentos = query(collection(db, "agendamentos"), where("status", "==", statusAgendamento));
+                appState.unsubAgendamentos = onSnapshot(qAgendamentos, (snapshot) => {
+                    agendamentosHtml = '';
+                    if (!snapshot.empty) {
+                        agendamentosHtml += `<h2 class="text-xl font-semibold text-teal-300 mt-6 mb-3 border-b border-slate-600 pb-2">Agendamentos</h2>`;
+                        snapshot.forEach(d => {
+                            const a = d.data();
+                            const dataAge = a.data ? new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'N/A';
+                            agendamentosHtml += `
+                                <div class="bg-slate-700 border-l-4 border-indigo-500 rounded-r-lg p-4 mb-4 shadow-sm">
+                                    <div class="flex justify-between items-start">
+                                        <p class="font-bold text-lg text-white">${a.cliente} <span class="font-normal text-sm text-slate-400">- ${a.servico}</span></p>
+                                        <span class="text-xs text-slate-400">Data: ${dataAge}</span>
+                                    </div>
+                                    <p class="mt-2 text-slate-300">${a.problema}</p>
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <button class="btn btn-blue text-xs" onclick="appState.mudarStatus('agendamentos', '${d.id}', 'Em Atendimento')">▶️ Em Atendimento</button>
+                                        <button class="btn btn-green text-xs" onclick="appState.mudarStatus('agendamentos', '${d.id}', 'Finalizado')">✅ Finalizar</button>
+                                    </div>
+                                </div>`;
+                        });
+                    }
+                    agendamentosReady = true; renderAll();
+                });
+            },
+
+            mudarStatus: async (colecao, id, novoStatus) => {
+                try {
+                    await updateDoc(doc(db, colecao, id), { status: novoStatus });
+                    alert(`Status atualizado para: ${novoStatus}`);
+                } catch(e) {
+                    alert("Erro ao atualizar.");
+                }
+            },
+
+            // --- IA Gemini ---
+            showAiModal: (htmlContent) => {
+                document.getElementById('aiModalContent').innerHTML = htmlContent;
+                document.getElementById('aiModal').classList.remove('hidden');
+                lucide.createIcons();
+            },
+            closeAiModal: () => {
+                document.getElementById('aiModal').classList.add('hidden');
+            },
+            sugerirSolucao: async (problemaReportado) => {
+                appState.showAiModal('<div class="flex flex-col items-center justify-center py-10"><i data-lucide="loader" class="w-10 h-10 text-purple-500 animate-spin mb-4"></i><p class="text-slate-400 animate-pulse">A IA está diagnosticando o problema...</p></div>');
+                
+                const prompt = `Atue como um Especialista Sênior de Suporte de TI. Um usuário relatou o seguinte problema em um chamado de assistência técnica: "${problemaReportado}". 
+                Responda em português com:
+                1. A possível causa raiz do problema de forma resumida.
+                2. Uma lista de 3 passos práticos, técnicos e diretos para o técnico de suporte investigar e resolver o caso. Use formatação limpa e objetiva.`;
+                
+                const resposta = await callGeminiAPI(prompt);
+                appState.showAiModal(resposta);
+            },
+            melhorarMensagem: async () => {
+                const input = document.getElementById('messageInput');
+                const textoOriginal = input.value.trim();
+                
+                if (!textoOriginal) {
+                    alert('Digite algum texto no campo antes de usar a IA.');
+                    return;
+                }
+
+                const btn = document.getElementById('btnImproveMsg');
+                const conteudoOriginalBtn = btn.innerHTML;
+                
+                btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i>`;
+                btn.disabled = true;
+
+                const prompt = `Reescreva a seguinte mensagem de suporte técnico corporativo. Torne-a muito educada, profissional e clara, mas mantenha-a curta para o contexto de um chat. Retorne APENAS a mensagem reescrita final, sem aspas, sem formatação markdown extra e sem comentários adicionais: "${textoOriginal}"`;
+                
+                const resposta = await callGeminiAPI(prompt);
+                input.value = resposta.trim().replace(/^"|"$/g, '');
+                
+                btn.innerHTML = conteudoOriginalBtn;
+                btn.disabled = false;
+                lucide.createIcons();
+            },
+
+            // --- Lógica do Chat (Apenas Listagem) ---
+            initChat: () => {
+                const techListEl = document.getElementById('techList');
+                // Busca EXCLUSIVAMENTE técnicos (exclui admins se eles estiverem com outra role)
+                const q = query(collection(db, "usuarios"), where("tipo", "==", "tecnico"));
+                
+                onSnapshot(q, (snapshot) => {
+                    techListEl.innerHTML = '';
+                    if (snapshot.empty) {
+                        techListEl.innerHTML = '<div class="p-4 text-center text-slate-500">Nenhum técnico encontrado.</div>';
+                        return;
+                    }
+                    snapshot.forEach(doc => {
+                        const tech = doc.data();
+                        const techId = doc.id;
+                        if (techId === appState.currentUser.uid) return;
+
+                        const nome = tech.nome || tech.email.split('@')[0];
+                        const div = document.createElement('div');
+                        div.id = `tech-item-${techId}`;
+                        div.className = "tech-item flex items-center gap-3 p-4 cursor-pointer hover:bg-slate-700/50 transition border-b border-slate-700/50";
+                        div.onclick = () => appState.selectTechnician(techId, nome);
+                        div.innerHTML = `
+                            <div class="w-12 h-12 bg-teal-700 text-white rounded-full flex items-center justify-center font-bold text-lg shrink-0">${nome.charAt(0).toUpperCase()}</div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-slate-200 font-medium truncate tech-name">${nome}</h3>
+                                <p class="text-xs text-slate-400 capitalize">${tech.tipo || 'Técnico'}</p>
+                            </div>`;
+                        techListEl.appendChild(div);
+                    });
+                    
+                    // Atualiza as bolinhas vermelhas ao carregar a lista
+                    appState.updateBadges();
+                });
+            },
+
+            selectTechnician: (techId, nome) => {
+                appState.selectedTechId = techId;
+                document.getElementById('activeTechName').innerText = nome;
+                document.getElementById('activeTechAvatar').innerText = nome.charAt(0).toUpperCase();
+                document.getElementById('activeTechRole').innerText = "Técnico WG";
+                
+                // Remove a bolinha vermelha e zera notificações deste usuário
+                appState.markAsRead(techId);
+
+                const input = document.getElementById('messageInput');
+                const btn = document.getElementById('sendBtn');
+                input.disabled = false; btn.disabled = false; input.focus();
+
+                if (window.innerWidth < 640) {
+                    document.getElementById('sidebar').classList.add('hidden');
+                    document.getElementById('chatArea').classList.remove('hidden');
+                    document.getElementById('chatArea').classList.add('flex');
+                }
+                appState.renderMessages();
+            },
+
+            renderMessages: () => {
+                const container = document.getElementById('messagesContainer');
+                const msgs = appState.allMessages.filter(msg => msg.participants.includes(appState.selectedTechId));
+                
+                if (msgs.length === 0) {
+                    container.innerHTML = `<div class="flex justify-center mt-4 mb-4"><div class="bg-slate-800 text-slate-400 text-xs px-4 py-2 rounded-lg">Conversa protegida.</div></div>`;
+                    return;
+                }
+
+                container.innerHTML = '';
+                msgs.forEach(msg => {
+                    const isMine = msg.senderId === appState.currentUser.uid;
+                    // Normaliza a data para exibição correta
+                    const dataAtual = msg.timestamp && msg.timestamp.toDate ? msg.timestamp.toDate() : new Date(msg.timestamp);
+                    const time = isNaN(dataAtual) ? "" : dataAtual.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    
+                    const wrapper = document.createElement('div');
+                    wrapper.className = `flex ${isMine ? 'justify-end' : 'justify-start'} mb-3`;
+                    const bubbleClass = isMine ? 'bg-teal-600 text-white rounded-tr-none' : 'bg-slate-700 text-slate-200 rounded-tl-none';
+                    wrapper.innerHTML = `
+                        <div class="max-w-[80%] sm:max-w-[65%] rounded-xl px-4 py-2 shadow-md relative ${bubbleClass}">
+                            <p class="text-sm break-words mb-3">${msg.text}</p>
+                            <span class="absolute bottom-1 right-2 text-[10px] opacity-70 flex items-center gap-1">
+                                ${time} ${isMine ? '<i data-lucide="check" class="w-3 h-3"></i>' : ''}
+                            </span>
+                        </div>`;
+                    container.appendChild(wrapper);
+                });
+                lucide.createIcons();
+                
+                // Força o scroll para a última mensagem
+                setTimeout(() => {
+                    container.scrollTop = container.scrollHeight;
+                }, 100);
+            }
+        };
+
+        // --- Event Listeners ---
+        
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+                const userData = userDoc.exists() ? userDoc.data() : { tipo: 'tecnico' };
+                
+                if (userData.tipo === "tecnico" || userData.tipo === "admin") {
+                    appState.currentUser = { uid: user.uid, nome: userData.nome || user.email.split('@')[0], ...userData };
+                    document.getElementById('currentUserDisplay').innerText = `Logado como: ${appState.currentUser.nome}`;
+                    
+                    // INICIA O OUVINTE GLOBAL ASSIM QUE LOGA
+                    appState.startGlobalMessageListener(); 
+                    appState.switchView('view-dashboard');
+                } else {
+                    alert("Acesso negado.");
+                    signOut(auth);
+                }
+            } else {
+                if (appState.unsubMessages) {
+                    appState.unsubMessages();
+                    appState.unsubMessages = null;
+                }
+                appState.switchView('view-login');
+            }
+        });
+
+        document.getElementById("formLogin").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("email").value;
+            const senha = document.getElementById("senha").value;
+            const btn = document.getElementById("btnLogin");
+            btn.innerText = "Carregando...";
+            try {
+                await signInWithEmailAndPassword(auth, email, senha);
+            } catch (err) {
+                alert("Erro ao fazer login. Verifique as credenciais.");
+                btn.innerText = "Entrar";
+            }
+        });
+
+        document.getElementById('messageForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text || !appState.selectedTechId) return;
+
+            input.value = '';
+            input.focus(); // Mantém o teclado aberto no mobile
+            
+            try {
+                await addDoc(collection(db, 'chat_equipe'), {
+                    text: text,
+                    senderId: appState.currentUser.uid,
+                    receiverId: appState.selectedTechId,
+                    participants: [appState.currentUser.uid, appState.selectedTechId],
+                    timestamp: Date.now()
+                });
+            } catch (e) {
+                console.error(e);
+                alert("Falha ao enviar a mensagem. Verifique a conexão.");
+            }
+        });
+
+        document.getElementById("btnLogout").addEventListener("click", () => {
+            signOut(auth);
+        });
+
+        document.getElementById('backToListBtn').addEventListener('click', () => {
+            appState.selectedTechId = null;
+            document.getElementById('sidebar').classList.remove('hidden');
+            document.getElementById('chatArea').classList.add('hidden');
+            document.getElementById('chatArea').classList.remove('flex');
+        });
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            document.querySelectorAll('.tech-item').forEach(item => {
+                const name = item.querySelector('.tech-name').innerText.toLowerCase();
+                item.style.display = name.includes(term) ? 'flex' : 'none';
+            });
+        });
+
+    </script>
+</body>
+</html>
