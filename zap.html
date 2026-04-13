@@ -255,12 +255,12 @@
         };
 
         const firebaseConfig = {
-          apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
-          authDomain: "sistema-chamados-99e49.firebaseapp.com",
-          projectId: "sistema-chamados-99e49"
-          // ATENÇÃO: Para o Push Notification funcionar sem erros, precisará de adicionar aqui:
-          // messagingSenderId: "SEU_SENDER_ID",
-          // appId: "SEU_APP_ID"
+            apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
+            authDomain: "sistema-chamados-99e49.firebaseapp.com",
+            projectId: "sistema-chamados-99e49",
+            storageBucket: "sistema-chamados-99e49.firebasestorage.app",
+            messagingSenderId: "680351942005",
+            appId: "1:680351942005:web:896b35a40f094d42297f3c"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -272,7 +272,7 @@
         try {
             messaging = getMessaging(app);
         } catch (err) {
-            console.warn("Aviso: Notificações Push inativas. Faltam as chaves 'messagingSenderId' e 'appId' no firebaseConfig.", err);
+            console.warn("Aviso: Notificações Push inativas. Ocorreu um erro ao inicializar o messaging.", err);
         }
 
         // Função crucial para pedir permissão e pegar o Token do celular do usuário
