@@ -18,44 +18,23 @@
     <style>
         body { 
             font-family: 'Poppins', sans-serif; 
-            /* Previne o layout de quebrar em telemóveis quando o teclado abre */
             height: 100dvh; 
             overflow: hidden;
         }
-        
-        /* Ocultar telas inativas */
         .view-hidden { display: none !important; }
-        
-        /* Scrollbar customizada */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-        
-        /* Fundo do Chat e do Dashboard Moderno */
         .chat-bg {
             background-color: #0f172a;
             background-image: radial-gradient(#1e293b 1px, transparent 1px);
             background-size: 20px 20px;
         }
-
-        /* Classes para transição suave no Mobile */
         .mobile-hide { display: none !important; }
-        @media (min-width: 640px) {
-            .mobile-hide { display: flex !important; }
-        }
-
-        /* Áudio Player Customizado (mantém o visual escuro) */
-        audio {
-            height: 36px;
-            border-radius: 8px;
-            outline: none;
-        }
-        audio::-webkit-media-controls-panel {
-            background-color: #cbd5e1;
-        }
-
-        /* Animação Ondas de Áudio enquanto grava */
+        @media (min-width: 640px) { .mobile-hide { display: flex !important; } }
+        audio { height: 36px; border-radius: 8px; outline: none; }
+        audio::-webkit-media-controls-panel { background-color: #cbd5e1; }
         .audio-wave { display: flex; align-items: center; justify-content: center; gap: 3px; height: 24px; }
         .audio-wave span { display: block; width: 4px; background-color: #14b8a6; border-radius: 4px; animation: wave 1.2s infinite ease-in-out; }
         .audio-wave span:nth-child(1) { animation-delay: 0.0s; }
@@ -63,27 +42,20 @@
         .audio-wave span:nth-child(3) { animation-delay: 0.4s; }
         .audio-wave span:nth-child(4) { animation-delay: 0.2s; }
         .audio-wave span:nth-child(5) { animation-delay: 0.0s; }
-        @keyframes wave {
-            0%, 100% { height: 6px; }
-            50% { height: 24px; }
-        }
+        @keyframes wave { 0%, 100% { height: 6px; } 50% { height: 24px; } }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-200 flex flex-col chat-bg">
 
-    <!-- Toast Notification Global (Alerta flutuante) -->
     <div id="toastNotification" class="fixed top-5 left-1/2 -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[100] transition-all transform -translate-y-24 opacity-0 pointer-events-none flex items-center gap-3 font-medium text-sm w-[90%] max-w-md">
         <i data-lucide="info" class="w-5 h-5 shrink-0"></i>
         <span id="toastMessage" class="flex-1">Mensagem</span>
     </div>
 
-    <!-- ========================================== -->
-    <!-- TELA 1: LOGIN                              -->
-    <!-- ========================================== -->
+    <!-- TELA 1: LOGIN -->
     <div id="view-login" class="flex-1 flex items-center justify-center p-4 overflow-y-auto view-hidden">
         <div class="w-full max-w-sm bg-slate-800 rounded-3xl shadow-2xl p-8 border border-slate-700 relative overflow-hidden">
             <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
-            
             <div class="flex justify-center mb-6 relative z-10">
                 <div class="bg-slate-900 p-4 rounded-full border border-slate-700 shadow-inner">
                     <i data-lucide="shield-check" class="w-12 h-12 text-teal-500"></i>
@@ -92,7 +64,6 @@
             <div class="relative z-10">
                 <h2 class="text-2xl font-bold text-center mb-2 text-slate-100">Portal WG</h2>
                 <p class="text-center text-sm text-slate-400 mb-6">Acesso exclusivo para equipe</p>
-                
                 <form class="space-y-4" id="formLogin">
                     <div>
                         <div class="relative">
@@ -112,9 +83,7 @@
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- TELA 2: PORTAL DE BOAS VINDAS (DASHBOARD)  -->
-    <!-- ========================================== -->
+    <!-- TELA 2: PORTAL DE BOAS VINDAS -->
     <div id="view-dashboard" class="flex-1 flex flex-col overflow-y-auto view-hidden relative">
         <header class="bg-slate-800/80 backdrop-blur-md shadow-lg shrink-0 border-b border-slate-700 sticky top-0 z-20">
             <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
@@ -133,14 +102,11 @@
         <main class="w-full max-w-lg mx-auto py-8 sm:py-12 px-4 flex-1 flex flex-col items-center justify-center relative z-10">
             <div class="bg-slate-800 p-8 sm:p-10 rounded-3xl shadow-2xl border border-slate-700 text-center w-full relative overflow-hidden">
                 <div class="absolute -top-10 -right-10 w-40 h-40 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
                 <div class="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-slate-700">
                     <i data-lucide="user" class="w-10 h-10 text-teal-400"></i>
                 </div>
-                
                 <h2 class="text-2xl sm:text-3xl font-bold text-white mb-2" id="welcomeMessage">Olá, Equipe!</h2>
                 <p class="text-slate-400 mb-8 sm:mb-10 text-sm sm:text-base">Acesse o canal de comunicação exclusiva em tempo real.</p>
-
                 <button class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 px-6 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-teal-500/20 flex items-center justify-center gap-3 text-lg relative group" onclick="appState.switchView('view-chat')">
                     <i data-lucide="message-circle" class="w-6 h-6 group-hover:animate-pulse"></i>
                     Chat da Equipe
@@ -150,9 +116,7 @@
         </main>
     </div>
 
-    <!-- ========================================== -->
-    <!-- TELA 3: CHAT DA EQUIPE                     -->
-    <!-- ========================================== -->
+    <!-- TELA 3: CHAT DA EQUIPE -->
     <div id="view-chat" class="flex-1 flex flex-col h-full overflow-hidden view-hidden relative">
         <header class="bg-slate-800/90 backdrop-blur-md shadow-lg shrink-0 border-b border-slate-700 z-20">
             <div class="max-w-7xl mx-auto py-3 px-4 flex items-center justify-between">
@@ -192,7 +156,6 @@
 
                 <!-- Área do Chat -->
                 <div id="chatArea" class="w-full flex-1 flex flex-col relative bg-slate-900/30 mobile-hide h-full z-0 transition-opacity">
-                    <!-- Cabeçalho do Chat Ativo -->
                     <div class="bg-slate-800/95 p-3 flex items-center gap-3 border-b border-slate-700 z-10 backdrop-blur-md shadow-sm shrink-0">
                         <button id="backToListBtn" class="sm:hidden flex items-center gap-1 pr-2 text-slate-300 hover:text-white transition-colors">
                             <i data-lucide="arrow-left" class="w-6 h-6"></i>
@@ -225,55 +188,38 @@
                     <!-- Input Area -->
                     <div class="bg-slate-800/95 p-2 sm:p-4 border-t border-slate-700 z-10 backdrop-blur-md shrink-0">
                         <form id="messageForm" class="flex gap-2 w-full max-w-4xl mx-auto relative items-end">
-                            
-                            <!-- Botões Iniciais e Textarea -->
                             <button type="button" id="btnImproveMsg" onclick="appState.melhorarMensagem()" class="bg-slate-700 hover:bg-purple-600/90 text-purple-400 hover:text-white h-[44px] w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 border border-slate-600 shadow-md shrink-0" title="Melhorar com IA">
                                 <i data-lucide="sparkles" class="w-5 h-5"></i>
                             </button>
-                            
                             <button type="button" id="btnRecordAudio" onclick="appState.startRecording()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white h-[44px] w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 border border-slate-600 shadow-md shrink-0" title="Gravar Áudio">
                                 <i data-lucide="mic" class="w-5 h-5"></i>
                             </button>
+                            <textarea id="messageInput" disabled rows="1" placeholder="Digite a mensagem..." class="flex-1 bg-slate-900 text-white px-4 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50 shadow-inner resize-none min-h-[44px] max-h-24 overflow-y-auto leading-relaxed"></textarea>
                             
-                            <textarea id="messageInput" disabled rows="1"
-                                placeholder="Digite a mensagem..." 
-                                class="flex-1 bg-slate-900 text-white px-4 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50 shadow-inner resize-none min-h-[44px] max-h-24 overflow-y-auto leading-relaxed"></textarea>
-                                
-                            <!-- NOVO UI DE GRAVAÇÃO (Oculto por Padrão) -->
                             <div id="recordingUI" class="hidden flex-1 h-[44px] items-center justify-between bg-slate-900 border border-teal-500/30 rounded-xl px-2 sm:px-4 shadow-inner transition-all overflow-hidden">
-                                
-                                <!-- Estado 1: Gravando -->
                                 <div id="recordingState" class="flex flex-1 items-center justify-between w-full transition-opacity">
                                     <button type="button" onclick="appState.cancelRecording()" class="text-slate-400 hover:text-red-500 transition-colors p-2 rounded-full" title="Cancelar">
                                         <i data-lucide="trash-2" class="w-5 h-5"></i>
                                     </button>
-                                    
                                     <div class="flex items-center gap-2 sm:gap-3">
                                         <div class="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
                                         <span id="recordingTimer" class="text-red-400 font-mono font-medium tracking-wider text-xs sm:text-sm">00:00 / 01:00</span>
                                     </div>
-
                                     <div class="audio-wave mx-2 hidden sm:flex" id="audioWave">
                                         <span></span><span></span><span></span><span></span><span></span>
                                     </div>
-
                                     <button type="button" onclick="appState.stopAndPreview()" class="text-teal-400 hover:text-teal-300 transition-colors p-2 rounded-full bg-teal-500/10" title="Pausar e Ouvir">
                                         <i data-lucide="stop-circle" class="w-6 h-6 fill-teal-500/20"></i>
                                     </button>
                                 </div>
-
-                                <!-- Estado 2: Preview -->
                                 <div id="previewState" class="hidden flex-1 items-center justify-between w-full gap-2 transition-opacity">
                                     <button type="button" onclick="appState.cancelRecording()" class="text-slate-400 hover:text-red-500 transition-colors p-2 rounded-full shrink-0" title="Descartar Áudio">
                                         <i data-lucide="trash-2" class="w-5 h-5"></i>
                                     </button>
                                     <audio id="audioPreviewPlayer" controls class="h-[34px] flex-1 w-full max-w-[250px]"></audio>
                                 </div>
-
                             </div>
-
-                            <button type="submit" id="sendBtn" disabled
-                                class="bg-teal-600 hover:bg-teal-500 text-white h-[44px] w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shrink-0">
+                            <button type="submit" id="sendBtn" disabled class="bg-teal-600 hover:bg-teal-500 text-white h-[44px] w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shrink-0">
                                 <i data-lucide="send" class="w-5 h-5 ml-1"></i>
                             </button>
                         </form>
@@ -283,25 +229,22 @@
         </main>
     </div>
 
-    <!-- ========================================== -->
-    <!-- LÓGICA DO APLICATIVO                       -->
-    <!-- ========================================== -->
+    <!-- LÓGICA DO APLICATIVO -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
         import { getFirestore, collection, query, where, onSnapshot, addDoc, getDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        
+        // IMPORTAÇÕES NOVAS DO FIREBASE MESSAGING (PUSH NOTIFICATIONS)
+        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-messaging.js";
 
         lucide.createIcons();
 
-        // Helper para o Toast de Notificações
         window.showToast = (msg, isError = true) => {
             const toast = document.getElementById('toastNotification');
             document.getElementById('toastMessage').innerText = msg;
             toast.className = `fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl shadow-2xl z-[100] transition-all transform duration-300 flex items-center gap-3 font-medium text-sm w-[90%] max-w-md ${isError ? 'bg-red-500' : 'bg-teal-600'} text-white`;
-            
-            setTimeout(() => {
-                toast.classList.add('-translate-y-24', 'opacity-0');
-            }, 3500);
+            setTimeout(() => { toast.classList.add('-translate-y-24', 'opacity-0'); }, 3500);
         };
 
         const firebaseConfig = {
@@ -313,10 +256,36 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-
-        // --- Configuração da IA Gemini ---
-        const apiKey = ""; 
         
+        // Inicializa o Messaging
+        const messaging = getMessaging(app);
+
+        // Função crucial para pedir permissão e pegar o Token do celular do usuário
+        async function setupPushNotifications(user) {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    // Pega o token único deste dispositivo. 
+                    // NOTA: Para isso funcionar 100%, você deve adicionar a chave vapidKey nas configurações de nuvem do Firebase (Opcional, mas recomendado)
+                    const token = await getToken(messaging);
+                    
+                    if (token) {
+                        // Salva o Token do celular no perfil do usuário no Firestore
+                        // Assim, o banco de dados sabe para qual celular enviar o push quando chegar mensagem!
+                        await updateDoc(doc(db, "usuarios", user.uid), {
+                            fcmToken: token
+                        });
+                        console.log("Token de Notificação Push configurado com sucesso.");
+                    }
+                } else {
+                    console.log("Permissão para notificações negada.");
+                }
+            } catch (error) {
+                console.error("Erro ao configurar Push Notifications:", error);
+            }
+        }
+
+        const apiKey = ""; 
         async function callGeminiAPI(prompt) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const payload = { contents: [{ parts: [{ text: prompt }] }] };
@@ -324,9 +293,7 @@
                 const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 const data = await response.json();
                 return data.candidates?.[0]?.content?.parts?.[0]?.text || "Erro ao gerar.";
-            } catch (error) {
-                return "Erro de conexão.";
-            }
+            } catch (error) { return "Erro de conexão."; }
         }
 
         const playNotificationSound = () => {
@@ -341,12 +308,10 @@
             appState.handleTyping();
             const btnSend = document.getElementById('sendBtn');
             btnSend.disabled = this.value.trim() === '';
-            
             this.style.height = 'auto';
             this.style.height = (this.scrollHeight) + 'px';
         });
 
-        // --- Estado Global ---
         window.appState = {
             currentUser: null,
             selectedTechId: null,
@@ -355,16 +320,7 @@
             unsubMessages: null,
             usersData: {}, 
             isTypingTimer: null,
-            
-            // Variáveis de Gravação de Áudio
-            isRecording: false,
-            isCancelled: false,
-            isPreviewing: false,
-            isSendingDirectly: false,
-            pendingAudio: null,
-            mediaRecorder: null,
-            audioChunks: [],
-            recordingInterval: null,
+            isRecording: false, isCancelled: false, isPreviewing: false, isSendingDirectly: false, pendingAudio: null, mediaRecorder: null, audioChunks: [], recordingInterval: null,
             
             switchView: (viewId) => {
                 document.querySelectorAll('div[id^="view-"]').forEach(el => el.classList.add('view-hidden'));
@@ -374,67 +330,38 @@
 
             updatePresence: async (isOnline) => {
                 if (!appState.currentUser) return;
-                try {
-                    await updateDoc(doc(db, "usuarios", appState.currentUser.uid), {
-                        isOnline: isOnline,
-                        lastActive: Date.now()
-                    });
-                } catch(e) {}
+                try { await updateDoc(doc(db, "usuarios", appState.currentUser.uid), { isOnline: isOnline, lastActive: Date.now() }); } catch(e) {}
             },
 
             setTypingStatus: async (isTyping) => {
                 if (!appState.currentUser) return;
-                try {
-                    await updateDoc(doc(db, "usuarios", appState.currentUser.uid), {
-                        typingTo: isTyping ? appState.selectedTechId : null
-                    });
-                } catch(e) {}
+                try { await updateDoc(doc(db, "usuarios", appState.currentUser.uid), { typingTo: isTyping ? appState.selectedTechId : null }); } catch(e) {}
             },
 
             handleTyping: () => {
                 if(!appState.selectedTechId) return;
                 appState.setTypingStatus(true);
                 clearTimeout(appState.isTypingTimer);
-                appState.isTypingTimer = setTimeout(() => {
-                    appState.setTypingStatus(false);
-                }, 2000);
+                appState.isTypingTimer = setTimeout(() => { appState.setTypingStatus(false); }, 2000);
             },
 
-            // ==========================================
-            // GRAVAÇÃO DE ÁUDIO RENOVADA
-            // ==========================================
             startRecording: async () => {
-                if (!appState.selectedTechId) {
-                    showToast("Selecione um contato primeiro para enviar áudio.");
-                    return;
-                }
-                
+                if (!appState.selectedTechId) { showToast("Selecione um contato primeiro para enviar áudio."); return; }
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     appState.mediaRecorder = new MediaRecorder(stream);
                     appState.audioChunks = [];
-                    
-                    appState.isRecording = true;
-                    appState.isCancelled = false;
-                    appState.isPreviewing = false;
-                    appState.isSendingDirectly = false;
-                    appState.pendingAudio = null;
+                    appState.isRecording = true; appState.isCancelled = false; appState.isPreviewing = false; appState.isSendingDirectly = false; appState.pendingAudio = null;
 
-                    // Ajuste de Interface (Esconde inputs, mostra Gravador)
                     document.getElementById('btnImproveMsg').classList.add('hidden');
                     document.getElementById('btnRecordAudio').classList.add('hidden');
                     document.getElementById('messageInput').classList.add('hidden');
                     
                     const recUI = document.getElementById('recordingUI');
-                    recUI.classList.remove('hidden');
-                    recUI.classList.add('flex');
-                    
-                    document.getElementById('recordingState').classList.remove('hidden');
-                    document.getElementById('recordingState').classList.add('flex');
-                    document.getElementById('previewState').classList.add('hidden');
-                    document.getElementById('previewState').classList.remove('flex');
+                    recUI.classList.remove('hidden'); recUI.classList.add('flex');
+                    document.getElementById('recordingState').classList.remove('hidden'); document.getElementById('recordingState').classList.add('flex');
+                    document.getElementById('previewState').classList.add('hidden'); document.getElementById('previewState').classList.remove('flex');
 
-                    // Prepara o Botão Enviar para Envio Direto e Piscar
                     const btnSend = document.getElementById('sendBtn');
                     btnSend.disabled = false;
                     btnSend.classList.add('animate-pulse', 'bg-teal-500', 'shadow-[0_0_15px_rgba(20,184,166,0.6)]');
@@ -446,70 +373,40 @@
                     appState.recordingInterval = setInterval(() => {
                         secondsElapsed++;
                         timerDisplay.innerText = `00:${secondsElapsed.toString().padStart(2, '0')} / 00:15`;
-                        
-                        // Limite de 15 segundos atinge -> Pausa e obriga o usuário a ouvir (Preview)
-                        if(secondsElapsed >= 15) {
-                            if (appState.isRecording) {
-                                appState.stopAndPreview();
-                            }
-                        }
+                        if(secondsElapsed >= 15) { if (appState.isRecording) { appState.stopAndPreview(); } }
                     }, 1000);
 
-                    appState.mediaRecorder.ondataavailable = e => {
-                        if (e.data.size > 0) appState.audioChunks.push(e.data);
-                    };
+                    appState.mediaRecorder.ondataavailable = e => { if (e.data.size > 0) appState.audioChunks.push(e.data); };
 
                     appState.mediaRecorder.onstop = () => {
                         clearInterval(appState.recordingInterval);
-                        
-                        if (appState.isCancelled) {
-                            appState.resetRecordingUI();
-                            return;
-                        }
-                        if (appState.audioChunks.length === 0) {
-                            appState.resetRecordingUI();
-                            return;
-                        }
-
+                        if (appState.isCancelled || appState.audioChunks.length === 0) { appState.resetRecordingUI(); return; }
                         const mimeType = appState.mediaRecorder.mimeType || 'audio/webm';
                         const audioBlob = new Blob(appState.audioChunks, { type: mimeType });
-                        
                         const reader = new FileReader();
                         reader.readAsDataURL(audioBlob);
                         reader.onloadend = async () => {
                             const base64Audio = reader.result;
-                            
                             if (appState.isPreviewing) {
-                                // MODO PREVIEW: O áudio não é enviado, fica no player
                                 appState.pendingAudio = base64Audio;
-                                document.getElementById('recordingState').classList.add('hidden');
-                                document.getElementById('recordingState').classList.remove('flex');
-                                document.getElementById('previewState').classList.remove('hidden');
-                                document.getElementById('previewState').classList.add('flex');
+                                document.getElementById('recordingState').classList.add('hidden'); document.getElementById('recordingState').classList.remove('flex');
+                                document.getElementById('previewState').classList.remove('hidden'); document.getElementById('previewState').classList.add('flex');
                                 document.getElementById('audioPreviewPlayer').src = base64Audio;
-                                
                                 const btnSendPreview = document.getElementById('sendBtn');
-                                btnSendPreview.classList.remove('animate-pulse');
-                                btnSendPreview.disabled = false;
+                                btnSendPreview.classList.remove('animate-pulse'); btnSendPreview.disabled = false;
                             } else {
-                                // MODO ENVIO DIRETO (Atingiu 15s ou Carregou no botão Enviar durante a gravação)
                                 appState.resetRecordingUI();
                                 await appState.sendDataToFirebase({ text: "🎵 Mensagem de Áudio", audioData: base64Audio });
                             }
                         };
                     };
-
                     appState.mediaRecorder.start();
-
-                } catch (err) {
-                    console.error("Erro microfone:", err);
-                    showToast("Permissão de microfone negada. Verifique as configurações do navegador.");
-                }
+                } catch (err) { showToast("Permissão de microfone negada."); }
             },
 
             stopAndPreview: () => {
                 if (!appState.isRecording) return;
-                appState.isPreviewing = true; // Ativa a Flag de Preview
+                appState.isPreviewing = true;
                 if (appState.mediaRecorder && appState.mediaRecorder.state !== 'inactive') {
                     appState.mediaRecorder.stop();
                     appState.mediaRecorder.stream.getTracks().forEach(track => track.stop());
@@ -527,36 +424,20 @@
             },
 
             resetRecordingUI: () => {
-                appState.isRecording = false;
-                appState.isPreviewing = false;
-                appState.isSendingDirectly = false;
-                appState.pendingAudio = null;
-                appState.isCancelled = false;
+                appState.isRecording = false; appState.isPreviewing = false; appState.isSendingDirectly = false; appState.pendingAudio = null; appState.isCancelled = false;
                 clearInterval(appState.recordingInterval);
-
-                // Volta ao normal
                 document.getElementById('btnImproveMsg').classList.remove('hidden');
                 document.getElementById('btnRecordAudio').classList.remove('hidden');
                 document.getElementById('messageInput').classList.remove('hidden');
-                
                 const recUI = document.getElementById('recordingUI');
-                recUI.classList.add('hidden');
-                recUI.classList.remove('flex');
-                
-                // Reseta sub-componentes da UI de gravação
-                document.getElementById('recordingState').classList.remove('hidden');
-                document.getElementById('recordingState').classList.add('flex');
-                document.getElementById('previewState').classList.add('hidden');
-                document.getElementById('previewState').classList.remove('flex');
+                recUI.classList.add('hidden'); recUI.classList.remove('flex');
+                document.getElementById('recordingState').classList.remove('hidden'); document.getElementById('recordingState').classList.add('flex');
+                document.getElementById('previewState').classList.add('hidden'); document.getElementById('previewState').classList.remove('flex');
                 document.getElementById('audioPreviewPlayer').src = "";
-                
                 const btnSend = document.getElementById('sendBtn');
                 btnSend.classList.remove('animate-pulse', 'bg-teal-500', 'shadow-[0_0_15px_rgba(20,184,166,0.6)]');
-                
                 const input = document.getElementById('messageInput');
-                if (input.value.trim() === '') {
-                    btnSend.disabled = true;
-                }
+                if (input.value.trim() === '') { btnSend.disabled = true; }
             },
 
             sendDataToFirebase: async (msgData) => {
@@ -570,19 +451,11 @@
                         read: false,
                         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
                     });
-                } catch (e) {
-                    showToast("Falha ao enviar a mensagem. Verifique a conexão com a internet.");
-                }
+                } catch (e) { showToast("Falha ao enviar a mensagem. Verifique a conexão com a internet."); }
             },
 
-            // --- Ouvinte de Mensagens ---
             startGlobalMessageListener: () => {
                 if (appState.unsubMessages) return;
-
-                if ("Notification" in window && Notification.permission === "default") {
-                    Notification.requestPermission();
-                }
-
                 const qMsg = query(collection(db, "chat_equipe"), where("participants", "array-contains", appState.currentUser.uid));
                 let isFirstLoad = true;
 
@@ -592,9 +465,7 @@
 
                     snapshot.forEach(doc => {
                         const msgData = doc.data();
-                        if (msgData.timestamp >= timeLimit) {
-                            appState.allMessages.push({ id: doc.id, ...msgData });
-                        }
+                        if (msgData.timestamp >= timeLimit) { appState.allMessages.push({ id: doc.id, ...msgData }); }
                     });
                     
                     const getTime = (ts) => (ts && ts.toDate) ? ts.toDate().getTime() : (ts || 0);
@@ -609,11 +480,9 @@
                                     const isChattingWithSender = appState.selectedTechId === msg.senderId;
                                     const isMobileHidden = document.getElementById('chatArea').classList.contains('mobile-hide');
                                     
+                                    // Se o app estiver aberto e em foco na conversa errada: avisa com som.
                                     if (!(isViewingChat && isChattingWithSender && !isMobileHidden)) {
                                         playNotificationSound();
-                                        if ("Notification" in window && Notification.permission === "granted") {
-                                            new Notification("Nova Mensagem WG", { body: msg.text });
-                                        }
                                         appState.unreadCounts[msg.senderId] = (appState.unreadCounts[msg.senderId] || 0) + 1;
                                         appState.updateBadges();
                                     }
@@ -622,10 +491,7 @@
                         });
                     }
                     isFirstLoad = false;
-
-                    if (appState.selectedTechId) {
-                        appState.renderMessages();
-                    }
+                    if (appState.selectedTechId) { appState.renderMessages(); }
                 });
             },
 
@@ -648,26 +514,18 @@
                                 techDiv.appendChild(badge);
                             }
                             badge.innerText = count;
-                        } else if (badge) {
-                            badge.remove();
-                        }
+                        } else if (badge) { badge.remove(); }
                     }
                 });
             },
 
-            // --- IA Gemini ---
             melhorarMensagem: async () => {
                 const input = document.getElementById('messageInput');
                 const textoOriginal = input.value.trim();
-                
-                if (!textoOriginal) {
-                    showToast('Digite algo para a IA poder melhorar e corrigir.', false);
-                    return;
-                }
+                if (!textoOriginal) { showToast('Digite algo para a IA poder melhorar e corrigir.', false); return; }
 
                 const btn = document.getElementById('btnImproveMsg');
                 const iconeOriginal = btn.innerHTML;
-                
                 btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin text-purple-300"></i>`;
                 btn.disabled = true;
 
@@ -676,18 +534,12 @@
                 
                 if (!resposta.includes('Erro')) {
                     input.value = resposta.trim().replace(/^"|"$/g, '');
-                    input.style.height = 'auto';
-                    input.style.height = (input.scrollHeight) + 'px';
-                } else {
-                    showToast("O servidor da IA Gemini falhou. Tente de novo.");
-                }
+                    input.style.height = 'auto'; input.style.height = (input.scrollHeight) + 'px';
+                } else { showToast("O servidor da IA Gemini falhou. Tente de novo."); }
                 
-                btn.innerHTML = iconeOriginal;
-                btn.disabled = false;
-                lucide.createIcons();
+                btn.innerHTML = iconeOriginal; btn.disabled = false; lucide.createIcons();
             },
 
-            // --- Lógica do Chat ---
             initChat: () => {
                 const techListEl = document.getElementById('techList');
                 const q = query(collection(db, "usuarios"), where("tipo", "in", ["tecnico", "admin", "administrador"]));
@@ -725,9 +577,7 @@
                             </div>`;
                         techListEl.appendChild(div);
                     });
-                    
-                    appState.updateBadges();
-                    appState.updateActiveHeader();
+                    appState.updateBadges(); appState.updateActiveHeader();
                 });
             },
 
@@ -750,9 +600,7 @@
                     if (tech.lastActive) {
                         const timeStr = new Date(tech.lastActive).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
                         roleEl.innerHTML = `Visto por último às ${timeStr}`;
-                    } else {
-                        roleEl.innerHTML = 'Offline';
-                    }
+                    } else { roleEl.innerHTML = 'Offline'; }
                 }
             },
 
@@ -760,7 +608,6 @@
                 appState.selectedTechId = techId;
                 document.getElementById('activeTechName').innerText = nome;
                 document.getElementById('activeTechAvatar').innerText = nome.charAt(0).toUpperCase();
-                
                 appState.updateActiveHeader();
                 
                 if (appState.unreadCounts[techId]) {
@@ -768,24 +615,18 @@
                     appState.updateBadges();
                 }
 
-                if (appState.isRecording || appState.pendingAudio) {
-                    appState.cancelRecording();
-                }
+                if (appState.isRecording || appState.pendingAudio) { appState.cancelRecording(); }
 
                 const input = document.getElementById('messageInput');
                 const btnRecord = document.getElementById('btnRecordAudio');
-                
-                input.disabled = false; 
-                btnRecord.disabled = false;
+                input.disabled = false; btnRecord.disabled = false;
 
                 const sidebar = document.getElementById('sidebar');
                 const chatArea = document.getElementById('chatArea');
                 
                 if (window.innerWidth < 640) {
-                    sidebar.classList.add('mobile-hide');
-                    chatArea.classList.remove('mobile-hide');
+                    sidebar.classList.add('mobile-hide'); chatArea.classList.remove('mobile-hide');
                 }
-                
                 appState.renderMessages();
             },
 
@@ -800,17 +641,13 @@
                                 <i data-lucide="lock" class="w-3 h-3"></i> Conversa protegida de ponta a ponta
                             </div>
                         </div>`;
-                    lucide.createIcons();
-                    return;
+                    lucide.createIcons(); return;
                 }
 
                 container.innerHTML = '';
                 msgs.forEach((msg, index) => {
                     const isMine = msg.senderId === appState.currentUser.uid;
-                    
-                    if (!isMine && !msg.read) {
-                        updateDoc(doc(db, 'chat_equipe', msg.id), { read: true }).catch(()=>{});
-                    }
+                    if (!isMine && !msg.read) { updateDoc(doc(db, 'chat_equipe', msg.id), { read: true }).catch(()=>{}); }
 
                     const dataAtual = msg.timestamp && msg.timestamp.toDate ? msg.timestamp.toDate() : new Date(msg.timestamp);
                     const time = isNaN(dataAtual) ? "" : dataAtual.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -822,18 +659,10 @@
                     const wrapper = document.createElement('div');
                     wrapper.className = `flex ${isMine ? 'justify-end' : 'justify-start'} ${marginClass}`;
                     
-                    const bubbleClass = isMine 
-                        ? 'bg-teal-700 text-white rounded-l-2xl rounded-tr-2xl' 
-                        : 'bg-slate-700 text-slate-100 rounded-r-2xl rounded-tl-2xl';
+                    const bubbleClass = isMine ? 'bg-teal-700 text-white rounded-l-2xl rounded-tr-2xl' : 'bg-slate-700 text-slate-100 rounded-r-2xl rounded-tl-2xl';
 
                     let checks = '';
-                    if (isMine) {
-                        if (msg.read) {
-                            checks = '<i data-lucide="check-check" class="w-3.5 h-3.5 text-blue-400"></i>'; 
-                        } else {
-                            checks = '<i data-lucide="check" class="w-3.5 h-3.5 text-slate-300"></i>'; 
-                        }
-                    }
+                    if (isMine) { checks = msg.read ? '<i data-lucide="check-check" class="w-3.5 h-3.5 text-blue-400"></i>' : '<i data-lucide="check" class="w-3.5 h-3.5 text-slate-300"></i>'; }
 
                     let contentHtml = '';
                     if (msg.audioData) {
@@ -841,11 +670,8 @@
                             <div class="flex items-center gap-2 pb-2 min-w-[200px]">
                                 <i data-lucide="mic" class="w-4 h-4 text-slate-300/80 shrink-0"></i>
                                 <audio controls src="${msg.audioData}" class="w-full h-8 outline-none custom-audio"></audio>
-                            </div>
-                        `;
-                    } else {
-                        contentHtml = `<p class="text-[14px] sm:text-[15px] break-words leading-relaxed pb-3">${msg.text}</p>`;
-                    }
+                            </div>`;
+                    } else { contentHtml = `<p class="text-[14px] sm:text-[15px] break-words leading-relaxed pb-3">${msg.text}</p>`; }
 
                     wrapper.innerHTML = `
                         <div class="max-w-[85%] sm:max-w-[75%] px-3 sm:px-4 py-2 shadow-md relative group ${bubbleClass} ${sameSender ? (isMine ? 'rounded-tr-md' : 'rounded-tl-md') : ''}">
@@ -858,26 +684,14 @@
                     container.appendChild(wrapper);
                 });
                 lucide.createIcons();
-                
-                setTimeout(() => {
-                    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-                }, 100);
+                setTimeout(() => { container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' }); }, 100);
             }
         };
-
-        // --- Event Listeners Globais ---
         
         window.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                appState.updatePresence(true);
-            } else {
-                appState.updatePresence(false);
-                appState.setTypingStatus(false);
-            }
+            if (document.visibilityState === 'visible') { appState.updatePresence(true); } else { appState.updatePresence(false); appState.setTypingStatus(false); }
         });
-        window.addEventListener('beforeunload', () => {
-            appState.updatePresence(false);
-        });
+        window.addEventListener('beforeunload', () => { appState.updatePresence(false); });
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -886,24 +700,21 @@
                 
                 if (userData.tipo === "tecnico" || userData.tipo === "admin" || userData.tipo === "administrador") {
                     appState.currentUser = { uid: user.uid, nome: userData.nome || user.email.split('@')[0], ...userData };
-                    
                     const primeiroNome = appState.currentUser.nome.split(' ')[0];
                     document.getElementById('welcomeMessage').innerText = `Olá, ${primeiroNome}!`;
                     document.getElementById('currentUserDisplay').innerHTML = `<div class="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></div> ${primeiroNome}`;
                     
                     appState.updatePresence(true); 
                     appState.startGlobalMessageListener(); 
+                    
+                    // CHAMA A FUNÇÃO DE PUSH NOTIFICATIONS APÓS LOGIN!
+                    setupPushNotifications(user);
+
                     appState.switchView('view-dashboard');
-                } else {
-                    showToast("Acesso restrito apenas para a equipe técnica.");
-                    signOut(auth);
-                }
+                } else { showToast("Acesso restrito."); signOut(auth); }
             } else {
                 appState.updatePresence(false); 
-                if (appState.unsubMessages) {
-                    appState.unsubMessages();
-                    appState.unsubMessages = null;
-                }
+                if (appState.unsubMessages) { appState.unsubMessages(); appState.unsubMessages = null; }
                 appState.switchView('view-login');
             }
         });
@@ -913,65 +724,32 @@
             const email = document.getElementById("email").value;
             const senha = document.getElementById("senha").value;
             const btn = document.getElementById("btnLogin");
-            
             const textoOriginal = btn.innerText;
             btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin mx-auto"></i>`;
-            
-            try {
-                await signInWithEmailAndPassword(auth, email, senha);
-            } catch (err) {
-                showToast("Erro ao iniciar sessão. Verifique o seu e-mail e palavra-passe.");
-                btn.innerText = textoOriginal;
-            }
+            try { await signInWithEmailAndPassword(auth, email, senha); } catch (err) { showToast("Erro ao iniciar sessão."); btn.innerText = textoOriginal; }
         });
 
         document.getElementById('messageForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            // Tratamento 1: Modo de Preview do Áudio.
             if (appState.pendingAudio) {
-                const audioBlob = appState.pendingAudio;
-                appState.resetRecordingUI();
-                await appState.sendDataToFirebase({ text: "🎵 Mensagem de Áudio", audioData: audioBlob });
-                return;
+                const audioBlob = appState.pendingAudio; appState.resetRecordingUI(); await appState.sendDataToFirebase({ text: "🎵 Mensagem de Áudio", audioData: audioBlob }); return;
             }
-
-            // Tratamento 2: Gravação ativa -> Envia Diretamente.
             if (appState.isRecording) {
                 appState.isSendingDirectly = true;
                 if (appState.mediaRecorder && appState.mediaRecorder.state !== 'inactive') {
-                    appState.mediaRecorder.stop();
-                    appState.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    appState.mediaRecorder.stop(); appState.mediaRecorder.stream.getTracks().forEach(track => track.stop());
                 }
                 return;
             }
-
-            // Tratamento 3: Envio de Texto Normal.
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             if (!text || !appState.selectedTechId) return;
-
-            input.value = '';
-            input.style.height = 'auto'; 
-            appState.setTypingStatus(false);
-            
-            document.getElementById('sendBtn').disabled = true;
-            
+            input.value = ''; input.style.height = 'auto'; appState.setTypingStatus(false); document.getElementById('sendBtn').disabled = true;
             await appState.sendDataToFirebase({ text: text });
         });
 
-        document.getElementById("btnLogout").addEventListener("click", () => {
-            appState.updatePresence(false);
-            signOut(auth);
-        });
-
-        document.getElementById('backToListBtn').addEventListener('click', () => {
-            appState.selectedTechId = null;
-            appState.updateActiveHeader();
-            document.getElementById('sidebar').classList.remove('mobile-hide');
-            document.getElementById('chatArea').classList.add('mobile-hide');
-        });
-
+        document.getElementById("btnLogout").addEventListener("click", () => { appState.updatePresence(false); signOut(auth); });
+        document.getElementById('backToListBtn').addEventListener('click', () => { appState.selectedTechId = null; appState.updateActiveHeader(); document.getElementById('sidebar').classList.remove('mobile-hide'); document.getElementById('chatArea').classList.add('mobile-hide'); });
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
             document.querySelectorAll('.tech-item').forEach(item => {
@@ -980,14 +758,7 @@
                 item.style.display = (name.includes(term) || role.includes(term)) ? 'flex' : 'none';
             });
         });
-
-        document.getElementById('messageInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                document.getElementById('messageForm').dispatchEvent(new Event('submit'));
-            }
-        });
-
+        document.getElementById('messageInput').addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('messageForm').dispatchEvent(new Event('submit')); } });
     </script>
 </body>
 </html>
