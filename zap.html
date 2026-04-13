@@ -52,6 +52,13 @@
         <span id="toastMessage" class="flex-1">Mensagem</span>
     </div>
 
+    <!-- AVISO DE PROTOCOLO FILE:// -->
+    <script>
+        if (window.location.protocol === 'file:') {
+            alert("ATENÇÃO: O chat utiliza módulos seguros que não funcionam abrindo o ficheiro diretamente (file://). Por favor, use um servidor local como o 'Live Server' do VS Code, ou hospede o ficheiro online.");
+        }
+    </script>
+
     <!-- TELA 1: LOGIN -->
     <div id="view-login" class="flex-1 flex items-center justify-center p-4 overflow-y-auto view-hidden">
         <div class="w-full max-w-sm bg-slate-800 rounded-3xl shadow-2xl p-8 border border-slate-700 relative overflow-hidden">
@@ -251,17 +258,34 @@
           apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
           authDomain: "sistema-chamados-99e49.firebaseapp.com",
           projectId: "sistema-chamados-99e49"
+          // ATENÇÃO: Para o Push Notification funcionar sem erros, precisará de adicionar aqui:
+          // messagingSenderId: "SEU_SENDER_ID",
+          // appId: "SEU_APP_ID"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        // Inicializa o Messaging
-        const messaging = getMessaging(app);
+        // Inicializa o Messaging com Proteção contra Falhas
+        let messaging = null;
+        try {
+            messaging = getMessaging(app);
+        } catch (err) {
+            console.warn("Aviso: Notificações Push inativas. Faltam as chaves 'messagingSenderId' e 'appId' no firebaseConfig.", err);
+        }
 
         // Função crucial para pedir permissão e pegar o Token do celular do usuário
         async function setupPushNotifications(user) {
+            // Aborta se o messaging não conseguiu iniciar (ex: faltam chaves)
+            if (!messaging) return; 
+            
+            // Aborta se o navegador for incompatível com Push Notifications
+            if (!('Notification' in window)) {
+                console.log("Este navegador não suporta notificações desktop/push.");
+                return;
+            }
+
             try {
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
