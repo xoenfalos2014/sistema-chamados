@@ -132,7 +132,7 @@
                 <p class="text-slate-400 mb-8 sm:mb-10 text-sm sm:text-base">Aceda ao canal de comunicação exclusiva em tempo real.</p>
                 <button class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 px-6 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-teal-500/20 flex items-center justify-center gap-3 text-lg relative group" onclick="appState.switchView('view-chat')">
                     <i data-lucide="message-circle" class="w-6 h-6 group-hover:animate-pulse"></i>
-                    Chat da Equipa
+                    Chat da Equipe
                     <span id="globalChatBadge" class="hidden absolute -top-3 -right-3 bg-red-500 text-white text-sm font-bold rounded-full h-8 w-8 flex items-center justify-center animate-bounce shadow-md border-4 border-slate-800">0</span>
                 </button>
             </div>
@@ -338,14 +338,18 @@
             }
         });
 
-        // Push Notifications Setup
+        // Push Notifications Setup Corrigido (Passando o SW Registration)
         async function setupPushNotifications(user) {
             if (!messaging || !('Notification' in window)) return;
             try {
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
-                    const token = await getToken(messaging);
-                    if (token) await updateDoc(doc(db, "usuarios", user.uid), { fcmToken: token });
+                    // Pega o Service Worker atual para garantir que o token liga as mensagens de background
+                    const swReg = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+                    if(swReg) {
+                        const token = await getToken(messaging, { serviceWorkerRegistration: swReg });
+                        if (token) await updateDoc(doc(db, "usuarios", user.uid), { fcmToken: token });
+                    }
                 }
             } catch (error) { console.error("Erro Push:", error); }
         }
@@ -414,7 +418,7 @@
             this.style.height = (this.scrollHeight) + 'px';
         });
 
-        // --- UPLOAD DE ANEXOS ---
+        // --- UPLOAD DE ANEXOS COM PROTEÇÃO ANTI-TRAVAMENTO ---
         const fileInput = document.getElementById('fileInput');
         const btnAttachFile = document.getElementById('btnAttachFile');
 
@@ -430,32 +434,55 @@
             
             if (file.size > 5 * 1024 * 1024) { showToast("O ficheiro excede o limite de 5MB."); return; }
 
+            // Guardar ícone original e meter "a carregar"
+            const originalIcon = btnAttachFile.innerHTML;
+            btnAttachFile.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i>`;
+            lucide.createIcons();
+
             btnAttachFile.classList.add('uploading-pulse');
             btnAttachFile.disabled = true; msgInput.disabled = true; btnRecordAudio.disabled = true;
             showToast("A enviar anexo...", false);
 
             try {
-                const storageRef = ref(storage, `chat_anexos/${appState.currentUser.uid}/${Date.now()}_${file.name}`);
+                // Remover caracteres esquisitos do nome do ficheiro para evitar erros no Storage
+                const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+                const storageRef = ref(storage, `chat_anexos/${appState.currentUser.uid}/${Date.now()}_${safeName}`);
                 const uploadTask = uploadBytesResumable(storageRef, file);
 
                 uploadTask.on('state_changed', 
-                    (snapshot) => {}, 
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        console.log('Upload is ' + progress + '% done');
+                    }, 
                     (error) => {
-                        console.error("Erro:", error); showToast("Falha no upload."); resetUploadUI();
+                        console.error("Erro Firebase Storage:", error); 
+                        showToast("Erro de permissão! Verifique as regras do Storage no Firebase."); 
+                        resetUploadUI(originalIcon);
                     }, 
                     async () => {
-                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                        await appState.sendDataToFirebase({
-                            text: file.type.startsWith('image/') ? "📷 Imagem partilhada" : "📎 Ficheiro partilhado",
-                            fileUrl: downloadURL, fileName: file.name, fileType: file.type
-                        });
-                        resetUploadUI(); showToast("Anexo enviado!", false);
+                        try {
+                            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                            await appState.sendDataToFirebase({
+                                text: file.type.startsWith('image/') ? "📷 Imagem partilhada" : "📎 Ficheiro partilhado",
+                                fileUrl: downloadURL, fileName: file.name, fileType: file.type
+                            });
+                            resetUploadUI(originalIcon); showToast("Anexo enviado com sucesso!", false);
+                        } catch (err) {
+                            console.error(err);
+                            resetUploadUI(originalIcon); showToast("Erro ao gerar link do anexo.");
+                        }
                     }
                 );
-            } catch (err) { resetUploadUI(); }
+            } catch (err) { 
+                console.error(err);
+                resetUploadUI(originalIcon); 
+                showToast("Erro interno ao enviar.");
+            }
         });
 
-        function resetUploadUI() {
+        function resetUploadUI(iconHTML) {
+            btnAttachFile.innerHTML = iconHTML || '<i data-lucide="paperclip" class="w-5 h-5"></i>';
+            lucide.createIcons();
             btnAttachFile.classList.remove('uploading-pulse');
             btnAttachFile.disabled = false; msgInput.disabled = false; btnRecordAudio.disabled = false;
             msgInput.focus();
@@ -635,7 +662,8 @@
                                             const textoNotificacao = msg.audioData ? "🎵 Mensagem de Áudio" : (msg.fileUrl ? "📎 Anexo" : msg.text);
                                             new Notification("WG Informática: " + remetenteNome, {
                                                 body: textoNotificacao,
-                                                icon: 'https://cdn-icons-png.flaticon.com/512/1005/1005141.png'
+                                                icon: 'https://cdn-icons-png.flaticon.com/512/1005/1005141.png',
+                                                badge: 'https://cdn-icons-png.flaticon.com/512/1005/1005141.png'
                                             });
                                         }
 
