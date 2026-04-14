@@ -1,32 +1,48 @@
-// IMPORTANTE: Este arquivo DEVE ficar na mesma pasta raiz que o seu arquivo zap.html
-// e obrigatoriamente tem que se chamar "firebase-messaging-sw.js"
-
 importScripts('https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.6.10/firebase-messaging-compat.js');
 
-// 1. Inicializa o app com suas credenciais do Firebase
+// CONFIGURAÇÃO WG - Garanta que estes dados são idênticos ao zap.html
 firebase.initializeApp({
     apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
     authDomain: "sistema-chamados-99e49.firebaseapp.com",
-    projectId: "sistema-chamados-99e49"
+    projectId: "sistema-chamados-99e49",
+    storageBucket: "sistema-chamados-99e49.firebasestorage.app",
+    messagingSenderId: "680351942005",
+    appId: "1:680351942005:web:896b35a40f094d42297f3c"
 });
 
-// 2. Inicializa o serviço de mensagens em segundo plano
 const messaging = firebase.messaging();
 
-// 3. Esta função é executada pelo SO do celular quando o app está fechado / minimizado
-messaging.onBackgroundMessage(function(payload) {
-  console.log('Mensagem recebida em segundo plano: ', payload);
-  
-  // Customiza como a notificação do celular vai aparecer
-  const notificationTitle = payload.notification.title || 'Nova mensagem no Chat WG';
-  const notificationOptions = {
-    body: payload.notification.body || 'Você tem uma nova mensagem de texto ou áudio.',
-    icon: 'https://cdn-icons-png.flaticon.com/512/1005/1005141.png', // O ícone que aparece na barrinha de cima
-    badge: 'https://cdn-icons-png.flaticon.com/512/1005/1005141.png',
-    vibrate: [200, 100, 200]
-    // OBS: O som em segundo plano é gerido pelas configurações de notificação do próprio sistema Android/iOS.
-  };
+// Captura mensagens quando o utilizador está no Instagram/Facebook/Ecrã Bloqueado
+messaging.onBackgroundMessage((payload) => {
+    console.log('[SW] Mensagem recebida em segundo plano:', payload);
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+    const notificationTitle = payload.notification?.title || "WG: Nova Mensagem";
+    const notificationOptions = {
+        body: payload.notification?.body || "Abra o chat para ler.",
+        icon: 'https://cdn-icons-png.flaticon.com/512/1005/1005141.png',
+        badge: 'https://cdn-icons-png.flaticon.com/512/1005/1005141.png',
+        tag: 'chat-wg', // Agrupa notificações para não encher o ecrã
+        renotify: true,
+        requireInteraction: true, // A notificação não desaparece sozinha
+        vibrate: [200, 100, 200, 100, 400],
+        data: {
+            url: '/zap.html' // Redireciona ao clicar
+        }
+    };
+
+    return self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// Ao clicar na notificação, abre o seu app mesmo que esteja fechado
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            if (clientList.length > 0) {
+                return clientList[0].focus();
+            }
+            return clients.openWindow('/zap.html');
+        })
+    );
 });
