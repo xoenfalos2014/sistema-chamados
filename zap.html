@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WG Informática - Portal de Comunicação</title>
     
+    <!-- Configurações PWA / APK -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -32,8 +33,11 @@
         }
         .mobile-hide { display: none !important; }
         @media (min-width: 640px) { .mobile-hide { display: flex !important; } }
+        
         audio { height: 36px; border-radius: 8px; outline: none; }
         audio::-webkit-media-controls-panel { background-color: #cbd5e1; }
+        
+        /* Animação Ondas de Áudio */
         .audio-wave { display: flex; align-items: center; justify-content: center; gap: 3px; height: 24px; }
         .audio-wave span { display: block; width: 4px; background-color: #14b8a6; border-radius: 4px; animation: wave 1.2s infinite ease-in-out; }
         .audio-wave span:nth-child(1) { animation-delay: 0.0s; }
@@ -43,7 +47,7 @@
         .audio-wave span:nth-child(5) { animation-delay: 0.0s; }
         @keyframes wave { 0%, 100% { height: 6px; } 50% { height: 24px; } }
         
-        /* Loading Animation para Upload */
+        /* Animação de Upload */
         .uploading-pulse { animation: pulse-border 1.5s infinite; border-color: #14b8a6; }
         @keyframes pulse-border {
             0% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.4); }
@@ -54,11 +58,19 @@
 </head>
 <body class="bg-slate-900 text-slate-200 flex flex-col chat-bg">
 
+    <!-- Toast Notification -->
     <div id="toastNotification" class="fixed top-5 left-1/2 -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[100] transition-all transform -translate-y-24 opacity-0 pointer-events-none flex items-center gap-3 font-medium text-sm w-[90%] max-w-md">
         <i data-lucide="info" class="w-5 h-5 shrink-0"></i>
         <span id="toastMessage" class="flex-1">Mensagem</span>
     </div>
 
+    <script>
+        if (window.location.protocol === 'file:') {
+            alert("ATENÇÃO: O chat utiliza módulos seguros que não funcionam abrindo o ficheiro diretamente (file://). Por favor, use um servidor local ou aloje o ficheiro online.");
+        }
+    </script>
+
+    <!-- TELA 1: LOGIN -->
     <div id="view-login" class="flex-1 flex items-center justify-center p-4 overflow-y-auto view-hidden">
         <div class="w-full max-w-sm bg-slate-800 rounded-3xl shadow-2xl p-8 border border-slate-700 relative overflow-hidden">
             <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -69,7 +81,7 @@
             </div>
             <div class="relative z-10">
                 <h2 class="text-2xl font-bold text-center mb-2 text-slate-100">Portal WG</h2>
-                <p class="text-center text-sm text-slate-400 mb-6">Acesso exclusivo para equipe</p>
+                <p class="text-center text-sm text-slate-400 mb-6">Acesso exclusivo para a equipa</p>
                 <form class="space-y-4" id="formLogin">
                     <div>
                         <div class="relative">
@@ -80,15 +92,21 @@
                     <div>
                         <div class="relative">
                             <i data-lucide="lock" class="absolute left-3 top-3.5 text-slate-400 w-5 h-5"></i>
-                            <input class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900 text-white border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors" id="senha" placeholder="Senha" required="" type="password"/>
+                            <input class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900 text-white border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors" id="senha" placeholder="Palavra-passe" required="" type="password"/>
                         </div>
                     </div>
                     <button class="w-full bg-teal-600 text-white font-semibold py-3.5 rounded-xl hover:bg-teal-500 transition-all transform hover:-translate-y-0.5 shadow-lg shadow-teal-500/25 mt-2" type="submit" id="btnLogin">Entrar no Sistema</button>
+                    
+                    <!-- Botão de Instalação PWA -->
+                    <button id="btnInstallPwa" class="w-full bg-slate-700 text-teal-400 font-semibold py-3.5 rounded-xl hover:bg-slate-600 transition-all border border-slate-600 mt-4 hidden flex items-center justify-center gap-2 shadow-lg" type="button">
+                        <i data-lucide="download" class="w-5 h-5"></i> Instalar Aplicação
+                    </button>
                 </form>
             </div>
         </div>
     </div>
 
+    <!-- TELA 2: PORTAL DE BOAS VINDAS -->
     <div id="view-dashboard" class="flex-1 flex flex-col overflow-y-auto view-hidden relative">
         <header class="bg-slate-800/80 backdrop-blur-md shadow-lg shrink-0 border-b border-slate-700 sticky top-0 z-20">
             <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
@@ -110,17 +128,18 @@
                 <div class="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-slate-700">
                     <i data-lucide="user" class="w-10 h-10 text-teal-400"></i>
                 </div>
-                <h2 class="text-2xl sm:text-3xl font-bold text-white mb-2" id="welcomeMessage">Olá, Equipe!</h2>
-                <p class="text-slate-400 mb-8 sm:mb-10 text-sm sm:text-base">Acesse o canal de comunicação exclusiva em tempo real.</p>
+                <h2 class="text-2xl sm:text-3xl font-bold text-white mb-2" id="welcomeMessage">Olá, Equipa!</h2>
+                <p class="text-slate-400 mb-8 sm:mb-10 text-sm sm:text-base">Aceda ao canal de comunicação exclusiva em tempo real.</p>
                 <button class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-4 px-6 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg shadow-teal-500/20 flex items-center justify-center gap-3 text-lg relative group" onclick="appState.switchView('view-chat')">
                     <i data-lucide="message-circle" class="w-6 h-6 group-hover:animate-pulse"></i>
-                    Chat da Equipe
+                    Chat da Equipa
                     <span id="globalChatBadge" class="hidden absolute -top-3 -right-3 bg-red-500 text-white text-sm font-bold rounded-full h-8 w-8 flex items-center justify-center animate-bounce shadow-md border-4 border-slate-800">0</span>
                 </button>
             </div>
         </main>
     </div>
 
+    <!-- TELA 3: CHAT DA EQUIPE -->
     <div id="view-chat" class="flex-1 flex flex-col h-full overflow-hidden view-hidden relative">
         <header class="bg-slate-800/90 backdrop-blur-md shadow-lg shrink-0 border-b border-slate-700 z-20">
             <div class="max-w-7xl mx-auto py-3 px-4 flex items-center justify-between">
@@ -133,7 +152,7 @@
                 </div>
                 <div class="text-xs sm:text-sm px-3 py-1 bg-slate-900 rounded-full border border-slate-700 text-teal-400 font-medium flex items-center gap-2" id="currentUserDisplay">
                     <div class="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></div>
-                    Conectado
+                    Ligado
                 </div>
             </div>
         </header>
@@ -141,22 +160,24 @@
         <main class="flex-1 flex overflow-hidden w-full max-w-7xl mx-auto relative">
             <div class="flex w-full h-full bg-slate-800/90 backdrop-blur-sm sm:rounded-b-3xl shadow-2xl border-x border-b border-slate-700 overflow-hidden relative">
                 
+                <!-- Barra Lateral (Contactos) -->
                 <div id="sidebar" class="w-full sm:w-80 md:w-96 flex flex-col border-r border-slate-700 bg-slate-900/50 absolute sm:relative h-full z-10 transition-transform duration-300">
                     <div class="p-3 sm:p-4 border-b border-slate-700 bg-slate-800/80">
                         <div class="relative">
                             <i data-lucide="search" class="absolute left-3 top-2.5 text-slate-400 w-5 h-5"></i>
-                            <input type="text" id="searchInput" placeholder="Buscar parceiro..." 
+                            <input type="text" id="searchInput" placeholder="Procurar parceiro..." 
                                    class="w-full bg-slate-900 text-white pl-10 pr-4 py-2 rounded-xl border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors text-sm">
                         </div>
                     </div>
                     <div class="flex-1 overflow-y-auto" id="techList">
                         <div class="p-8 text-center text-slate-500 text-sm flex flex-col items-center">
                             <i data-lucide="loader" class="w-8 h-8 animate-spin mb-2"></i>
-                            Carregando equipe...
+                            A carregar equipa...
                         </div>
                     </div>
                 </div>
 
+                <!-- Área do Chat -->
                 <div id="chatArea" class="w-full flex-1 flex flex-col relative bg-slate-900/30 mobile-hide h-full z-0 transition-opacity">
                     <div class="bg-slate-800/95 p-3 flex items-center gap-3 border-b border-slate-700 z-10 backdrop-blur-md shadow-sm shrink-0">
                         <button id="backToListBtn" class="sm:hidden flex items-center gap-1 pr-2 text-slate-300 hover:text-white transition-colors">
@@ -167,11 +188,12 @@
                             <div id="activeTechStatusDot" class="hidden absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-slate-800 rounded-full"></div>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <h2 class="font-semibold text-white tracking-wide truncate" id="activeTechName">Selecione um contato</h2>
-                            <p class="text-xs text-slate-400 truncate" id="activeTechRole">Aguardando...</p>
+                            <h2 class="font-semibold text-white tracking-wide truncate" id="activeTechName">Selecione um contacto</h2>
+                            <p class="text-xs text-slate-400 truncate" id="activeTechRole">A aguardar...</p>
                         </div>
                     </div>
 
+                    <!-- Mensagens -->
                     <div class="flex-1 overflow-y-auto p-4 space-y-3 z-10 scroll-smooth" id="messagesContainer">
                         <div class="flex h-full items-center justify-center text-center">
                             <div>
@@ -180,30 +202,78 @@
                                 </div>
                                 <h3 class="text-xl font-medium text-white mb-2">Comunicação Segura</h3>
                                 <p class="text-slate-400 text-sm max-w-xs mx-auto">
-                                    Selecione um membro da equipe para enviar mensagens.
+                                    Selecione um membro da equipa para enviar mensagens.
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-slate-800/95 p-2 sm:p-4 border-t border-slate-700 z-10 backdrop-blur-md shrink-0">
-                        <form id="messageForm" class="flex gap-2 w-full max-w-4xl mx-auto relative items-end">
+                    <!-- Área de Input -->
+                    <div class="bg-slate-800/95 p-2 sm:p-3 border-t border-slate-700 z-10 backdrop-blur-md shrink-0 relative">
+                        
+                        <!-- Emoji Picker Oculto -->
+                        <div id="emojiPicker" class="hidden absolute bottom-full mb-2 left-2 bg-slate-800 border border-slate-600 p-3 rounded-2xl grid grid-cols-6 sm:grid-cols-8 gap-2 w-[calc(100%-16px)] sm:w-80 shadow-2xl z-[100] max-h-48 overflow-y-auto">
+                            <!-- Emojis carregados via JS -->
+                        </div>
+
+                        <form id="messageForm" class="flex gap-1.5 sm:gap-2 w-full max-w-4xl mx-auto items-end relative">
                             
+                            <!-- Input File Escondido -->
                             <input type="file" id="fileInput" class="hidden" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" />
 
-                            <button type="button" id="btnImproveMsg" onclick="appState.melhorarMensagem()" class="bg-slate-700 hover:bg-purple-600/90 text-purple-400 hover:text-white h-[44px] w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 border border-slate-600 shadow-md shrink-0" title="Melhorar com IA">
-                                <i data-lucide="sparkles" class="w-5 h-5"></i>
-                            </button>
+                            <!-- Grupo de Ferramentas -->
+                            <div id="inputTools" class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                                <button type="button" id="btnImproveMsg" onclick="appState.melhorarMensagem()" class="bg-slate-700 hover:bg-purple-600/90 text-purple-400 hover:text-white h-[40px] w-[40px] sm:h-[44px] sm:w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 border border-slate-600 shadow-md" title="Melhorar com IA">
+                                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                                </button>
+                                <button type="button" id="btnAttachFile" class="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white h-[40px] w-[40px] sm:h-[44px] sm:w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 border border-slate-600 shadow-md" title="Anexar Ficheiro">
+                                    <i data-lucide="paperclip" class="w-5 h-5"></i>
+                                </button>
+                                <button type="button" id="btnEmoji" class="bg-slate-700 hover:bg-slate-600 text-yellow-400 hover:text-yellow-300 h-[40px] w-[40px] sm:h-[44px] sm:w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 border border-slate-600 shadow-md" title="Emojis">
+                                    <i data-lucide="smile" class="w-5 h-5"></i>
+                                </button>
+                            </div>
 
-                            <button type="button" id="btnAttachFile" class="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white h-[44px] w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 border border-slate-600 shadow-md shrink-0" title="Anexar Arquivo">
-                                <i data-lucide="paperclip" class="w-5 h-5"></i>
-                            </button>
-
-                            <textarea id="messageInput" disabled rows="1" placeholder="Digite a mensagem..." class="flex-1 bg-slate-900 text-white px-4 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50 shadow-inner resize-none min-h-[44px] max-h-24 overflow-y-auto leading-relaxed"></textarea>
+                            <!-- Área de Texto -->
+                            <textarea id="messageInput" disabled rows="1" placeholder="Escreva a mensagem..." class="flex-1 bg-slate-900 text-white px-3 py-2.5 sm:py-3 rounded-xl border border-slate-700 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 disabled:opacity-50 shadow-inner resize-none min-h-[40px] sm:min-h-[44px] max-h-24 overflow-y-auto leading-relaxed text-sm sm:text-base"></textarea>
                             
-                            <button type="submit" id="sendBtn" disabled class="bg-teal-600 hover:bg-teal-500 text-white h-[44px] w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shrink-0">
+                            <!-- Botão Microfone (Padrão) -->
+                            <button type="button" id="btnRecordAudio" onclick="appState.startRecording()" class="bg-slate-700 hover:bg-red-500/90 text-red-400 hover:text-white h-[40px] w-[40px] sm:h-[44px] sm:w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 border border-slate-600 shadow-md shrink-0" title="Gravar Áudio">
+                                <i data-lucide="mic" class="w-5 h-5"></i>
+                            </button>
+
+                            <!-- Botão Enviar (Oculto até digitar texto) -->
+                            <button type="submit" id="sendBtn" class="hidden bg-teal-600 hover:bg-teal-500 text-white h-[40px] w-[40px] sm:h-[44px] sm:w-[44px] rounded-xl transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shrink-0">
                                 <i data-lucide="send" class="w-5 h-5 ml-1"></i>
                             </button>
+
+                            <!-- Interface de Gravação de Áudio (Sobrepõe os inputs) -->
+                            <div id="recordingUI" class="hidden absolute left-0 right-0 top-0 bottom-0 h-full w-full items-center justify-between bg-slate-800/95 backdrop-blur-md rounded-xl px-2 sm:px-4 shadow-inner transition-all z-20">
+                                <div id="recordingState" class="flex flex-1 items-center justify-between w-full transition-opacity">
+                                    <button type="button" onclick="appState.cancelRecording()" class="text-slate-400 hover:text-red-500 transition-colors p-2 rounded-full" title="Cancelar">
+                                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                    </button>
+                                    <div class="flex items-center gap-2 sm:gap-3">
+                                        <div class="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+                                        <span id="recordingTimer" class="text-red-400 font-mono font-medium tracking-wider text-xs sm:text-sm">00:00 / 01:00</span>
+                                    </div>
+                                    <div class="audio-wave mx-2 hidden sm:flex" id="audioWave">
+                                        <span></span><span></span><span></span><span></span><span></span>
+                                    </div>
+                                    <button type="button" onclick="appState.stopAndPreview()" class="text-teal-400 hover:text-teal-300 transition-colors p-2 rounded-full bg-teal-500/10" title="Pausar e Ouvir">
+                                        <i data-lucide="stop-circle" class="w-6 h-6 fill-teal-500/20"></i>
+                                    </button>
+                                </div>
+                                <div id="previewState" class="hidden flex-1 items-center justify-between w-full gap-2 transition-opacity">
+                                    <button type="button" onclick="appState.cancelRecording()" class="text-slate-400 hover:text-red-500 transition-colors p-2 rounded-full shrink-0" title="Eliminar Áudio">
+                                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                    </button>
+                                    <audio id="audioPreviewPlayer" controls class="h-[34px] flex-1 w-full max-w-[250px]"></audio>
+                                    <button type="button" onclick="document.getElementById('messageForm').dispatchEvent(new Event('submit'))" class="bg-teal-600 hover:bg-teal-500 text-white h-[36px] w-[36px] rounded-lg flex items-center justify-center shadow-lg">
+                                        <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -211,25 +281,27 @@
         </main>
     </div>
 
+    <!-- LÓGICA DA APLICAÇÃO -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
         import { getFirestore, collection, query, where, onSnapshot, addDoc, getDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
         
-        // NOVO: Importações do Firebase Storage para upload de arquivos
+        // Messaging e Storage
+        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-messaging.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-storage.js";
 
         lucide.createIcons();
 
-        // Helper para o Toast de Notificações
+        // Helpers
         window.showToast = (msg, isError = true) => {
             const toast = document.getElementById('toastNotification');
             document.getElementById('toastMessage').innerText = msg;
             toast.className = `fixed top-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl shadow-2xl z-[100] transition-all transform duration-300 flex items-center gap-3 font-medium text-sm w-[90%] max-w-md ${isError ? 'bg-red-500' : 'bg-teal-600'} text-white`;
-            
             setTimeout(() => { toast.classList.add('-translate-y-24', 'opacity-0'); }, 3500);
         };
 
+        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
             authDomain: "sistema-chamados-99e49.firebaseapp.com",
@@ -242,11 +314,44 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const storage = getStorage(app); // Inicializa o Storage para Anexos
-
-        // --- Configuração da IA Gemini ---
-        const apiKey = ""; 
+        const storage = getStorage(app);
         
+        let messaging = null;
+        try { messaging = getMessaging(app); } catch (err) { console.warn("Push inativo.", err); }
+
+        // PWA e Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(err => console.log('SW falhou:', err));
+            });
+        }
+
+        let deferredPrompt;
+        const btnInstallPwa = document.getElementById('btnInstallPwa');
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); deferredPrompt = e; btnInstallPwa.classList.remove('hidden');
+        });
+        btnInstallPwa.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt(); await deferredPrompt.userChoice;
+                deferredPrompt = null; btnInstallPwa.classList.add('hidden');
+            }
+        });
+
+        // Push Notifications Setup
+        async function setupPushNotifications(user) {
+            if (!messaging || !('Notification' in window)) return;
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const token = await getToken(messaging);
+                    if (token) await updateDoc(doc(db, "usuarios", user.uid), { fcmToken: token });
+                }
+            } catch (error) { console.error("Erro Push:", error); }
+        }
+
+        // IA Gemini
+        const apiKey = ""; 
         async function callGeminiAPI(prompt) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const payload = { contents: [{ parts: [{ text: prompt }] }] };
@@ -254,111 +359,114 @@
                 const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 const data = await response.json();
                 return data.candidates?.[0]?.content?.parts?.[0]?.text || "Erro ao gerar.";
-            } catch (error) { return "Erro de conexão."; }
+            } catch (error) { return "Erro de ligação."; }
         }
 
         const playNotificationSound = () => {
-            try {
-                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-                audio.play().catch(() => {});
-            } catch (e) {}
+            try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play().catch(()=>{}); } catch (e) {}
         };
 
+        // --- SISTEMA DE EMOJIS E TOGGLE MICROFONE/ENVIAR ---
+        const emojisList = ['😀','😂','😊','😍','😎','😢','😭','😡','👍','👎','❤️','🔥','✨','🎉','👏','🙌','🤔','👀','✅','❌','⚠️','❗️','❓','🎵','📎','📁','📄','💼','💻'];
+        const emojiContainer = document.getElementById('emojiPicker');
+        
+        emojisList.forEach(emoji => {
+            const span = document.createElement('span');
+            span.className = 'cursor-pointer hover:bg-slate-700 p-1.5 rounded-lg text-center text-2xl transition-colors';
+            span.innerText = emoji;
+            span.onclick = () => {
+                const input = document.getElementById('messageInput');
+                input.value += emoji;
+                input.dispatchEvent(new Event('input')); 
+                input.focus();
+            };
+            emojiContainer.appendChild(span);
+        });
+
+        document.getElementById('btnEmoji').addEventListener('click', (e) => {
+            e.stopPropagation();
+            emojiContainer.classList.toggle('hidden');
+        });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#emojiPicker') && !e.target.closest('#btnEmoji')) {
+                emojiContainer.classList.add('hidden');
+            }
+        });
+
         const msgInput = document.getElementById('messageInput');
+        const btnSend = document.getElementById('sendBtn');
+        const btnRecordAudio = document.getElementById('btnRecordAudio');
+
         msgInput.addEventListener('input', function() {
             appState.handleTyping();
-            const btnSend = document.getElementById('sendBtn');
-            btnSend.disabled = this.value.trim() === '';
+            
+            // Alterna entre Botão Gravar Áudio e Botão Enviar consoante houver texto
+            if (this.value.trim() === '') {
+                btnSend.classList.add('hidden');
+                btnRecordAudio.classList.remove('hidden');
+            } else {
+                btnSend.classList.remove('hidden');
+                btnSend.disabled = false;
+                btnRecordAudio.classList.add('hidden');
+            }
+
             this.style.height = 'auto';
             this.style.height = (this.scrollHeight) + 'px';
         });
 
-        // -------------------------------------------------------------------
-        // LÓGICA PARA UPLOAD DE ANEXOS (IMAGENS E ARQUIVOS)
-        // -------------------------------------------------------------------
+        // --- UPLOAD DE ANEXOS ---
         const fileInput = document.getElementById('fileInput');
         const btnAttachFile = document.getElementById('btnAttachFile');
 
         btnAttachFile.addEventListener('click', () => {
-            if (!appState.selectedTechId) {
-                showToast("Selecione um contato primeiro.");
-                return;
-            }
+            if (!appState.selectedTechId) { showToast("Selecione um contacto primeiro."); return; }
             fileInput.click();
         });
 
         fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
-            e.target.value = ''; // Reset input
+            e.target.value = ''; 
             
-            // Limite de 5MB
-            if (file.size > 5 * 1024 * 1024) {
-                showToast("O arquivo não pode ser maior que 5MB.");
-                return;
-            }
+            if (file.size > 5 * 1024 * 1024) { showToast("O ficheiro excede o limite de 5MB."); return; }
 
-            // UI Feedback (Mostra que está carregando)
             btnAttachFile.classList.add('uploading-pulse');
-            btnAttachFile.disabled = true;
-            document.getElementById('sendBtn').disabled = true;
-            msgInput.disabled = true;
-            showToast("Enviando anexo...", false);
+            btnAttachFile.disabled = true; msgInput.disabled = true; btnRecordAudio.disabled = true;
+            showToast("A enviar anexo...", false);
 
             try {
-                // Prepara o Firebase Storage
                 const storageRef = ref(storage, `chat_anexos/${appState.currentUser.uid}/${Date.now()}_${file.name}`);
                 const uploadTask = uploadBytesResumable(storageRef, file);
 
                 uploadTask.on('state_changed', 
-                    (snapshot) => {
-                        // Progresso pode ser adicionado aqui
-                    }, 
+                    (snapshot) => {}, 
                     (error) => {
-                        console.error("Erro upload:", error);
-                        showToast("Falha ao fazer upload do arquivo.");
-                        resetUploadUI();
+                        console.error("Erro:", error); showToast("Falha no upload."); resetUploadUI();
                     }, 
                     async () => {
-                        // Upload terminou, pegar link público
                         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                        
-                        // Envia a mensagem pro Firestore
                         await appState.sendDataToFirebase({
-                            text: file.type.startsWith('image/') ? "📷 Imagem" : "📎 Arquivo Anexado",
-                            fileUrl: downloadURL,
-                            fileName: file.name,
-                            fileType: file.type
+                            text: file.type.startsWith('image/') ? "📷 Imagem partilhada" : "📎 Ficheiro partilhado",
+                            fileUrl: downloadURL, fileName: file.name, fileType: file.type
                         });
-                        
-                        resetUploadUI();
-                        showToast("Anexo enviado com sucesso!", false);
+                        resetUploadUI(); showToast("Anexo enviado!", false);
                     }
                 );
-            } catch (err) {
-                console.error("Erro ao processar anexo:", err);
-                resetUploadUI();
-            }
+            } catch (err) { resetUploadUI(); }
         });
 
         function resetUploadUI() {
             btnAttachFile.classList.remove('uploading-pulse');
-            btnAttachFile.disabled = false;
-            msgInput.disabled = false;
+            btnAttachFile.disabled = false; msgInput.disabled = false; btnRecordAudio.disabled = false;
             msgInput.focus();
         }
 
-
-        // --- Estado Global ---
+        // --- ESTADO GLOBAL DA APLICAÇÃO ---
         window.appState = {
             currentUser: null,
             selectedTechId: null,
-            allMessages: [],
-            unreadCounts: {}, 
-            unsubMessages: null,
-            usersData: {}, 
-            isTypingTimer: null,
+            allMessages: [], unreadCounts: {}, unsubMessages: null, usersData: {}, isTypingTimer: null,
+            isRecording: false, isCancelled: false, isPreviewing: false, isSendingDirectly: false, pendingAudio: null, mediaRecorder: null, audioChunks: [], recordingInterval: null,
             
             switchView: (viewId) => {
                 document.querySelectorAll('div[id^="view-"]').forEach(el => el.classList.add('view-hidden'));
@@ -381,6 +489,102 @@
                 appState.setTypingStatus(true);
                 clearTimeout(appState.isTypingTimer);
                 appState.isTypingTimer = setTimeout(() => { appState.setTypingStatus(false); }, 2000);
+            },
+
+            startRecording: async () => {
+                if (!appState.selectedTechId) { showToast("Selecione um contacto primeiro para enviar áudio."); return; }
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    appState.mediaRecorder = new MediaRecorder(stream);
+                    appState.audioChunks = [];
+                    appState.isRecording = true; appState.isCancelled = false; appState.isPreviewing = false; appState.isSendingDirectly = false; appState.pendingAudio = null;
+
+                    // Oculta input e mostra gravação
+                    document.getElementById('inputTools').classList.add('invisible');
+                    document.getElementById('messageInput').classList.add('invisible');
+                    btnRecordAudio.classList.add('hidden');
+                    
+                    const recUI = document.getElementById('recordingUI');
+                    recUI.classList.remove('hidden'); recUI.classList.add('flex');
+                    document.getElementById('recordingState').classList.remove('hidden'); document.getElementById('recordingState').classList.add('flex');
+                    document.getElementById('previewState').classList.add('hidden'); document.getElementById('previewState').classList.remove('flex');
+
+                    let secondsElapsed = 0;
+                    const timerDisplay = document.getElementById('recordingTimer');
+                    timerDisplay.innerText = `00:00 / 01:00`; // Limite visual 1 min
+
+                    appState.recordingInterval = setInterval(() => {
+                        secondsElapsed++;
+                        const mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+                        const secs = (secondsElapsed % 60).toString().padStart(2, '0');
+                        timerDisplay.innerText = `${mins}:${secs} / 01:00`;
+                        if(secondsElapsed >= 60) { if (appState.isRecording) { appState.stopAndPreview(); } }
+                    }, 1000);
+
+                    appState.mediaRecorder.ondataavailable = e => { if (e.data.size > 0) appState.audioChunks.push(e.data); };
+
+                    appState.mediaRecorder.onstop = () => {
+                        clearInterval(appState.recordingInterval);
+                        if (appState.isCancelled || appState.audioChunks.length === 0) { appState.resetRecordingUI(); return; }
+                        const mimeType = appState.mediaRecorder.mimeType || 'audio/webm';
+                        const audioBlob = new Blob(appState.audioChunks, { type: mimeType });
+                        const reader = new FileReader();
+                        reader.readAsDataURL(audioBlob);
+                        reader.onloadend = async () => {
+                            const base64Audio = reader.result;
+                            if (appState.isPreviewing) {
+                                appState.pendingAudio = base64Audio;
+                                document.getElementById('recordingState').classList.add('hidden'); document.getElementById('recordingState').classList.remove('flex');
+                                document.getElementById('previewState').classList.remove('hidden'); document.getElementById('previewState').classList.add('flex');
+                                document.getElementById('audioPreviewPlayer').src = base64Audio;
+                            } else {
+                                appState.resetRecordingUI();
+                                await appState.sendDataToFirebase({ text: "🎵 Mensagem de Áudio", audioData: base64Audio });
+                            }
+                        };
+                    };
+                    appState.mediaRecorder.start();
+                } catch (err) { showToast("Permissão de microfone recusada."); }
+            },
+
+            stopAndPreview: () => {
+                if (!appState.isRecording) return;
+                appState.isPreviewing = true;
+                if (appState.mediaRecorder && appState.mediaRecorder.state !== 'inactive') {
+                    appState.mediaRecorder.stop();
+                    appState.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
+            },
+
+            cancelRecording: () => {
+                if (!appState.isRecording && !appState.pendingAudio) return;
+                appState.isCancelled = true;
+                if (appState.mediaRecorder && appState.mediaRecorder.state !== 'inactive') {
+                    appState.mediaRecorder.stop();
+                    appState.mediaRecorder.stream.getTracks().forEach(track => track.stop()); 
+                }
+                appState.resetRecordingUI();
+            },
+
+            resetRecordingUI: () => {
+                appState.isRecording = false; appState.isPreviewing = false; appState.isSendingDirectly = false; appState.pendingAudio = null; appState.isCancelled = false;
+                clearInterval(appState.recordingInterval);
+                
+                document.getElementById('inputTools').classList.remove('invisible');
+                document.getElementById('messageInput').classList.remove('invisible');
+                
+                const recUI = document.getElementById('recordingUI');
+                recUI.classList.add('hidden'); recUI.classList.remove('flex');
+                document.getElementById('audioPreviewPlayer').src = "";
+                
+                // Repõe botões corretos
+                if (msgInput.value.trim() === '') {
+                    btnSend.classList.add('hidden');
+                    btnRecordAudio.classList.remove('hidden');
+                } else {
+                    btnSend.classList.remove('hidden');
+                    btnRecordAudio.classList.add('hidden');
+                }
             },
 
             sendDataToFirebase: async (msgData) => {
@@ -425,6 +629,16 @@
                                     
                                     if (!(isViewingChat && isChattingWithSender && !isMobileHidden)) {
                                         playNotificationSound();
+                                        
+                                        if ("Notification" in window && Notification.permission === "granted") {
+                                            const remetenteNome = appState.usersData[msg.senderId]?.nome || "Nova Mensagem";
+                                            const textoNotificacao = msg.audioData ? "🎵 Mensagem de Áudio" : (msg.fileUrl ? "📎 Anexo" : msg.text);
+                                            new Notification("WG Informática: " + remetenteNome, {
+                                                body: textoNotificacao,
+                                                icon: 'https://cdn-icons-png.flaticon.com/512/1005/1005141.png'
+                                            });
+                                        }
+
                                         appState.unreadCounts[msg.senderId] = (appState.unreadCounts[msg.senderId] || 0) + 1;
                                         appState.updateBadges();
                                     }
@@ -464,7 +678,7 @@
             melhorarMensagem: async () => {
                 const input = document.getElementById('messageInput');
                 const textoOriginal = input.value.trim();
-                if (!textoOriginal) { showToast('Digite algo para a IA melhorar.', false); return; }
+                if (!textoOriginal) { showToast('Escreva algo para a IA melhorar.', false); return; }
 
                 const btn = document.getElementById('btnImproveMsg');
                 const iconeOriginal = btn.innerHTML;
@@ -477,8 +691,8 @@
                 if (!resposta.includes('Erro')) {
                     input.value = resposta.trim().replace(/^"|"$/g, '');
                     input.style.height = 'auto'; input.style.height = (input.scrollHeight) + 'px';
-                    document.getElementById('sendBtn').disabled = false;
-                } else { showToast("IA falhou. Tente de novo."); }
+                    input.dispatchEvent(new Event('input')); // Atualiza o botão Enviar
+                } else { showToast("O servidor da IA Gemini falhou."); }
                 
                 btn.innerHTML = iconeOriginal; btn.disabled = false; lucide.createIcons();
             },
@@ -515,7 +729,7 @@
                             <div class="flex-1 min-w-0">
                                 <h3 class="text-slate-200 font-medium truncate tech-name text-sm sm:text-base">${nome}</h3>
                                 <p class="text-[11px] sm:text-xs text-slate-500 tech-role ${tech.typingTo === appState.currentUser.uid ? 'text-teal-400 font-medium italic' : ''}">
-                                    ${tech.typingTo === appState.currentUser.uid ? 'Digitando...' : roleLabel}
+                                    ${tech.typingTo === appState.currentUser.uid ? 'A escrever...' : roleLabel}
                                 </p>
                             </div>`;
                         techListEl.appendChild(div);
@@ -533,7 +747,7 @@
                 const dotEl = document.getElementById('activeTechStatusDot');
 
                 if (tech.typingTo === appState.currentUser.uid) {
-                    roleEl.innerHTML = '<span class="text-teal-400 font-medium italic">Digitando...</span>';
+                    roleEl.innerHTML = '<span class="text-teal-400 font-medium italic">A escrever...</span>';
                     dotEl.classList.remove('hidden');
                 } else if (tech.isOnline) {
                     roleEl.innerHTML = '<span class="text-teal-400">Online</span>';
@@ -541,7 +755,7 @@
                 } else {
                     dotEl.classList.add('hidden');
                     if (tech.lastActive) {
-                        const timeStr = new Date(tech.lastActive).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+                        const timeStr = new Date(tech.lastActive).toLocaleTimeString('pt-PT', {hour: '2-digit', minute: '2-digit'});
                         roleEl.innerHTML = `Visto por último às ${timeStr}`;
                     } else { roleEl.innerHTML = 'Offline'; }
                 }
@@ -558,14 +772,13 @@
                     appState.updateBadges();
                 }
 
-                const input = document.getElementById('messageInput');
-                input.disabled = false;
+                if (appState.isRecording || appState.pendingAudio) { appState.cancelRecording(); }
 
-                const sidebar = document.getElementById('sidebar');
-                const chatArea = document.getElementById('chatArea');
+                document.getElementById('messageInput').disabled = false;
                 
                 if (window.innerWidth < 640) {
-                    sidebar.classList.add('mobile-hide'); chatArea.classList.remove('mobile-hide');
+                    document.getElementById('sidebar').classList.add('mobile-hide'); 
+                    document.getElementById('chatArea').classList.remove('mobile-hide');
                 }
                 appState.renderMessages();
             },
@@ -590,7 +803,7 @@
                     if (!isMine && !msg.read) { updateDoc(doc(db, 'chat_equipe', msg.id), { read: true }).catch(()=>{}); }
 
                     const dataAtual = msg.timestamp && msg.timestamp.toDate ? msg.timestamp.toDate() : new Date(msg.timestamp);
-                    const time = isNaN(dataAtual) ? "" : dataAtual.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    const time = isNaN(dataAtual) ? "" : dataAtual.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
                     
                     const prevMsg = index > 0 ? msgs[index - 1] : null;
                     const sameSender = prevMsg && prevMsg.senderId === msg.senderId;
@@ -600,34 +813,23 @@
                     wrapper.className = `flex ${isMine ? 'justify-end' : 'justify-start'} ${marginClass}`;
                     
                     const bubbleClass = isMine ? 'bg-teal-700 text-white rounded-l-2xl rounded-tr-2xl' : 'bg-slate-700 text-slate-100 rounded-r-2xl rounded-tl-2xl';
-
                     let checks = '';
                     if (isMine) { checks = msg.read ? '<i data-lucide="check-check" class="w-3.5 h-3.5 text-blue-400"></i>' : '<i data-lucide="check" class="w-3.5 h-3.5 text-slate-300"></i>'; }
 
                     let contentHtml = '';
                     
-                    // RENDERIZAÇÃO DE ANEXOS (IMAGENS OU DOCUMENTOS)
                     if (msg.fileUrl) {
                         if (msg.fileType && msg.fileType.startsWith('image/')) {
-                            // É Imagem
-                            contentHtml = `
-                                <div class="pb-4">
-                                    <img src="${msg.fileUrl}" alt="Anexo" class="max-w-[200px] sm:max-w-[260px] rounded-lg border border-slate-600/50 cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open('${msg.fileUrl}', '_blank')" />
-                                </div>
-                            `;
+                            contentHtml = `<div class="pb-4"><img src="${msg.fileUrl}" alt="Anexo" class="max-w-[200px] sm:max-w-[260px] rounded-lg border border-slate-600/50 cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open('${msg.fileUrl}', '_blank')" /></div>`;
                         } else {
-                            // É Documento (PDF, Doc, Excel, etc)
                             contentHtml = `
                                 <div class="pb-4">
                                     <a href="${msg.fileUrl}" target="_blank" class="flex items-center gap-3 bg-slate-800/60 hover:bg-slate-800 border border-slate-600/50 p-3 rounded-xl transition-colors no-underline">
-                                        <div class="bg-teal-500/20 p-2 rounded-lg text-teal-400">
-                                            <i data-lucide="file-text" class="w-6 h-6 shrink-0"></i>
-                                        </div>
-                                        <span class="text-sm truncate font-medium max-w-[140px] sm:max-w-[180px] text-slate-200">${msg.fileName || 'Arquivo'}</span>
+                                        <div class="bg-teal-500/20 p-2 rounded-lg text-teal-400"><i data-lucide="file-text" class="w-6 h-6 shrink-0"></i></div>
+                                        <span class="text-sm truncate font-medium max-w-[140px] sm:max-w-[180px] text-slate-200">${msg.fileName || 'Documento'}</span>
                                         <i data-lucide="download" class="w-4 h-4 ml-1 text-slate-400"></i>
                                     </a>
-                                </div>
-                            `;
+                                </div>`;
                         }
                     } else if (msg.audioData) {
                         contentHtml = `
@@ -672,6 +874,7 @@
                     
                     appState.updatePresence(true); 
                     appState.startGlobalMessageListener(); 
+                    setupPushNotifications(user);
                     appState.switchView('view-dashboard');
                 } else { showToast("Acesso restrito."); signOut(auth); }
             } else {
@@ -693,10 +896,32 @@
 
         document.getElementById('messageForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            if (appState.pendingAudio) {
+                const audioBlob = appState.pendingAudio; appState.resetRecordingUI(); await appState.sendDataToFirebase({ text: "🎵 Mensagem de Áudio", audioData: audioBlob }); return;
+            }
+            if (appState.isRecording) {
+                // Se clicar em enviar enquanto grava, submete a gravação diretamente
+                document.getElementById('recordingState').classList.add('hidden');
+                document.getElementById('recordingState').classList.remove('flex');
+                if (appState.mediaRecorder && appState.mediaRecorder.state !== 'inactive') {
+                    appState.isSendingDirectly = true;
+                    appState.mediaRecorder.stop(); appState.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
+                return;
+            }
+            
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             if (!text || !appState.selectedTechId) return;
-            input.value = ''; input.style.height = 'auto'; appState.setTypingStatus(false); document.getElementById('sendBtn').disabled = true;
+            
+            input.value = ''; 
+            input.style.height = 'auto'; 
+            appState.setTypingStatus(false); 
+            
+            btnSend.classList.add('hidden');
+            btnRecordAudio.classList.remove('hidden');
+            
             await appState.sendDataToFirebase({ text: text });
         });
 
