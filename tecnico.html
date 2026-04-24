@@ -16,11 +16,13 @@
   <!-- Ícones Lucide -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Firebase Scripts (Mantidos do original) -->
+  <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-  <!-- <script src="js/firebase-config.js"></script> -->
+  
+  <!-- ATENÇÃO: Seu arquivo de configuração do Firebase foi reativado aqui -->
+  <script src="js/firebase-config.js"></script>
 
   <script>
     tailwind.config = {
@@ -195,41 +197,28 @@
   // Inicializa ícones
   lucide.createIcons();
 
-  // --- MOCK DATA PARA PREVIEW (Simulando o Firebase) ---
-  // Como o firebase-config não está aqui, criei um sistema que mostra dados fictícios
-  // para você ver como a interface reage. 
-  const mockChamados = [
-    { id: '1', empresa: 'Contabilidade Silva', setor: 'Fiscal', email: 'contato@silva.com', status: 'Aberto', mensagem: 'PC do setor fiscal não liga após queda de luz.', criadoEm: new Date() },
-    { id: '2', empresa: 'Padaria Pão Quente', setor: 'Caixa', email: '', status: 'Em Andamento', mensagem: 'Impressora não fiscal parou de imprimir.', criadoEm: new Date(Date.now() - 86400000) },
-    { id: '3', empresa: 'Clinica Saúde', setor: 'Recepção', email: 'recepcao@clinica.com', status: 'Resolvido', mensagem: 'Formatação de máquina nova concluída.', criadoEm: new Date(Date.now() - 172800000) }
-  ];
-  const mockAgendamentos = [
-    { id: 'a1', cliente: 'Escola Educar', servico: 'Manutenção Preventiva', status: 'Agendado', problema: 'Limpeza de 10 computadores do laboratório.', data: '2023-11-15' },
-    { id: 'a2', cliente: 'Advocacia Lima', servico: 'Redes', status: 'Em Atendimento', problema: 'Passagem de cabo para nova sala.', data: '2023-10-20' }
-  ];
+  // Arrays globais vazios para receber os dados reais
+  let snapChamados = [];
+  let snapAgendamentos = [];
 
-  let snapChamados = [...mockChamados];
-  let snapAgendamentos = [...mockAgendamentos];
-
-  // Verifica se o Firebase real existe. Se não, usa o Mock.
-  const isFirebaseActive = typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0;
-  let db, auth;
+  // Conexão com Firebase
+  const db = firebase.firestore();
+  const auth = firebase.auth();
   
-  if (isFirebaseActive) {
-    db = firebase.firestore();
-    auth = firebase.auth();
-    auth.onAuthStateChanged(user => {
-      if (!user) { window.location.href = 'login-tecnico.html'; return; }
-      document.getElementById('user-email-display').innerText = user.email;
-      observarStatsFirebase();
-    });
-  } else {
-    // Inicia com dados Mockados para demonstração de UI
-    setTimeout(() => {
-      atualizarCards();
-      document.querySelector('#nav-buttons .active-tab').click();
-    }, 500);
-  }
+  auth.onAuthStateChanged(user => {
+    if (!user) { 
+      window.location.href = 'login-tecnico.html'; 
+      return; 
+    }
+    // Mostra o email do técnico logado
+    document.getElementById('user-email-display').innerText = user.email;
+    
+    // Inicia a busca de dados no Firebase
+    observarStatsFirebase();
+    
+    // Seleciona a aba "Abertos" por padrão
+    document.querySelector('#nav-buttons .active-tab').click();
+  });
 
   // --- SISTEMA DE TOAST (Substitui o alert()) ---
   function showToast(message, type = 'success') {
@@ -258,7 +247,17 @@
     db.collection('chamados').onSnapshot(snapshot => {
       snapChamados = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       atualizarCards();
+      
+      // Recarrega a lista baseada na aba ativa caso haja atualização em tempo real
+      const abaAtiva = document.querySelector('#nav-buttons .active-tab');
+      if (abaAtiva) {
+        let statusParaBuscar = 'Aberto';
+        if(abaAtiva.innerText.includes('Andamento')) statusParaBuscar = 'Em Andamento';
+        if(abaAtiva.innerText.includes('Finalizado')) statusParaBuscar = 'Resolvido';
+        mostrarTarefas(statusParaBuscar, abaAtiva, true);
+      }
     });
+    
     db.collection('agendamentos').onSnapshot(snapshot => {
       snapAgendamentos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       atualizarCards();
@@ -272,25 +271,31 @@
     document.getElementById('stat-agenda').textContent = snapAgendamentos.length;
   }
 
-  function mostrarTarefas(statusFiltro, el) {
+  // O parâmetro isUpdate evita recriar o loading caso seja apenas uma atualização em tempo real (onSnapshot)
+  function mostrarTarefas(statusFiltro, el, isUpdate = false) {
     // UI: Controle de Abas
-    document.querySelectorAll('.wg-tab-btn').forEach(btn => btn.classList.remove('active-tab'));
-    if(el) el.classList.add('active-tab');
+    if (!isUpdate) {
+      document.querySelectorAll('.wg-tab-btn').forEach(btn => btn.classList.remove('active-tab'));
+      if(el) el.classList.add('active-tab');
+    }
 
     const lista = document.getElementById('lista-tarefas');
-    lista.innerHTML = `
-      <div class="flex flex-col items-center justify-center h-40 text-slate-400">
-        <i data-lucide="loader-2" class="w-8 h-8 animate-spin mb-2"></i><p>Buscando...</p>
-      </div>`;
-    lucide.createIcons();
+    
+    if (!isUpdate) {
+      lista.innerHTML = `
+        <div class="flex flex-col items-center justify-center h-40 text-slate-400">
+          <i data-lucide="loader-2" class="w-8 h-8 animate-spin mb-2"></i><p>Buscando...</p>
+        </div>`;
+      lucide.createIcons();
+    }
 
     let statusChamado = statusFiltro;
     let statusAgendamento = statusFiltro;
     if (statusFiltro === 'Em Andamento') statusAgendamento = 'Em Atendimento';
     if (statusFiltro === 'Resolvido') statusAgendamento = 'Finalizado';
 
-    // RENDERIZAÇÃO: Usando classes Tailwind para os Cards
-    setTimeout(() => { // Timeout simulado para efeito visual suave
+    // RENDERIZAÇÃO
+    setTimeout(() => {
       let htmlFinal = '';
       
       const chamadosFiltrados = snapChamados.filter(c => c.status === statusChamado);
@@ -319,7 +324,7 @@
 
       lista.innerHTML = htmlFinal;
       lucide.createIcons(); // Recarrega ícones injetados via HTML
-    }, 300);
+    }, isUpdate ? 0 : 300); // Se for update de snapshot, atualiza instântaneamente
   }
 
   // Geração de HTML Modularizada
@@ -406,18 +411,9 @@
   }
 
   function mudarStatus(colecao, id, novoStatus) {
-    if (isFirebaseActive) {
-      db.collection(colecao).doc(id).update({ status: novoStatus })
-        .then(() => showToast(`Status atualizado para ${novoStatus}`))
-        .catch(error => showToast('Erro: ' + error.message, 'error'));
-    } else {
-      // Comportamento Mockado
-      showToast(`[Mock] ${colecao} atualizado para ${novoStatus}`);
-      if(colecao === 'chamados') snapChamados.find(c => c.id === id).status = novoStatus;
-      if(colecao === 'agendamentos') snapAgendamentos.find(a => a.id === id).status = novoStatus;
-      atualizarCards();
-      document.querySelector('#nav-buttons .active-tab').click(); // Recarrega tela atual
-    }
+    db.collection(colecao).doc(id).update({ status: novoStatus })
+      .then(() => showToast(`Status atualizado para ${novoStatus}`))
+      .catch(error => showToast('Erro: ' + error.message, 'error'));
   }
 
   // Utilitários de formatação
