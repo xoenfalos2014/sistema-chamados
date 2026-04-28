@@ -1,568 +1,316 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor TI - Cloud Edition</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestor WG PRO</title>
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#ef4444',
-                        secondary: '#1f2937',
-                    }
-                }
-            }
-        }
-    </script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
-        .card-enter { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .loader { border: 4px solid #f3f3f3; border-radius: 50%; border-top: 4px solid #ef4444; width: 24px; height: 24px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .tab-active { border-bottom: 3px solid #ef4444; color: #ef4444; font-weight: bold; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
+<style>
+body { font-family: 'Poppins', sans-serif; }
+.card:hover { transform: scale(1.02); transition:.2s }
+</style>
 </head>
-<body class="text-gray-800 h-screen flex flex-col overflow-hidden">
 
-<header class="bg-secondary text-white shadow-lg z-10">
-    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-        <div class="flex items-center gap-3">
-            <i class="fas fa-network-wired text-primary text-2xl"></i>
-            <div>
-                <h1 class="text-xl font-bold tracking-wide leading-none">Gestor WG INFO</h1>
-                <span class="text-xs text-gray-400 flex items-center gap-1">
-                    <span id="connectionStatus" class="w-2 h-2 rounded-full bg-yellow-500"></span>
-                    <span id="connectionText">Conectando...</span>
-                </span>
-            </div>
-        </div>
-    </div>
-</header>
+<body class="bg-slate-900 text-white flex h-screen">
 
-<div class="flex flex-1 overflow-hidden">
-    <!-- Sidebar Empresas -->
-    <aside class="w-72 bg-white shadow-md flex flex-col z-0 border-r border-gray-200">
-        <div class="p-4 border-b border-gray-200 bg-gray-50">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="font-bold text-gray-700">Empresas</h2>
-                <button onclick="window.openAddClientModal()" class="text-primary hover:text-red-700 p-1">
-                    <i class="fas fa-plus-circle text-xl"></i>
-                </button>
-            </div>
-            <div class="relative">
-                <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
-                <input type="text" id="clientSearch" onkeyup="window.renderClients()" placeholder="Buscar cliente..." class="w-full pl-8 pr-3 py-1.5 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary">
-            </div>
-        </div>
+<!-- SIDEBAR -->
+<aside class="w-64 bg-slate-800 border-r border-slate-700 p-4 flex flex-col">
 
-        <div class="flex-1 overflow-y-auto p-2 space-y-1" id="clientList">
-            <div class="flex flex-col items-center justify-center mt-10">
-                <div class="loader mb-2"></div>
-                <p class="text-xs text-gray-400">A carregar dados...</p>
-            </div>
-        </div>
-    </aside>
+<button onclick="openAddClientModal()" class="bg-teal-600 hover:bg-teal-500 p-2 rounded mb-4">
++ Empresa
+</button>
 
-    <!-- Main Content -->
-    <main class="flex-1 flex flex-col bg-gray-100 overflow-hidden relative">
+<div id="clientList" class="space-y-2 overflow-y-auto"></div>
+</aside>
 
-        <div id="headerActions" class="bg-white p-4 shadow-sm border-b border-gray-200 hidden">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h2 id="currentClientTitle" class="text-2xl font-bold text-gray-800">Cliente</h2>
-                    <div class="flex items-center gap-4 mt-1">
-                        <p id="currentClientSubtitle" class="text-sm text-gray-500">Gestão por setores</p>
-                        <button onclick="window.openManageSectorsModal()" class="text-xs font-semibold text-primary hover:underline">
-                            <i class="fas fa-cog"></i> Configurar Setores
-                        </button>
-                    </div>
-                </div>
+<!-- MAIN -->
+<main class="flex-1 flex flex-col">
 
-                <div class="flex items-center gap-2">
-                    <input type="text" id="searchInput" onkeyup="window.renderComputers()" placeholder="Filtrar PCs..." class="px-3 py-2 border rounded-lg text-sm w-40 focus:ring-1 focus:ring-primary outline-none">
-                    <button onclick="window.openAddComputerModal()" class="bg-primary hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow flex items-center gap-2 transition-all">
-                        <i class="fas fa-plus"></i> <span>Novo PC</span>
-                    </button>
-                </div>
-            </div>
+<div class="bg-slate-800 border-b border-slate-700 p-4 flex justify-between items-center">
 
-            <div class="flex items-center gap-2 mt-4 overflow-x-auto pb-1 no-scrollbar border-b" id="sectorsTabsContainer"></div>
-        </div>
+<h1 id="currentClientTitle" class="text-xl font-bold text-slate-100">
+Selecione empresa
+</h1>
 
-        <div class="flex-1 overflow-y-auto p-6" id="mainContent">
-            <div class="text-center text-gray-400 mt-20" id="emptyState">
-                <i class="fas fa-cloud text-6xl mb-4 opacity-20"></i>
-                <p class="text-xl">Aguardando seleção</p>
-                <p class="text-sm mt-2">Escolha uma empresa na lista lateral.</p>
-                
-                <!-- Ferramenta de Migração -->
-                <div id="migrationTool" class="hidden mt-8 p-6 bg-white border border-blue-100 rounded-xl max-w-md mx-auto shadow-sm">
-                    <i class="fas fa-file-import text-blue-500 text-3xl mb-2"></i>
-                    <h4 class="font-bold text-gray-800">Seus dados estão aqui!</h4>
-                    <p class="text-xs text-gray-600 mb-4">Como atualizámos o sistema para suportar **Setores**, precisamos de mover os seus dados antigos para a nova pasta segura.</p>
-                    <button onclick="window.migrateData()" id="btnMigrate" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold text-sm transition shadow-md flex items-center justify-center gap-2">
-                        <i class="fas fa-magic"></i> Importar todos os meus dados
-                    </button>
-                    <p class="text-[10px] text-gray-400 mt-2">Nota: Este botão aparece apenas se houver dados antigos detetados.</p>
-                </div>
-            </div>
-        </div>
-    </main>
+<div class="flex gap-2 items-center">
+
+<input id="searchInput" onkeyup="render()"
+placeholder="Buscar..."
+class="bg-slate-700 border border-slate-600 p-2 rounded text-white focus:ring-2 focus:ring-teal-500">
+
+<div id="actions" class="hidden flex gap-2">
+<button onclick="openAddSectorModal()" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded">
++ Setor
+</button>
+
+<button onclick="openAddComputerModal()" class="bg-teal-600 hover:bg-teal-500 px-3 py-2 rounded">
++ PC
+</button>
 </div>
 
-<!-- Modais -->
-<div id="clientModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 card-enter">
-        <h3 id="clientModalTitle" class="text-lg font-bold mb-4">Novo Cliente</h3>
-        <input type="text" id="newClientName" placeholder="Nome da Empresa" class="w-full border p-2 rounded mb-4 focus:ring-1 focus:ring-primary outline-none">
-        <div class="flex justify-end gap-2">
-            <button onclick="window.closeModal('clientModal')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
-            <button onclick="window.addClient()" id="btnSaveClient" class="px-4 py-2 bg-secondary text-white rounded hover:bg-gray-800">Salvar</button>
-        </div>
-    </div>
+</div>
 </div>
 
-<div id="sectorModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 card-enter">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-bold">Setores</h3>
-            <button onclick="window.closeModal('sectorModal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="flex gap-2 mb-4">
-            <input type="text" id="newSectorName" placeholder="Nome do Setor" class="flex-1 border p-2 rounded text-sm outline-none focus:ring-1 focus:ring-primary">
-            <button onclick="window.addSector()" class="bg-secondary text-white px-4 py-2 rounded text-sm">Adicionar</button>
-        </div>
-        <div class="max-h-60 overflow-y-auto border rounded divide-y" id="sectorManagementList"></div>
-    </div>
+<div id="mainContent" class="p-6 overflow-y-auto flex-1"></div>
+
+</main>
+
+<!-- MODAIS DARK -->
+
+<div id="clientModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center">
+<div class="bg-slate-800 border border-slate-700 p-6 rounded-xl w-80">
+
+<input id="newClientName" placeholder="Empresa"
+class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 mb-3">
+
+<button onclick="addClient()" class="w-full bg-teal-600 py-2 rounded">
+Salvar
+</button>
+
+</div>
 </div>
 
-<div id="computerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 card-enter">
-        <h3 id="computerModalTitle" class="text-lg font-bold mb-4 border-b pb-2">Dados do PC</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">Nome/Usuário</label>
-                <input type="text" id="pcName" class="w-full border p-2 rounded focus:ring-1 focus:ring-primary outline-none">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">Setor</label>
-                <select id="pcSectorSelect" class="w-full border p-2 rounded bg-white focus:ring-1 focus:ring-primary outline-none"></select>
-            </div>
-        </div>
-        <div class="mb-4">
-            <label class="block text-xs font-bold text-gray-500 mb-1">Configuração</label>
-            <input type="text" id="pcConfig" class="w-full border p-2 rounded focus:ring-1 focus:ring-primary outline-none">
-        </div>
-        <div class="grid grid-cols-2 gap-4 bg-red-50 p-4 rounded-lg mb-4 border border-red-100">
-            <div>
-                <label class="block text-xs font-bold text-red-500 mb-1">AnyDesk ID</label>
-                <input type="text" id="pcAnyId" class="w-full border p-2 font-mono rounded outline-none focus:ring-1 focus:ring-primary">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-red-500 mb-1">Senha</label>
-                <input type="text" id="pcAnyPass" class="w-full border p-2 font-mono rounded outline-none focus:ring-1 focus:ring-primary">
-            </div>
-        </div>
-        <div class="flex justify-end gap-2">
-            <button onclick="window.closeModal('computerModal')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancelar</button>
-            <button onclick="window.saveComputer()" id="btnSavePc" class="px-6 py-2 bg-primary text-white rounded font-bold">Salvar</button>
-        </div>
-    </div>
+<div id="sectorModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center">
+<div class="bg-slate-800 border border-slate-700 p-6 rounded-xl w-80">
+
+<h3 class="mb-3 font-bold">Setor</h3>
+
+<input id="newSectorName" placeholder="Nome"
+class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 mb-3">
+
+<div class="flex gap-2">
+<button onclick="close('sectorModal')" class="w-1/2 bg-slate-600 p-2 rounded">Cancelar</button>
+<button onclick="addSector()" class="w-1/2 bg-teal-600 p-2 rounded">Salvar</button>
 </div>
+
+</div>
+</div>
+
+<div id="computerModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center">
+<div class="bg-slate-800 border border-slate-700 p-6 rounded-xl w-96">
+
+<input id="pcName" placeholder="Nome PC" class="input">
+<select id="pcSetor" class="input"></select>
+<input id="pcConfig" placeholder="Configuração" class="input">
+<input id="pcAnyId" placeholder="AnyDesk ID" class="input">
+<input id="pcAnyPass" placeholder="Senha" class="input">
+
+<button onclick="addComputer()" class="w-full bg-teal-600 py-2 rounded mt-2">
+Salvar
+</button>
+
+</div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="hidden fixed bottom-5 right-5 bg-teal-600 px-4 py-2 rounded shadow"></div>
+
+<style>
+.input{
+width:100%;
+padding:10px;
+margin-bottom:8px;
+background:#334155;
+border:1px solid #475569;
+border-radius:8px;
+color:white;
+}
+</style>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "" };
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'gestor-wg-info-v3';
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+const app = initializeApp({
+apiKey:"AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
+authDomain:"sistema-chamados-99e49.firebaseapp.com",
+projectId:"sistema-chamados-99e49"
+});
 
-    let user = null;
-    let selectedClientId = null;
-    let selectedSectorId = 'all';
-    let editingComputerId = null;
-    let editingClientId = null;
-    let cachedData = { clients: [], sectors: [], computers: [] };
+const db=getFirestore(app);
+const auth=getAuth(app);
 
-    const initAuth = async () => {
-        try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        } catch (e) { 
-            console.error("Erro Auth:", e);
-            document.getElementById("connectionText").innerText = "Erro de Autenticação";
-            document.getElementById("connectionStatus").className = "w-2 h-2 rounded-full bg-red-500";
-        }
-    };
-    initAuth();
+let clients=[], computers=[], sectors=[];
+let selectedClientId=null;
+let editingComputerId=null;
 
-    onAuthStateChanged(auth, (u) => {
-        user = u;
-        if (user) {
-            document.getElementById("connectionStatus").className = "w-2 h-2 rounded-full bg-green-500";
-            document.getElementById("connectionText").innerText = "Sincronizado";
-            subscribeToData();
-            checkOldData().catch(e => console.log("Verificação de migração terminada ou indisponível."));
-        }
-    });
+onAuthStateChanged(auth,user=>{
+if(!user) window.location.href="login-tecnico.html";
+else start();
+});
 
-    async function checkOldData() {
-        if (!user) return;
-        try {
-            // Tentativa de ler raiz antiga (pode falhar por regras, mas capturamos o erro)
-            const oldClients = await getDocs(collection(db, 'clientes'));
-            const newClients = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'clientes'));
-            
-            if (!oldClients.empty && newClients.empty) {
-                document.getElementById("migrationTool").classList.remove("hidden");
-            } else {
-                 // Se a lista de clientes estiver vazia mas não houver o que migrar, limpamos o loader
-                 if (newClients.empty) window.renderClients();
-            }
-        } catch (e) { 
-            // Caso falhe por permissão ou ausência, apenas renderizamos a lista (que estará vazia)
-            window.renderClients();
-        }
-    }
+function start(){
 
-    window.migrateData = async () => {
-        const btn = document.getElementById("btnMigrate");
-        btn.disabled = true;
-        btn.innerText = "A migrar... Por favor, aguarde.";
+onSnapshot(collection(db,"clientes"),snap=>{
+clients=[]; snap.forEach(d=>clients.push({id:d.id,...d.data()}));
+renderClients();
+});
 
-        try {
-            const oldClients = await getDocs(collection(db, 'clientes'));
-            const oldComputers = await getDocs(collection(db, 'computadores'));
-            const idMap = {};
+onSnapshot(collection(db,"computadores"),snap=>{
+computers=[]; snap.forEach(d=>computers.push({id:d.id,...d.data()}));
+render();
+});
 
-            for (const cDoc of oldClients.docs) {
-                const data = cDoc.data();
-                const newRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'clientes'), {
-                    name: data.name,
-                    createdAt: data.createdAt || new Date().toISOString()
-                });
-                idMap[cDoc.id] = newRef.id;
-            }
+onSnapshot(collection(db,"setores"),snap=>{
+sectors=[]; snap.forEach(d=>sectors.push({id:d.id,...d.data()}));
+});
+}
 
-            for (const pDoc of oldComputers.docs) {
-                const data = pDoc.data();
-                const newClientId = idMap[data.clientId];
-                if (newClientId) {
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'computadores'), {
-                        ...data,
-                        clientId: newClientId,
-                        sectorId: "none",
-                        createdAt: data.createdAt || new Date().toISOString()
-                    });
-                }
-            }
+window.addClient=async()=>{
+await addDoc(collection(db,"clientes"),{name:newClientName.value});
+close("clientModal"); toast("Empresa criada");
+};
 
-            alert("Migração concluída com sucesso!");
-            document.getElementById("migrationTool").classList.add("hidden");
-        } catch (e) {
-            console.error(e);
-            alert("Ocorreu um erro durante a migração. Tente novamente.");
-            btn.disabled = false;
-            btn.innerText = "Tentar importar novamente";
-        }
-    };
+window.addSector=async()=>{
+await addDoc(collection(db,"setores"),{
+name:newSectorName.value,
+clientId:selectedClientId
+});
+close("sectorModal"); toast("Setor criado");
+};
 
-    function subscribeToData() {
-        if (!user) return;
-        const base = (col) => collection(db, 'artifacts', appId, 'public', 'data', col);
+window.addComputer=async()=>{
+const sectorId=pcSetor.value;
+const setor=sectors.find(s=>s.id===sectorId);
 
-        onSnapshot(base('clientes'), snap => {
-            cachedData.clients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            window.renderClients();
-        }, e => {
-            console.error("Erro Snapshot Clientes:", e);
-            window.renderClients(); // Para limpar o loader mesmo em erro
-        });
+if(editingComputerId){
+await updateDoc(doc(db,"computadores",editingComputerId),{
+name:pcName.value,
+sectorId,
+sectorName:setor?.name||"",
+config:pcConfig.value,
+anyId:pcAnyId.value,
+anyPass:pcAnyPass.value
+});
+toast("Atualizado");
+}else{
+await addDoc(collection(db,"computadores"),{
+clientId:selectedClientId,
+name:pcName.value,
+sectorId,
+sectorName:setor?.name||"",
+config:pcConfig.value,
+anyId:pcAnyId.value,
+anyPass:pcAnyPass.value
+});
+toast("Cadastrado");
+}
 
-        onSnapshot(base('setores'), snap => {
-            cachedData.sectors = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            window.renderSectors();
-            window.updateSectorDropdown();
-        }, e => console.error("Erro Snapshot Setores:", e));
+editingComputerId=null;
+close("computerModal");
+};
 
-        onSnapshot(base('computadores'), snap => {
-            cachedData.computers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            window.renderComputers();
-            window.renderSectors();
-        }, e => console.error("Erro Snapshot PCs:", e));
-    }
+window.deleteComputer=async(id)=>{
+if(confirm("Excluir?")){
+await deleteDoc(doc(db,"computadores",id));
+toast("Removido");
+}
+};
 
-    // --- FUNÇÕES DE INTERFACE ---
-    window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
-    window.closeModal = (id) => document.getElementById(id).classList.add("hidden");
+window.editComputer=id=>{
+const pc=computers.find(p=>p.id===id);
+editingComputerId=id;
 
-    window.renderClients = () => {
-        const list = document.getElementById("clientList");
-        if (!list) return;
-        
-        const searchInput = document.getElementById("clientSearch");
-        const search = searchInput ? searchInput.value.toLowerCase() : "";
-        list.innerHTML = "";
+pcName.value=pc.name;
+pcConfig.value=pc.config;
+pcAnyId.value=pc.anyId;
+pcAnyPass.value=pc.anyPass;
 
-        const filtered = cachedData.clients.filter(c => c.name.toLowerCase().includes(search));
+loadSectors();
+pcSetor.value=pc.sectorId;
 
-        if (filtered.length === 0) {
-            list.innerHTML = `<div class="text-center text-gray-400 mt-10 p-4 text-xs">Nenhuma empresa encontrada.</div>`;
-            return;
-        }
+open("computerModal");
+};
 
-        filtered.forEach(c => {
-            const div = document.createElement("div");
-            div.className = `flex items-center justify-between p-3 rounded-lg cursor-pointer border mb-1 transition-all ${selectedClientId === c.id ? 'bg-red-50 border-red-200 shadow-sm' : 'border-transparent hover:bg-gray-100'}`;
-            div.onclick = () => window.selectClient(c.id);
-            div.innerHTML = `<span class="text-sm font-bold truncate flex-1 ${selectedClientId === c.id ? 'text-primary' : 'text-gray-700'}">${c.name}</span>
-                <div class="flex gap-1">
-                    <button onclick="event.stopPropagation(); window.editClient('${c.id}')" class="text-gray-400 hover:text-blue-500 p-1"><i class="fas fa-edit text-xs"></i></button>
-                    <button onclick="event.stopPropagation(); window.deleteClient('${c.id}')" class="text-gray-400 hover:text-red-500 p-1"><i class="fas fa-trash text-xs"></i></button>
-                </div>`;
-            list.appendChild(div);
-        });
-    };
+window.selectClient=id=>{
+selectedClientId=id;
+actions.classList.remove("hidden");
 
-    window.selectClient = (id) => {
-        selectedClientId = id;
-        selectedSectorId = 'all';
-        const client = cachedData.clients.find(c => c.id === id);
-        if (client) {
-            document.getElementById("currentClientTitle").innerText = client.name;
-            document.getElementById("headerActions").classList.remove("hidden");
-            window.renderClients();
-            window.renderSectors();
-            window.renderComputers();
-        }
-    };
+currentClientTitle.innerText=clients.find(c=>c.id===id).name;
+render();
+};
 
-    window.addClient = async () => {
-        const name = document.getElementById("newClientName").value.trim();
-        if (!name) return;
-        const ref = collection(db, 'artifacts', appId, 'public', 'data', 'clientes');
-        if (editingClientId) {
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clientes', editingClientId), { name });
-        } else {
-            await addDoc(ref, { name, createdAt: new Date().toISOString() });
-        }
-        window.closeModal('clientModal');
-    };
+function renderClients(){
+clientList.innerHTML=clients.map(c=>`
+<div onclick="selectClient('${c.id}')" class="p-2 bg-slate-700 rounded cursor-pointer hover:bg-slate-600">
+${c.name}
+</div>`).join("");
+}
 
-    window.openAddClientModal = () => {
-        editingClientId = null;
-        document.getElementById("clientModalTitle").innerText = "Novo Cliente";
-        document.getElementById("newClientName").value = "";
-        window.openModal('clientModal');
-    };
+function render(){
+if(!selectedClientId)return;
 
-    window.editClient = (id) => {
-        editingClientId = id;
-        const client = cachedData.clients.find(c => c.id === id);
-        document.getElementById("newClientName").value = client.name;
-        document.getElementById("clientModalTitle").innerText = "Editar Empresa";
-        window.openModal('clientModal');
-    };
+const search=searchInput.value.toLowerCase();
 
-    window.deleteClient = async (id) => {
-        if (confirm("Deseja mesmo eliminar esta empresa e todos os seus PCs?")) {
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clientes', id));
-            if (selectedClientId === id) {
-                selectedClientId = null;
-                document.getElementById("headerActions").classList.add("hidden");
-            }
-        }
-    };
+const list=computers.filter(p=>
+p.clientId===selectedClientId &&
+(p.name?.toLowerCase().includes(search) ||
+p.sectorName?.toLowerCase().includes(search))
+);
 
-    // --- SETORES ---
-    window.addSector = async () => {
-        const name = document.getElementById("newSectorName").value.trim();
-        if (!name || !selectedClientId) return;
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'setores'), { name, clientId: selectedClientId });
-        document.getElementById("newSectorName").value = "";
-    };
+const grouped={};
 
-    window.deleteSector = async (id) => {
-        if (confirm("Eliminar este setor? Os PCs vinculados ficarão sem setor.")) {
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'setores', id));
-        }
-    };
+list.forEach(p=>{
+const key=p.sectorName||"Sem setor";
+if(!grouped[key])grouped[key]=[];
+grouped[key].push(p);
+});
 
-    window.selectSector = (id) => {
-        selectedSectorId = id;
-        window.renderSectors();
-        window.renderComputers();
-    };
+mainContent.innerHTML=Object.keys(grouped).map(setor=>`
+<h2 class="mb-2 mt-4 text-teal-400 font-bold">${setor} (${grouped[setor].length})</h2>
 
-    window.renderSectors = () => {
-        const container = document.getElementById("sectorsTabsContainer");
-        if (!selectedClientId) return;
-        const scts = cachedData.sectors.filter(s => s.clientId === selectedClientId);
-        
-        let html = `<button onclick="window.selectSector('all')" class="px-4 py-2 text-sm whitespace-nowrap transition-all ${selectedSectorId === 'all' ? 'tab-active' : 'text-gray-500'}">Todos (${cachedData.computers.filter(p => p.clientId === selectedClientId).length})</button>`;
-        
-        scts.forEach(s => {
-            const count = cachedData.computers.filter(p => p.clientId === selectedClientId && p.sectorId === s.id).length;
-            html += `<button onclick="window.selectSector('${s.id}')" class="px-4 py-2 text-sm whitespace-nowrap transition-all ${selectedSectorId === s.id ? 'tab-active' : 'text-gray-500'}">${s.name} (${count})</button>`;
-        });
-        container.innerHTML = html;
-    };
+<div class="grid md:grid-cols-3 gap-3">
 
-    window.updateSectorDropdown = () => {
-        const select = document.getElementById("pcSectorSelect");
-        if (!select) return;
-        const scts = cachedData.sectors.filter(s => s.clientId === selectedClientId);
-        select.innerHTML = '<option value="none">Geral (Sem Setor)</option>' + scts.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-    };
+${grouped[setor].map(pc=>`
+<div class="bg-slate-800 p-4 rounded-xl border border-slate-700 card relative">
 
-    window.openManageSectorsModal = () => {
-        const list = document.getElementById("sectorManagementList");
-        const scts = cachedData.sectors.filter(s => s.clientId === selectedClientId);
-        list.innerHTML = scts.map(s => `
-            <div class="flex justify-between items-center p-3">
-                <span class="text-sm font-medium">${s.name}</span>
-                <button onclick="window.deleteSector('${s.id}')" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
-            </div>`).join('') || '<p class="p-4 text-center text-gray-400 text-xs">Nenhum setor cadastrado.</p>';
-        window.openModal('sectorModal');
-    };
+<div class="absolute top-2 right-2 flex gap-2">
+<i class="fas fa-pen cursor-pointer" onclick="editComputer('${pc.id}')"></i>
+<i class="fas fa-trash text-red-400 cursor-pointer" onclick="deleteComputer('${pc.id}')"></i>
+</div>
 
-    // --- COMPUTADORES ---
-    window.saveComputer = async () => {
-        const name = document.getElementById("pcName").value.trim();
-        const anyId = document.getElementById("pcAnyId").value.trim();
-        
-        if (!name || !anyId) return alert("Preencha o Nome e o ID do AnyDesk.");
+<b>${pc.name}</b>
+<div class="text-sm text-slate-400">${pc.config||""}</div>
+<div class="text-xs mt-2">ID: ${pc.anyId}</div>
 
-        const data = {
-            name,
-            sectorId: document.getElementById("pcSectorSelect").value,
-            config: document.getElementById("pcConfig").value.trim(),
-            anyId,
-            anyPass: document.getElementById("pcAnyPass").value.trim(),
-            clientId: selectedClientId,
-            updatedAt: new Date().toISOString()
-        };
+</div>
+`).join("")}
 
-        const ref = collection(db, 'artifacts', appId, 'public', 'data', 'computadores');
-        if (editingComputerId) {
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'computadores', editingComputerId), data);
-        } else {
-            await addDoc(ref, { ...data, createdAt: new Date().toISOString() });
-        }
-        window.closeModal('computerModal');
-    };
+</div>
+`).join("");
+}
 
-    window.editComputer = (id) => {
-        editingComputerId = id;
-        const pc = cachedData.computers.find(p => p.id === id);
-        if (pc) {
-            document.getElementById("pcName").value = pc.name || "";
-            document.getElementById("pcConfig").value = pc.config || "";
-            document.getElementById("pcAnyId").value = pc.anyId || "";
-            document.getElementById("pcAnyPass").value = pc.anyPass || "";
-            window.updateSectorDropdown();
-            document.getElementById("pcSectorSelect").value = pc.sectorId || "none";
-            document.getElementById("computerModalTitle").innerText = "Editar Computador";
-            window.openModal('computerModal');
-        }
-    };
+window.openAddClientModal=()=>open("clientModal");
+window.openAddSectorModal=()=>open("sectorModal");
 
-    window.deleteComputer = async (id) => {
-        if (confirm("Eliminar este PC?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'computadores', id));
-    };
+window.openAddComputerModal=()=>{
+editingComputerId=null;
+pcName.value="";
+pcConfig.value="";
+pcAnyId.value="";
+pcAnyPass.value="";
+loadSectors();
+open("computerModal");
+};
 
-    window.renderComputers = () => {
-        const container = document.getElementById("mainContent");
-        const searchInput = document.getElementById("searchInput");
-        const search = searchInput ? searchInput.value.toLowerCase() : "";
-        if (!selectedClientId) return;
+function loadSectors(){
+const list=sectors.filter(s=>s.clientId===selectedClientId);
+pcSetor.innerHTML=list.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
+}
 
-        let list = cachedData.computers.filter(p => p.clientId === selectedClientId);
-        if (selectedSectorId !== 'all') list = list.filter(p => p.sectorId === selectedSectorId);
-        if (search) list = list.filter(p => p.name.toLowerCase().includes(search) || p.anyId.includes(search));
+function open(id){document.getElementById(id).classList.remove("hidden")}
+function close(id){document.getElementById(id).classList.add("hidden")}
 
-        if (list.length === 0) {
-            container.innerHTML = `<div class="text-center text-gray-400 mt-10">Nenhum computador encontrado aqui.</div>`;
-            return;
-        }
-
-        container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            ${list.map(p => {
-                const sName = cachedData.sectors.find(s => s.id === p.sectorId)?.name || 'Geral';
-                return `
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-all group">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <h4 class="font-bold text-gray-800 leading-tight">${p.name}</h4>
-                            <span class="text-[10px] uppercase font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">${sName}</span>
-                        </div>
-                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="window.editComputer('${p.id}')" class="text-gray-400 hover:text-primary"><i class="fas fa-edit text-xs"></i></button>
-                            <button onclick="window.deleteComputer('${p.id}')" class="text-gray-400 hover:text-red-600"><i class="fas fa-trash text-xs"></i></button>
-                        </div>
-                    </div>
-                    <p class="text-xs text-gray-400 mb-3 italic line-clamp-1">${p.config || 'Sem Configuração'}</p>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-center bg-red-50 p-2 rounded border border-red-100">
-                            <div class="flex flex-col">
-                                <span class="text-[9px] uppercase font-bold text-red-400">AnyDesk ID</span>
-                                <span class="font-mono text-sm font-bold text-red-600">${p.anyId}</span>
-                            </div>
-                            <button onclick="window.copyText('${p.anyId}')" class="text-red-300 hover:text-red-600"><i class="fas fa-copy"></i></button>
-                        </div>
-                        <div class="flex justify-between items-center bg-gray-50 p-2 rounded border border-gray-100">
-                            <div class="flex flex-col">
-                                <span class="text-[9px] uppercase font-bold text-gray-400">Senha</span>
-                                <span class="font-mono text-sm text-gray-600 font-bold">${p.anyPass || '---'}</span>
-                            </div>
-                            <button onclick="window.copyText('${p.anyPass}')" class="text-gray-300 hover:text-gray-600"><i class="fas fa-copy"></i></button>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('')}
-        </div>`;
-    };
-
-    window.openAddComputerModal = () => {
-        editingComputerId = null;
-        document.getElementById("computerModalTitle").innerText = "Novo Computador";
-        ["pcName", "pcConfig", "pcAnyId", "pcAnyPass"].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = "";
-        });
-        window.updateSectorDropdown();
-        window.openModal('computerModal');
-    };
-
-    window.copyText = (txt) => {
-        const i = document.createElement("input");
-        document.body.appendChild(i);
-        i.value = txt; i.select();
-        document.execCommand("copy");
-        document.body.removeChild(i);
-        const t = document.createElement("div");
-        t.className = "fixed bottom-4 right-4 bg-black text-white px-3 py-2 rounded-lg text-xs z-[100] shadow-xl";
-        t.innerText = "Copiado!";
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 2000);
-    };
-
+function toast(msg){
+toast.innerText=msg;
+toast.classList.remove("hidden");
+setTimeout(()=>toast.classList.add("hidden"),2000);
+}
 </script>
 
 </body>
