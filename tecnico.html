@@ -1,72 +1,473 @@
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Técnico - WG Informática</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script src="https://unpkg.com/lucide@latest"></script>
 
-// 🔥 PUSH
-import { getMessaging, getToken, onMessage } 
-from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
 
-const app = initializeApp({
-apiKey:"AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
-authDomain:"sistema-chamados-99e49.firebaseapp.com",
-projectId:"sistema-chamados-99e49",
-messagingSenderId:"SEU_SENDER_ID_AQUI",
-appId:"SEU_APP_ID_AQUI"
-});
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            brand: { 50: '#ecfeff', 100: '#cffafe', 400: '#22d3ee', 500: '#06b6d4', 600: '#0891b2', 900: '#164e63' }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-zinc-950 text-zinc-200 font-sans h-screen flex overflow-hidden">
 
-const db = getFirestore(app);
-const auth = getAuth(app);
+  <div id="sidebar-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden transition-opacity" onclick="toggleMenu()"></div>
 
-// 🔔 INIT PUSH
-const messaging = getMessaging(app);
+  <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col justify-between transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-50 shadow-xl md:shadow-sm">
+    <div>
+      <div class="h-16 flex items-center justify-between px-6 border-b border-zinc-800">
+        <div class="flex items-center gap-2 text-brand-500">
+          <i data-lucide="monitor-wrench" class="w-6 h-6"></i>
+          <span class="font-bold text-lg tracking-tight">WG Tech</span>
+        </div>
+        <button class="md:hidden text-zinc-400 hover:text-white" onclick="toggleMenu()">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <nav class="p-4 space-y-1">
+        <p class="px-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Painel de Controle</p>
+        <a href="#" class="flex items-center gap-3 px-3 py-2 bg-brand-500/10 text-brand-400 rounded-lg font-medium transition-colors">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Fila de Chamados
+        </a>
+        <a href="agenda.html" class="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 rounded-lg font-medium transition-colors">
+          <i data-lucide="calendar" class="w-5 h-5"></i> Agenda
+        </a>
+        <a href="GESTAOPC.HTML" class="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 rounded-lg font-medium transition-colors">
+          <i data-lucide="cpu" class="w-5 h-5"></i> Gestão de PCs
+        </a>
+        <a href="rotina.html" class="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 rounded-lg font-medium transition-colors">
+          <i data-lucide="clipboard-check" class="w-5 h-5"></i> Rotina
+        </a>
+        
+        <p class="px-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider mt-6 mb-2">Documentação</p>
+        <a href="relatorio_tecnico.html" class="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 rounded-lg font-medium transition-colors">
+          <i data-lucide="file-text" class="w-5 h-5"></i> Novo Relatório
+        </a>
+        <a href="relatorios_salvos.html" class="flex items-center gap-3 px-3 py-2 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 rounded-lg font-medium transition-colors">
+          <i data-lucide="archive" class="w-5 h-5"></i> Salvos
+        </a>
+      </nav>
+    </div>
+    
+    <div class="p-4 border-t border-zinc-800">
+      <a href="zap.html" class="flex items-center gap-3 px-3 py-3 w-full bg-zinc-800 text-white rounded-xl font-medium hover:bg-zinc-700 transition-colors shadow-sm mb-4">
+        <i data-lucide="message-square" class="w-5 h-5 text-emerald-400"></i> Chat da Equipe
+      </a>
+      <div class="flex items-center gap-3 px-3">
+        <div class="w-8 h-8 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold text-sm border border-brand-500/30">
+          T
+        </div>
+        <div class="flex-1 overflow-hidden">
+          <p class="text-sm font-medium text-zinc-200 truncate" id="user-email-display">tecnico@wg.com</p>
+          <p class="text-xs text-zinc-500">Online</p>
+        </div>
+      </div>
+    </div>
+  </aside>
 
-async function initPush(){
+  <main class="flex-1 flex flex-col h-full overflow-hidden w-full relative">
+    <header class="md:hidden bg-zinc-900 border-b border-zinc-800 h-16 flex items-center px-4 justify-between shrink-0">
+      <div class="flex items-center gap-2 text-brand-500">
+        <i data-lucide="monitor-wrench" class="w-6 h-6"></i>
+        <span class="font-bold text-lg">WG Tech</span>
+      </div>
+      <button class="p-2 text-zinc-400 hover:bg-zinc-800 rounded-lg transition-colors" onclick="toggleMenu()">
+        <i data-lucide="menu"></i>
+      </button>
+    </header>
 
-try{
+    <div class="flex-1 overflow-y-auto p-4 md:p-8">
+      <div class="mb-8">
+        <h1 class="text-2xl font-bold text-white tracking-tight">Painel do Técnico</h1>
+        <p class="text-zinc-400 text-sm mt-1">Acompanhe seus chamados, agenda e produtividade de hoje.</p>
+      </div>
 
-const permission = await Notification.requestPermission();
+      <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm hover:border-zinc-700 transition-colors">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-sm font-medium text-zinc-400 mb-1">Abertos</p>
+              <h3 class="text-3xl font-bold text-zinc-100" id="stat-abertos">0</h3>
+            </div>
+            <div class="p-2 bg-red-500/10 rounded-lg text-red-400 border border-red-500/20"><i data-lucide="inbox"></i></div>
+          </div>
+        </div>
+        
+        <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm hover:border-zinc-700 transition-colors">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-sm font-medium text-zinc-400 mb-1">Em Andamento</p>
+              <h3 class="text-3xl font-bold text-brand-400" id="stat-andamento">0</h3>
+            </div>
+            <div class="p-2 bg-brand-500/10 rounded-lg text-brand-400 border border-brand-500/20"><i data-lucide="activity"></i></div>
+          </div>
+        </div>
 
-if(permission !== "granted"){
-console.log("Notificação negada");
-return;
-}
+        <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm hover:border-zinc-700 transition-colors">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-sm font-medium text-zinc-400 mb-1">Finalizados</p>
+              <h3 class="text-3xl font-bold text-zinc-100" id="stat-finalizados">0</h3>
+            </div>
+            <div class="p-2 bg-emerald-500/10 rounded-lg text-emerald-400 border border-emerald-500/20"><i data-lucide="check-circle-2"></i></div>
+          </div>
+        </div>
 
-const token = await getToken(messaging,{
-vapidKey: "SUA_VAPID_KEY_AQUI"
-});
+        <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm hover:border-zinc-700 transition-colors">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-sm font-medium text-zinc-400 mb-1">Agendamentos</p>
+              <h3 class="text-3xl font-bold text-zinc-100" id="stat-agenda">0</h3>
+            </div>
+            <div class="p-2 bg-purple-500/10 rounded-lg text-purple-400 border border-purple-500/20"><i data-lucide="calendar-clock"></i></div>
+          </div>
+        </div>
+      </section>
 
-console.log("TOKEN:", token);
+      <section class="bg-zinc-900 rounded-2xl border border-zinc-800 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-zinc-100">Fila de Atendimento</h2>
+            <p class="text-sm text-zinc-400">Gerencie os tickets ativos</p>
+          </div>
+          
+          <div class="flex bg-zinc-950 p-1 rounded-lg border border-zinc-800/50" id="nav-buttons">
+            <button class="flex-1 md:flex-none h-8 px-4 flex items-center justify-center text-sm font-medium rounded-md text-zinc-400 hover:text-zinc-200 transition-colors wg-tab-btn active-tab" onclick="mostrarTarefas('Aberto', this)">Abertos</button>
+            <button class="flex-1 md:flex-none h-8 px-4 flex items-center justify-center text-sm font-medium rounded-md text-zinc-400 hover:text-zinc-200 transition-colors wg-tab-btn" onclick="mostrarTarefas('Em Andamento', this)">Andamento</button>
+            <button class="flex-1 md:flex-none h-8 px-4 flex items-center justify-center text-sm font-medium rounded-md text-zinc-400 hover:text-zinc-200 transition-colors wg-tab-btn" onclick="mostrarTarefas('Resolvido', this)">Finalizados</button>
+          </div>
+        </div>
 
-// salva token
-await addDoc(collection(db,"tokens"),{
-token,
-createdAt: new Date()
-});
+        <div id="lista-tarefas" class="p-5 bg-zinc-950/50 min-h-[300px]">
+          <div class="flex flex-col items-center justify-center h-40 text-zinc-500">
+            <i data-lucide="loader-2" class="w-8 h-8 animate-spin mb-2"></i>
+            <p>Carregando fila...</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
 
-}catch(e){
-console.error("Erro push:", e);
-}
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-}
+<style>
+  .active-tab {
+    background-color: #27272a;
+    color: #f4f4f5;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  }
+  
+  /* Banner de Notificação Especial */
+  .banner-novo {
+    animation: slideIn 0.5s ease-out;
+    border-left: 4px solid #22d3ee !important;
+  }
+  
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+</style>
 
-// 🔔 RECEBER COM APP ABERTO
-onMessage(messaging,(payload)=>{
-showToast("🔔 " + payload.notification.title);
-});
+<script>
+  lucide.createIcons();
 
-// 🔐 LOGIN
-onAuthStateChanged(auth,(user)=>{
-if(!user){
-window.location.href="login-tecnico.html";
-}else{
-initPush(); // 🔥 ativa push
-start();
-}
-});
+  // --- CONFIGURAÇÃO DE NOTIFICAÇÃO ---
+  let primeiraCarga = true;
+  const somNotificacao = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
 
-// ===== RESTO DO SISTEMA (igual ao seu) =====
+  function toggleMenu() {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    sidebar.classList.toggle('-translate-x-full');
+    if (backdrop.classList.contains('hidden')) {
+      backdrop.classList.remove('hidden');
+    } else {
+      backdrop.classList.add('hidden');
+    }
+  }
 
-// 👇 mantém tudo igual daqui pra baixo
+  let snapChamados = [];
+  let snapAgendamentos = [];
 
+  const db = firebase.firestore();
+  const auth = firebase.auth();
+  
+  auth.onAuthStateChanged(user => {
+    if (!user) { 
+      window.location.href = 'login-tecnico.html'; 
+      return; 
+    }
+    document.getElementById('user-email-display').innerText = user.email;
+    observarStatsFirebase();
+    document.querySelector('#nav-buttons .active-tab').click();
+  });
+
+  function showToast(message, type = 'success', isBanner = false) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    const isError = type === 'error';
+    
+    // Se for banner de novo chamado, adiciona classe especial
+    const extraClass = isBanner ? 'banner-novo py-5 px-6 border-l-4' : '';
+
+    toast.className = `flex items-center gap-3 px-4 py-3 rounded-lg shadow-2xl text-sm font-medium text-white transition-all duration-300 transform ${isError ? 'bg-red-600' : 'bg-zinc-800'} border border-zinc-700 pointer-events-auto ${extraClass}`;
+    
+    toast.innerHTML = `
+      <div class="p-2 bg-white/10 rounded-full">
+        <i data-lucide="${isError ? 'alert-circle' : 'bell'}" class="w-5 h-5 ${isError ? 'text-white' : 'text-brand-400'}"></i>
+      </div>
+      <div class="flex flex-col">
+        <span class="font-bold">${isBanner ? 'ALERTA DE CHAMADO' : ''}</span>
+        <span>${message}</span>
+      </div>
+    `;
+    
+    container.appendChild(toast);
+    lucide.createIcons();
+    
+    setTimeout(() => {
+      toast.classList.add('opacity-0', 'translate-x-8');
+      setTimeout(() => toast.remove(), 300);
+    }, isBanner ? 8000 : 4000); // Banners de novos chamados duram mais
+  }
+
+  function dispararNotificacao(cliente) {
+    // 1. Tocar Som
+    somNotificacao.play().catch(e => console.log("Interaja com a página para habilitar áudio."));
+    
+    // 2. Mostrar Banner Visual
+    showToast(`Novo chamado recebido de: ${cliente}`, 'success', true);
+    
+    // 3. Notificação de Sistema (Browser)
+    if (Notification.permission === "granted") {
+      new Notification("WG Tech: Novo Chamado!", { body: `Cliente: ${cliente}` });
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission();
+    }
+  }
+
+  function observarStatsFirebase() {
+    db.collection('chamados').onSnapshot(snapshot => {
+      
+      // Lógica de Detecção de Novo Registro
+      if (!primeiraCarga) {
+        snapshot.docChanges().forEach(change => {
+          if (change.type === "added") {
+            const dados = change.doc.data();
+            // Só notifica se o status for Aberto (novo)
+            if(dados.status === 'Aberto') {
+              dispararNotificacao(dados.empresa || dados.nome || "Novo Cliente");
+            }
+          }
+        });
+      }
+
+      snapChamados = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      atualizarCards();
+      
+      const abaAtiva = document.querySelector('#nav-buttons .active-tab');
+      if (abaAtiva) {
+        let statusParaBuscar = 'Aberto';
+        if(abaAtiva.innerText.includes('Andamento')) statusParaBuscar = 'Em Andamento';
+        if(abaAtiva.innerText.includes('Finalizado')) statusParaBuscar = 'Resolvido';
+        mostrarTarefas(statusParaBuscar, abaAtiva, true);
+      }
+      
+      primeiraCarga = false;
+    });
+    
+    db.collection('agendamentos').onSnapshot(snapshot => {
+      snapAgendamentos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      atualizarCards();
+    });
+  }
+
+  function atualizarCards() {
+    document.getElementById('stat-abertos').textContent = snapChamados.filter(x => x.status === 'Aberto').length;
+    document.getElementById('stat-andamento').textContent = snapChamados.filter(x => x.status === 'Em Andamento').length + snapAgendamentos.filter(x => x.status === 'Em Atendimento').length;
+    document.getElementById('stat-finalizados').textContent = snapChamados.filter(x => x.status === 'Resolvido').length + snapAgendamentos.filter(x => x.status === 'Finalizado').length;
+    document.getElementById('stat-agenda').textContent = snapAgendamentos.length;
+  }
+
+  function mostrarTarefas(statusFiltro, el, isUpdate = false) {
+    if (!isUpdate) {
+      document.querySelectorAll('.wg-tab-btn').forEach(btn => btn.classList.remove('active-tab'));
+      if(el) el.classList.add('active-tab');
+    }
+
+    const lista = document.getElementById('lista-tarefas');
+    
+    if (!isUpdate) {
+      lista.innerHTML = `
+        <div class="flex flex-col items-center justify-center h-40 text-slate-400">
+          <i data-lucide="loader-2" class="w-8 h-8 animate-spin mb-2"></i><p>Buscando...</p>
+        </div>`;
+      lucide.createIcons();
+    }
+
+    let statusChamado = statusFiltro;
+    let statusAgendamento = statusFiltro;
+    if (statusFiltro === 'Em Andamento') statusAgendamento = 'Em Atendimento';
+    if (statusFiltro === 'Resolvido') statusAgendamento = 'Finalizado';
+
+    setTimeout(() => {
+      let htmlFinal = '';
+      
+      const chamadosFiltrados = snapChamados.filter(c => c.status === statusChamado);
+      if (chamadosFiltrados.length > 0) {
+        htmlFinal += `<h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 mt-2">Tickets Suporte</h3>`;
+        htmlFinal += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+        chamadosFiltrados.forEach(c => htmlFinal += gerarHTMLChamado(c));
+        htmlFinal += `</div>`;
+      }
+
+      const agendamentosFiltrados = snapAgendamentos.filter(a => a.status === statusAgendamento || (statusAgendamento === 'Aberto' && a.status === 'Agendado'));
+      if (agendamentosFiltrados.length > 0) {
+        htmlFinal += `<h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 mt-6">Agendamentos</h3>`;
+        htmlFinal += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+        agendamentosFiltrados.forEach(a => htmlFinal += gerarHTMLAgendamento(a));
+        htmlFinal += `</div>`;
+      }
+
+      if (htmlFinal === '') {
+        htmlFinal = `
+          <div class="flex flex-col items-center justify-center h-40 text-zinc-500">
+            <i data-lucide="check-circle" class="w-12 h-12 mb-3 text-zinc-700"></i>
+            <p>Nenhuma tarefa na fila <b class="text-zinc-400">${statusFiltro}</b>.</p>
+          </div>`;
+      }
+
+      lista.innerHTML = htmlFinal;
+      lucide.createIcons();
+    }, isUpdate ? 0 : 300);
+  }
+
+  function gerarHTMLChamado(c) {
+    const badge = obterEstiloBadge(c.status);
+    return `
+      <article class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-brand-500/50 hover:shadow-lg hover:shadow-brand-500/10 transition-all flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h3 class="font-bold text-zinc-100 text-lg leading-tight">${esc(c.empresa || c.nome || 'Cliente')}</h3>
+              <p class="text-xs text-zinc-400 mt-1">${esc(c.setor || '')} ${c.email ? '• ' + esc(c.email) : ''}</p>
+            </div>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${badge.bg} ${badge.text} ${badge.border}">
+              ${esc(c.status || 'Aberto')}
+            </span>
+          </div>
+          <p class="text-zinc-300 text-sm line-clamp-2 bg-zinc-950 p-3 rounded-lg border border-zinc-800/50">${esc(c.mensagem || '')}</p>
+        </div>
+        
+        <div class="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between">
+          <span class="text-xs font-medium text-zinc-500 flex items-center gap-1">
+            <i data-lucide="clock" class="w-3 h-3"></i> ${formatarData(c.criadoEm)}
+          </span>
+          <div class="flex gap-2">
+            <button onclick="abrirChat('${c.id}')" title="Abrir Chat" class="flex items-center justify-center w-8 h-8 text-zinc-400 hover:text-brand-400 hover:bg-brand-500/10 rounded-lg transition-colors">
+              <i data-lucide="message-square" class="w-4 h-4"></i>
+            </button>
+            <button onclick="window.location.href='ordem_servico.html?chamado=${c.id}'" title="Gerar OS" class="flex items-center justify-center w-8 h-8 text-zinc-400 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-colors">
+              <i data-lucide="file-signature" class="w-4 h-4"></i>
+            </button>
+            ${botoesAcao(c.status, 'chamados', c.id)}
+          </div>
+        </div>
+      </article>`;
+  }
+
+  function gerarHTMLAgendamento(a) {
+    const badge = obterEstiloBadge(a.status);
+    return `
+      <article class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-brand-500/50 hover:shadow-lg hover:shadow-brand-500/10 transition-all flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h3 class="font-bold text-zinc-100 text-lg leading-tight">${esc(a.cliente || 'Cliente')}</h3>
+              <p class="text-xs text-brand-400 font-medium mt-1">${esc(a.servico || '')}</p>
+            </div>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${badge.bg} ${badge.text} ${badge.border}">
+              ${esc(a.status || 'Agendado')}
+            </span>
+          </div>
+          <p class="text-zinc-400 text-sm line-clamp-2">${esc(a.problema || '')}</p>
+        </div>
+        
+        <div class="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between">
+          <span class="text-xs font-medium text-zinc-500 flex items-center gap-1">
+            <i data-lucide="calendar" class="w-3 h-3"></i> ${formatarDataAgenda(a.data)}
+          </span>
+          <div class="flex gap-2">
+            ${botoesAcao(a.status, 'agendamentos', a.id)}
+          </div>
+        </div>
+      </article>`;
+  }
+
+  function botoesAcao(status, tipo, id) {
+    if (status === 'Aberto' || status === 'Agendado') {
+      const novoStatus = tipo === 'chamados' ? 'Em Andamento' : 'Em Atendimento';
+      return `<button onclick="mudarStatus('${tipo}', '${id}', '${novoStatus}')" class="flex items-center justify-center h-8 px-3 gap-1.5 bg-brand-500/10 text-brand-400 border border-brand-500/20 text-xs font-bold rounded-lg hover:bg-brand-500/20 transition-colors"><i data-lucide="play" class="w-3.5 h-3.5"></i> Iniciar</button>`;
+    }
+    if (status === 'Em Andamento' || status === 'Em Atendimento') {
+      const novoStatus = tipo === 'chamados' ? 'Resolvido' : 'Finalizado';
+      return `<button onclick="mudarStatus('${tipo}', '${id}', '${novoStatus}')" class="flex items-center justify-center h-8 px-3 gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold rounded-lg hover:bg-emerald-500/20 transition-colors"><i data-lucide="check" class="w-3.5 h-3.5"></i> Finalizar</button>`;
+    }
+    return '';
+  }
+
+  function obterEstiloBadge(status = '') {
+    const s = String(status).toLowerCase();
+    if (s.includes('andamento') || s.includes('atendimento')) return { bg: 'bg-brand-500/10', text: 'text-brand-400', border: 'border-brand-500/20' };
+    if (s.includes('final') || s.includes('resolvido')) return { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' };
+    return { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' };
+  }
+
+  function mudarStatus(colecao, id, novoStatus) {
+    db.collection(colecao).doc(id).update({ status: novoStatus })
+      .then(() => showToast(`Status atualizado para ${novoStatus}`))
+      .catch(error => showToast('Erro: ' + error.message, 'error'));
+  }
+
+  function formatarData(timestamp) {
+    if (!timestamp) return 'S/ Data';
+    if (timestamp.toDate) return timestamp.toDate().toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+    const data = new Date(timestamp);
+    return Number.isNaN(data.getTime()) ? 'Data inválida' : data.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+  }
+  
+  function formatarDataAgenda(valor) {
+    if (!valor) return 'S/ Data';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return new Date(valor + 'T00:00:00').toLocaleDateString('pt-BR');
+    return valor;
+  }
+
+  function abrirChat(chamadoId) { window.location.href = `chat-tecnico.html?id=${chamadoId}`; }
+  function esc(v='') { return String(v).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 </script>
+</body>
+</html>
