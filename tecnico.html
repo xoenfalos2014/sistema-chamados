@@ -5,14 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel Técnico - WG Informática</title>
   
+  <!-- Fontes -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
+  <!-- Ícones Lucide -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
+  <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -34,13 +38,15 @@
 </head>
 <body class="bg-zinc-950 text-zinc-200 font-sans h-screen flex overflow-hidden">
 
+  <!-- Fundo escuro para mobile -->
   <div id="sidebar-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden transition-opacity" onclick="toggleMenu()"></div>
 
+  <!-- Sidebar -->
   <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col justify-between transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-50 shadow-xl md:shadow-sm">
     <div>
       <div class="h-16 flex items-center justify-between px-6 border-b border-zinc-800">
         <div class="flex items-center gap-2 text-brand-500">
-          <i data-lucide="monitor-wrench" class="w-6 h-6"></i>
+          <i data-lucide="wrench" class="w-6 h-6"></i>
           <span class="font-bold text-lg tracking-tight">WG Tech</span>
         </div>
         <button class="md:hidden text-zinc-400 hover:text-white" onclick="toggleMenu()">
@@ -88,10 +94,11 @@
     </div>
   </aside>
 
+  <!-- Main Content -->
   <main class="flex-1 flex flex-col h-full overflow-hidden w-full relative">
     <header class="md:hidden bg-zinc-900 border-b border-zinc-800 h-16 flex items-center px-4 justify-between shrink-0">
       <div class="flex items-center gap-2 text-brand-500">
-        <i data-lucide="monitor-wrench" class="w-6 h-6"></i>
+        <i data-lucide="wrench" class="w-6 h-6"></i>
         <span class="font-bold text-lg">WG Tech</span>
       </div>
       <button class="p-2 text-zinc-400 hover:bg-zinc-800 rounded-lg transition-colors" onclick="toggleMenu()">
@@ -100,11 +107,18 @@
     </header>
 
     <div class="flex-1 overflow-y-auto p-4 md:p-8">
-      <div class="mb-8">
-        <h1 class="text-2xl font-bold text-white tracking-tight">Painel do Técnico</h1>
-        <p class="text-zinc-400 text-sm mt-1">Acompanhe seus chamados, agenda e produtividade de hoje.</p>
+      <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-bold text-white tracking-tight">Painel do Técnico</h1>
+          <p class="text-zinc-400 text-sm mt-1">Gerencie chamados e acompanhe notificações em tempo real.</p>
+        </div>
+        <!-- Indicador de Áudio -->
+        <button id="audio-status" class="flex items-center gap-2 px-4 py-2 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-full text-xs font-bold transition-all hover:bg-yellow-500/20 active:scale-95" onclick="unlockAudio()">
+          <i data-lucide="volume-x" class="w-4 h-4"></i> Áudio Bloqueado - Clique para Ativar
+        </button>
       </div>
 
+      <!-- Stats -->
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm hover:border-zinc-700 transition-colors">
           <div class="flex justify-between items-start">
@@ -147,6 +161,7 @@
         </div>
       </section>
 
+      <!-- Fila -->
       <section class="bg-zinc-900 rounded-2xl border border-zinc-800 shadow-sm overflow-hidden">
         <div class="p-5 border-b border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -177,15 +192,11 @@
   .active-tab {
     background-color: #27272a;
     color: #f4f4f5;
-    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   }
-  
-  /* Banner de Notificação Especial */
   .banner-novo {
     animation: slideIn 0.5s ease-out;
     border-left: 4px solid #22d3ee !important;
   }
-  
   @keyframes slideIn {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
@@ -193,21 +204,73 @@
 </style>
 
 <script>
+  // Inicialização manual do Lucide para garantir ícones carregados
   lucide.createIcons();
 
-  // --- CONFIGURAÇÃO DE NOTIFICAÇÃO ---
+  // --- CONTROLO DE ÁUDIO E LOOP ---
   let primeiraCarga = true;
+  let audioDesbloqueado = false;
+  let intervaloAlertaLoop = null;
+  const TEMPO_LOOP = 5 * 60 * 1000; // 5 minutos
+
+  // Som estável vindo de CDN confiável (mixkit)
   const somNotificacao = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+
+  function unlockAudio() {
+    if (audioDesbloqueado) return;
+
+    // Tentativa de tocar e pausar para ganhar permissão do browser
+    somNotificacao.play().then(() => {
+        somNotificacao.pause();
+        somNotificacao.currentTime = 0;
+        audioDesbloqueado = true;
+        
+        const statusEl = document.getElementById('audio-status');
+        statusEl.classList.remove('bg-yellow-500/10', 'text-yellow-500', 'border-yellow-500/20');
+        statusEl.classList.add('bg-emerald-500/10', 'text-emerald-500', 'border-emerald-500/20');
+        statusEl.innerHTML = '<i data-lucide="volume-2" class="w-4 h-4"></i> Áudio Ativo';
+        
+        lucide.createIcons();
+        console.log("Sistema de som desbloqueado.");
+        showToast("Som de notificações ativado!", "success");
+    }).catch(err => {
+        console.error("Erro ao desbloquear áudio:", err);
+        showToast("Clique no botão 'Áudio Bloqueado' para ativar o som.", "error");
+    });
+  }
+
+  // Monitora interação para liberar áudio caso o usuário não clique no botão específico
+  document.body.addEventListener('click', unlockAudio, { once: true });
+
+  function tocarSomAlerta() {
+    if (audioDesbloqueado) {
+        somNotificacao.currentTime = 0;
+        somNotificacao.play().catch(e => console.warn("Som bloqueado pelo navegador.", e));
+    }
+  }
+
+  function gerenciarLoopAlerta(temAbertos) {
+    if (temAbertos) {
+      if (!intervaloAlertaLoop) {
+        console.log("Chamados em aberto. Iniciando loop de 5 min.");
+        intervaloAlertaLoop = setInterval(() => {
+          tocarSomAlerta();
+          showToast("Atenção: Chamados pendentes na fila!", "info");
+        }, TEMPO_LOOP);
+      }
+    } else {
+      if (intervaloAlertaLoop) {
+        clearInterval(intervaloAlertaLoop);
+        intervaloAlertaLoop = null;
+      }
+    }
+  }
 
   function toggleMenu() {
     const sidebar = document.getElementById('sidebar');
     const backdrop = document.getElementById('sidebar-backdrop');
     sidebar.classList.toggle('-translate-x-full');
-    if (backdrop.classList.contains('hidden')) {
-      backdrop.classList.remove('hidden');
-    } else {
-      backdrop.classList.add('hidden');
-    }
+    backdrop.classList.toggle('hidden');
   }
 
   let snapChamados = [];
@@ -217,10 +280,7 @@
   const auth = firebase.auth();
   
   auth.onAuthStateChanged(user => {
-    if (!user) { 
-      window.location.href = 'login-tecnico.html'; 
-      return; 
-    }
+    if (!user) { window.location.href = 'login-tecnico.html'; return; }
     document.getElementById('user-email-display').innerText = user.email;
     observarStatsFirebase();
     document.querySelector('#nav-buttons .active-tab').click();
@@ -230,18 +290,21 @@
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     const isError = type === 'error';
-    
-    // Se for banner de novo chamado, adiciona classe especial
-    const extraClass = isBanner ? 'banner-novo py-5 px-6 border-l-4' : '';
+    const isInfo = type === 'info';
+    const extraClass = isBanner ? 'banner-novo py-4 px-5 border-l-4' : '';
 
-    toast.className = `flex items-center gap-3 px-4 py-3 rounded-lg shadow-2xl text-sm font-medium text-white transition-all duration-300 transform ${isError ? 'bg-red-600' : 'bg-zinc-800'} border border-zinc-700 pointer-events-auto ${extraClass}`;
+    let bgColor = 'bg-zinc-800';
+    if(isError) bgColor = 'bg-red-600';
+    if(isInfo) bgColor = 'bg-brand-600';
+
+    toast.className = `flex items-center gap-3 px-4 py-3 rounded-lg shadow-2xl text-sm font-medium text-white transition-all duration-300 transform border border-zinc-700 pointer-events-auto ${bgColor} ${extraClass}`;
     
     toast.innerHTML = `
       <div class="p-2 bg-white/10 rounded-full">
-        <i data-lucide="${isError ? 'alert-circle' : 'bell'}" class="w-5 h-5 ${isError ? 'text-white' : 'text-brand-400'}"></i>
+        <i data-lucide="${isError ? 'alert-circle' : (isInfo ? 'info' : 'bell')}" class="w-5 h-5 text-white"></i>
       </div>
       <div class="flex flex-col">
-        <span class="font-bold">${isBanner ? 'ALERTA DE CHAMADO' : ''}</span>
+        <span class="font-bold text-xs uppercase tracking-widest opacity-70">${isBanner ? 'Novo Chamado' : (isInfo ? 'Lembrete WG' : '')}</span>
         <span>${message}</span>
       </div>
     `;
@@ -252,19 +315,15 @@
     setTimeout(() => {
       toast.classList.add('opacity-0', 'translate-x-8');
       setTimeout(() => toast.remove(), 300);
-    }, isBanner ? 8000 : 4000); // Banners de novos chamados duram mais
+    }, isBanner ? 10000 : 4000);
   }
 
   function dispararNotificacao(cliente) {
-    // 1. Tocar Som
-    somNotificacao.play().catch(e => console.log("Interaja com a página para habilitar áudio."));
+    tocarSomAlerta();
+    showToast(`${cliente} abriu um chamado agora!`, 'success', true);
     
-    // 2. Mostrar Banner Visual
-    showToast(`Novo chamado recebido de: ${cliente}`, 'success', true);
-    
-    // 3. Notificação de Sistema (Browser)
     if (Notification.permission === "granted") {
-      new Notification("WG Tech: Novo Chamado!", { body: `Cliente: ${cliente}` });
+      new Notification("WG Tech: Novo Chamado!", { body: `Cliente: ${cliente}`, silent: true });
     } else if (Notification.permission !== "denied") {
       Notification.requestPermission();
     }
@@ -272,15 +331,12 @@
 
   function observarStatsFirebase() {
     db.collection('chamados').onSnapshot(snapshot => {
-      
-      // Lógica de Detecção de Novo Registro
       if (!primeiraCarga) {
         snapshot.docChanges().forEach(change => {
           if (change.type === "added") {
-            const dados = change.doc.data();
-            // Só notifica se o status for Aberto (novo)
-            if(dados.status === 'Aberto') {
-              dispararNotificacao(dados.empresa || dados.nome || "Novo Cliente");
+            const d = change.doc.data();
+            if(d.status === 'Aberto') {
+              dispararNotificacao(d.empresa || d.nome || "Novo Cliente");
             }
           }
         });
@@ -291,14 +347,14 @@
       
       const abaAtiva = document.querySelector('#nav-buttons .active-tab');
       if (abaAtiva) {
-        let statusParaBuscar = 'Aberto';
-        if(abaAtiva.innerText.includes('Andamento')) statusParaBuscar = 'Em Andamento';
-        if(abaAtiva.innerText.includes('Finalizado')) statusParaBuscar = 'Resolvido';
-        mostrarTarefas(statusParaBuscar, abaAtiva, true);
+        let status = 'Aberto';
+        if(abaAtiva.innerText.includes('Andamento')) status = 'Em Andamento';
+        if(abaAtiva.innerText.includes('Finalizado')) status = 'Resolvido';
+        mostrarTarefas(status, abaAtiva, true);
       }
       
       primeiraCarga = false;
-    });
+    }, error => console.error("Erro Firestore:", error));
     
     db.collection('agendamentos').onSnapshot(snapshot => {
       snapAgendamentos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -307,10 +363,13 @@
   }
 
   function atualizarCards() {
-    document.getElementById('stat-abertos').textContent = snapChamados.filter(x => x.status === 'Aberto').length;
+    const abertosCount = snapChamados.filter(x => x.status === 'Aberto').length;
+    document.getElementById('stat-abertos').textContent = abertosCount;
     document.getElementById('stat-andamento').textContent = snapChamados.filter(x => x.status === 'Em Andamento').length + snapAgendamentos.filter(x => x.status === 'Em Atendimento').length;
     document.getElementById('stat-finalizados').textContent = snapChamados.filter(x => x.status === 'Resolvido').length + snapAgendamentos.filter(x => x.status === 'Finalizado').length;
     document.getElementById('stat-agenda').textContent = snapAgendamentos.length;
+
+    gerenciarLoopAlerta(abertosCount > 0);
   }
 
   function mostrarTarefas(statusFiltro, el, isUpdate = false) {
@@ -318,155 +377,103 @@
       document.querySelectorAll('.wg-tab-btn').forEach(btn => btn.classList.remove('active-tab'));
       if(el) el.classList.add('active-tab');
     }
-
     const lista = document.getElementById('lista-tarefas');
-    
     if (!isUpdate) {
-      lista.innerHTML = `
-        <div class="flex flex-col items-center justify-center h-40 text-slate-400">
-          <i data-lucide="loader-2" class="w-8 h-8 animate-spin mb-2"></i><p>Buscando...</p>
-        </div>`;
+      lista.innerHTML = `<div class="flex flex-col items-center justify-center h-40 text-slate-400"><i data-lucide="loader-2" class="w-8 h-8 animate-spin mb-2"></i><p>Buscando...</p></div>`;
       lucide.createIcons();
     }
-
-    let statusChamado = statusFiltro;
-    let statusAgendamento = statusFiltro;
-    if (statusFiltro === 'Em Andamento') statusAgendamento = 'Em Atendimento';
-    if (statusFiltro === 'Resolvido') statusAgendamento = 'Finalizado';
+    let sC = statusFiltro;
+    let sA = statusFiltro === 'Em Andamento' ? 'Em Atendimento' : (statusFiltro === 'Resolvido' ? 'Finalizado' : statusFiltro);
 
     setTimeout(() => {
-      let htmlFinal = '';
-      
-      const chamadosFiltrados = snapChamados.filter(c => c.status === statusChamado);
-      if (chamadosFiltrados.length > 0) {
-        htmlFinal += `<h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 mt-2">Tickets Suporte</h3>`;
-        htmlFinal += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
-        chamadosFiltrados.forEach(c => htmlFinal += gerarHTMLChamado(c));
-        htmlFinal += `</div>`;
+      let html = '';
+      const cF = snapChamados.filter(c => c.status === sC);
+      if (cF.length > 0) {
+        html += `<h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 mt-2">Tickets Suporte</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+        cF.forEach(c => html += gerarHTMLChamado(c));
+        html += `</div>`;
       }
-
-      const agendamentosFiltrados = snapAgendamentos.filter(a => a.status === statusAgendamento || (statusAgendamento === 'Aberto' && a.status === 'Agendado'));
-      if (agendamentosFiltrados.length > 0) {
-        htmlFinal += `<h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 mt-6">Agendamentos</h3>`;
-        htmlFinal += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
-        agendamentosFiltrados.forEach(a => htmlFinal += gerarHTMLAgendamento(a));
-        htmlFinal += `</div>`;
+      const aF = snapAgendamentos.filter(a => a.status === sA || (sA === 'Aberto' && a.status === 'Agendado'));
+      if (aF.length > 0) {
+        html += `<h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 mt-6">Agendamentos</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+        aF.forEach(a => html += gerarHTMLAgendamento(a));
+        html += `</div>`;
       }
-
-      if (htmlFinal === '') {
-        htmlFinal = `
-          <div class="flex flex-col items-center justify-center h-40 text-zinc-500">
-            <i data-lucide="check-circle" class="w-12 h-12 mb-3 text-zinc-700"></i>
-            <p>Nenhuma tarefa na fila <b class="text-zinc-400">${statusFiltro}</b>.</p>
-          </div>`;
-      }
-
-      lista.innerHTML = htmlFinal;
+      if (html === '') html = `<div class="flex flex-col items-center justify-center h-40 text-zinc-500"><i data-lucide="check-circle" class="w-12 h-12 mb-3 text-zinc-700"></i><p>Nenhuma tarefa <b class="text-zinc-400">${statusFiltro}</b>.</p></div>`;
+      lista.innerHTML = html;
       lucide.createIcons();
     }, isUpdate ? 0 : 300);
   }
 
   function gerarHTMLChamado(c) {
     const badge = obterEstiloBadge(c.status);
-    return `
-      <article class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-brand-500/50 hover:shadow-lg hover:shadow-brand-500/10 transition-all flex flex-col justify-between">
+    return `<article class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-brand-500/50 transition-all flex flex-col justify-between">
         <div>
           <div class="flex justify-between items-start mb-3">
-            <div>
-              <h3 class="font-bold text-zinc-100 text-lg leading-tight">${esc(c.empresa || c.nome || 'Cliente')}</h3>
-              <p class="text-xs text-zinc-400 mt-1">${esc(c.setor || '')} ${c.email ? '• ' + esc(c.email) : ''}</p>
-            </div>
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${badge.bg} ${badge.text} ${badge.border}">
-              ${esc(c.status || 'Aberto')}
-            </span>
+            <div><h3 class="font-bold text-zinc-100 text-lg leading-tight">${esc(c.empresa || c.nome || 'Cliente')}</h3><p class="text-xs text-zinc-400 mt-1">${esc(c.setor || '')}</p></div>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${badge.bg} ${badge.text} ${badge.border}">${esc(c.status || 'Aberto')}</span>
           </div>
-          <p class="text-zinc-300 text-sm line-clamp-2 bg-zinc-950 p-3 rounded-lg border border-zinc-800/50">${esc(c.mensagem || '')}</p>
+          <p class="text-zinc-300 text-sm line-clamp-2 bg-zinc-950 p-3 rounded-lg border border-zinc-800/50 mb-4">${esc(c.mensagem || '')}</p>
         </div>
-        
-        <div class="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between">
-          <span class="text-xs font-medium text-zinc-500 flex items-center gap-1">
-            <i data-lucide="clock" class="w-3 h-3"></i> ${formatarData(c.criadoEm)}
-          </span>
-          <div class="flex gap-2">
-            <button onclick="abrirChat('${c.id}')" title="Abrir Chat" class="flex items-center justify-center w-8 h-8 text-zinc-400 hover:text-brand-400 hover:bg-brand-500/10 rounded-lg transition-colors">
-              <i data-lucide="message-square" class="w-4 h-4"></i>
-            </button>
-            <button onclick="window.location.href='ordem_servico.html?chamado=${c.id}'" title="Gerar OS" class="flex items-center justify-center w-8 h-8 text-zinc-400 hover:text-orange-400 hover:bg-orange-500/10 rounded-lg transition-colors">
-              <i data-lucide="file-signature" class="w-4 h-4"></i>
-            </button>
-            ${botoesAcao(c.status, 'chamados', c.id)}
-          </div>
+        <div class="pt-4 border-t border-zinc-800 flex items-center justify-between mt-auto">
+          <span class="text-xs text-zinc-500 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> ${formatarData(c.criadoEm)}</span>
+          <div class="flex gap-2">${botoesAcao(c.status, 'chamados', c.id)}</div>
         </div>
       </article>`;
   }
 
   function gerarHTMLAgendamento(a) {
     const badge = obterEstiloBadge(a.status);
-    return `
-      <article class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-brand-500/50 hover:shadow-lg hover:shadow-brand-500/10 transition-all flex flex-col justify-between">
+    return `<article class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-brand-500/50 transition-all flex flex-col justify-between">
         <div>
           <div class="flex justify-between items-start mb-3">
-            <div>
-              <h3 class="font-bold text-zinc-100 text-lg leading-tight">${esc(a.cliente || 'Cliente')}</h3>
-              <p class="text-xs text-brand-400 font-medium mt-1">${esc(a.servico || '')}</p>
-            </div>
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${badge.bg} ${badge.text} ${badge.border}">
-              ${esc(a.status || 'Agendado')}
-            </span>
+            <div><h3 class="font-bold text-zinc-100 text-lg leading-tight">${esc(a.cliente || 'Cliente')}</h3><p class="text-xs text-brand-400 font-medium mt-1">${esc(a.servico || '')}</p></div>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${badge.bg} ${badge.text} ${badge.border}">${esc(a.status || 'Agendado')}</span>
           </div>
-          <p class="text-zinc-400 text-sm line-clamp-2">${esc(a.problema || '')}</p>
+          <p class="text-zinc-400 text-sm line-clamp-2 mb-4">${esc(a.problema || '')}</p>
         </div>
-        
-        <div class="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between">
-          <span class="text-xs font-medium text-zinc-500 flex items-center gap-1">
-            <i data-lucide="calendar" class="w-3 h-3"></i> ${formatarDataAgenda(a.data)}
-          </span>
-          <div class="flex gap-2">
-            ${botoesAcao(a.status, 'agendamentos', a.id)}
-          </div>
+        <div class="pt-4 border-t border-zinc-800 flex items-center justify-between mt-auto">
+          <span class="text-xs text-zinc-500 flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i> ${formatarDataAgenda(a.data)}</span>
+          <div class="flex gap-2">${botoesAcao(a.status, 'agendamentos', a.id)}</div>
         </div>
       </article>`;
   }
 
   function botoesAcao(status, tipo, id) {
     if (status === 'Aberto' || status === 'Agendado') {
-      const novoStatus = tipo === 'chamados' ? 'Em Andamento' : 'Em Atendimento';
-      return `<button onclick="mudarStatus('${tipo}', '${id}', '${novoStatus}')" class="flex items-center justify-center h-8 px-3 gap-1.5 bg-brand-500/10 text-brand-400 border border-brand-500/20 text-xs font-bold rounded-lg hover:bg-brand-500/20 transition-colors"><i data-lucide="play" class="w-3.5 h-3.5"></i> Iniciar</button>`;
+      const nS = tipo === 'chamados' ? 'Em Andamento' : 'Em Atendimento';
+      return `<button onclick="mudarStatus('${tipo}', '${id}', '${nS}')" class="h-8 px-3 bg-brand-500/10 text-brand-400 text-xs font-bold rounded-lg hover:bg-brand-500/20 transition-colors">Iniciar</button>`;
     }
     if (status === 'Em Andamento' || status === 'Em Atendimento') {
-      const novoStatus = tipo === 'chamados' ? 'Resolvido' : 'Finalizado';
-      return `<button onclick="mudarStatus('${tipo}', '${id}', '${novoStatus}')" class="flex items-center justify-center h-8 px-3 gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold rounded-lg hover:bg-emerald-500/20 transition-colors"><i data-lucide="check" class="w-3.5 h-3.5"></i> Finalizar</button>`;
+      const nS = tipo === 'chamados' ? 'Resolvido' : 'Finalizado';
+      return `<button onclick="mudarStatus('${tipo}', '${id}', '${nS}')" class="h-8 px-3 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-lg hover:bg-emerald-500/20 transition-colors">Finalizar</button>`;
     }
     return '';
   }
 
   function obterEstiloBadge(status = '') {
-    const s = String(status).toLowerCase();
+    const s = status.toLowerCase();
     if (s.includes('andamento') || s.includes('atendimento')) return { bg: 'bg-brand-500/10', text: 'text-brand-400', border: 'border-brand-500/20' };
     if (s.includes('final') || s.includes('resolvido')) return { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' };
     return { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' };
   }
 
-  function mudarStatus(colecao, id, novoStatus) {
-    db.collection(colecao).doc(id).update({ status: novoStatus })
-      .then(() => showToast(`Status atualizado para ${novoStatus}`))
-      .catch(error => showToast('Erro: ' + error.message, 'error'));
+  function mudarStatus(col, id, nS) {
+    db.collection(col).doc(id).update({ status: nS })
+      .then(() => showToast(`Status: ${nS}`))
+      .catch(e => showToast(e.message, 'error'));
   }
 
-  function formatarData(timestamp) {
-    if (!timestamp) return 'S/ Data';
-    if (timestamp.toDate) return timestamp.toDate().toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-    const data = new Date(timestamp);
-    return Number.isNaN(data.getTime()) ? 'Data inválida' : data.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+  function formatarData(ts) {
+    if (!ts) return '--:--';
+    const d = ts.toDate ? ts.toDate() : new Date(ts);
+    return d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
   }
-  
-  function formatarDataAgenda(valor) {
-    if (!valor) return 'S/ Data';
-    if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return new Date(valor + 'T00:00:00').toLocaleDateString('pt-BR');
-    return valor;
+  function formatarDataAgenda(v) {
+    if (!v) return '--';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return new Date(v + 'T00:00:00').toLocaleDateString('pt-BR');
+    return v;
   }
-
-  function abrirChat(chamadoId) { window.location.href = `chat-tecnico.html?id=${chamadoId}`; }
   function esc(v='') { return String(v).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 </script>
 </body>
