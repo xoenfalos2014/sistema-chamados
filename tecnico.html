@@ -35,6 +35,69 @@
       }
     }
   </script>
+
+  <style>
+    .active-tab {
+      background-color: #27272a;
+      color: #f4f4f5;
+    }
+    .banner-novo {
+      animation: slideIn 0.5s ease-out;
+      border-left: 4px solid #22d3ee !important;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* ESTILOS DE IMPRESSÃO (RELATÓRIO) */
+    @media print {
+      body { 
+        background-color: white !important; 
+        color: black !important; 
+        height: auto !important; 
+        overflow: visible !important; 
+      }
+      /* Esconder elementos desnecessários na impressão */
+      #sidebar, #sidebar-backdrop, header, #nav-buttons, #filtros-avancados, #estatisticas, button, a { 
+        display: none !important; 
+      }
+      main { 
+        padding: 0 !important; 
+        margin: 0 !important; 
+        width: 100% !important; 
+      }
+      .bg-zinc-900, .bg-zinc-950 { 
+        background-color: white !important; 
+        border-color: #ccc !important; 
+      }
+      .text-zinc-400, .text-zinc-500, .text-zinc-300, .text-zinc-100, .text-white { 
+        color: black !important; 
+      }
+      .border-zinc-800 { 
+        border-color: #ddd !important; 
+      }
+      /* Exibir header de impressão */
+      .print-header { 
+        display: block !important; 
+        margin-bottom: 20px;
+        border-bottom: 2px solid #000;
+        padding-bottom: 10px;
+      }
+      /* Ajustar os cards para impressão */
+      article { 
+        break-inside: avoid; 
+        border: 1px solid #aaa !important; 
+        box-shadow: none !important; 
+        margin-bottom: 15px; 
+        padding: 15px !important;
+      }
+      /* Remover limite de linhas de texto para ler tudo no papel */
+      .line-clamp-2 {
+        -webkit-line-clamp: unset !important;
+      }
+    }
+  </style>
 </head>
 <body class="bg-zinc-950 text-zinc-200 font-sans h-screen flex overflow-hidden">
 
@@ -107,7 +170,14 @@
     </header>
 
     <div class="flex-1 overflow-y-auto p-4 md:p-8">
-      <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      
+      <!-- Cabeçalho de Impressão (Oculto na tela, visível só ao imprimir) -->
+      <div class="print-header hidden">
+        <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">Relatório de Atendimentos - WG Informática</h1>
+        <p style="font-size: 14px; color: #555;" id="print-date">Gerado em: </p>
+      </div>
+
+      <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4" id="main-header-title">
         <div>
           <h1 class="text-2xl font-bold text-white tracking-tight">Painel do Técnico</h1>
           <p class="text-zinc-400 text-sm mt-1">Gerencie chamados e acompanhe notificações em tempo real.</p>
@@ -119,7 +189,7 @@
       </div>
 
       <!-- Stats -->
-      <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <section id="estatisticas" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm hover:border-zinc-700 transition-colors">
           <div class="flex justify-between items-start">
             <div>
@@ -161,12 +231,58 @@
         </div>
       </section>
 
+      <!-- SEÇÃO NOVA: FILTROS AVANÇADOS E RELATÓRIO -->
+      <div id="filtros-avancados" class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-sm mb-6">
+        <h2 class="text-sm font-bold text-zinc-100 mb-4 flex items-center gap-2">
+          <i data-lucide="filter" class="w-4 h-4 text-brand-400"></i> Filtros e Relatório
+        </h2>
+        <div class="flex flex-wrap gap-4 items-end">
+          <div class="flex-1 min-w-[150px]">
+            <label class="text-xs text-zinc-400 mb-1 block">Empresa/Cliente</label>
+            <input type="text" id="filtro-empresa" placeholder="Digite o nome..." class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-brand-500 transition-colors">
+          </div>
+          <!-- NOVO CAMPO: EMAIL / DOMÍNIO -->
+          <div class="flex-1 min-w-[150px]">
+            <label class="text-xs text-zinc-400 mb-1 block">Email/Domínio</label>
+            <input type="text" id="filtro-email" placeholder="Ex: @empresa.com" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-brand-500 transition-colors">
+          </div>
+          <div class="w-full sm:w-auto min-w-[140px]">
+            <label class="text-xs text-zinc-400 mb-1 block">Status</label>
+            <select id="filtro-status" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-brand-500 transition-colors">
+              <option value="">Todos os Status</option>
+              <option value="Aberto">Abertos</option>
+              <option value="Em Andamento">Em Andamento</option>
+              <option value="Resolvido">Resolvidos / Finalizados</option>
+            </select>
+          </div>
+          <div class="w-full sm:w-auto">
+            <label class="text-xs text-zinc-400 mb-1 block">Data Inicial</label>
+            <input type="date" id="filtro-data-inicio" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-brand-500 transition-colors">
+          </div>
+          <div class="w-full sm:w-auto">
+            <label class="text-xs text-zinc-400 mb-1 block">Data Final</label>
+            <input type="date" id="filtro-data-fim" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-brand-500 transition-colors">
+          </div>
+          <div class="flex gap-2 w-full lg:w-auto pt-2">
+            <button onclick="aplicarFiltrosAvancados()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-sm font-medium transition-colors flex-1 flex items-center justify-center gap-2">
+              <i data-lucide="search" class="w-4 h-4"></i> Buscar
+            </button>
+            <button onclick="limparFiltros()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2" title="Limpar Filtros">
+              <i data-lucide="eraser" class="w-4 h-4"></i>
+            </button>
+            <button onclick="imprimirRelatorio()" class="px-4 py-2 bg-zinc-200 hover:bg-white text-zinc-900 rounded-lg text-sm font-bold transition-colors flex-1 flex items-center justify-center gap-2">
+              <i data-lucide="printer" class="w-4 h-4"></i> Imprimir
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Fila -->
-      <section class="bg-zinc-900 rounded-2xl border border-zinc-800 shadow-sm overflow-hidden">
+      <section class="bg-zinc-900 rounded-2xl border border-zinc-800 shadow-sm overflow-hidden" id="secao-lista">
         <div class="p-5 border-b border-zinc-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 class="text-lg font-bold text-zinc-100">Fila de Atendimento</h2>
-            <p class="text-sm text-zinc-400">Gerencie os tickets ativos</p>
+            <h2 class="text-lg font-bold text-zinc-100" id="titulo-lista">Fila de Atendimento</h2>
+            <p class="text-sm text-zinc-400" id="subtitulo-lista">Gerencie os tickets ativos</p>
           </div>
           
           <div class="flex bg-zinc-950 p-1 rounded-lg border border-zinc-800/50" id="nav-buttons">
@@ -187,21 +303,6 @@
   </main>
 
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
-
-<style>
-  .active-tab {
-    background-color: #27272a;
-    color: #f4f4f5;
-  }
-  .banner-novo {
-    animation: slideIn 0.5s ease-out;
-    border-left: 4px solid #22d3ee !important;
-  }
-  @keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-</style>
 
 <script>
   // Inicialização manual do Lucide para garantir ícones carregados
@@ -273,8 +374,10 @@
     backdrop.classList.toggle('hidden');
   }
 
+  // VARIÁVEIS GLOBAIS DE ESTADO
   let snapChamados = [];
   let snapAgendamentos = [];
+  let modoFiltroAvancado = false; // Controle de estado para saber se está filtrando
 
   const db = firebase.firestore();
   const auth = firebase.auth();
@@ -345,12 +448,17 @@
       snapChamados = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       atualizarCards();
       
-      const abaAtiva = document.querySelector('#nav-buttons .active-tab');
-      if (abaAtiva) {
-        let status = 'Aberto';
-        if(abaAtiva.innerText.includes('Andamento')) status = 'Em Andamento';
-        if(abaAtiva.innerText.includes('Finalizado')) status = 'Resolvido';
-        mostrarTarefas(status, abaAtiva, true);
+      // Atualiza a view baseada no estado (filtro avançado ou aba normal)
+      if(modoFiltroAvancado) {
+        aplicarFiltrosAvancados(true);
+      } else {
+        const abaAtiva = document.querySelector('#nav-buttons .active-tab');
+        if (abaAtiva) {
+          let status = 'Aberto';
+          if(abaAtiva.innerText.includes('Andamento')) status = 'Em Andamento';
+          if(abaAtiva.innerText.includes('Finalizado')) status = 'Resolvido';
+          mostrarTarefas(status, abaAtiva, true);
+        }
       }
       
       primeiraCarga = false;
@@ -359,6 +467,9 @@
     db.collection('agendamentos').onSnapshot(snapshot => {
       snapAgendamentos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       atualizarCards();
+      if(modoFiltroAvancado) {
+        aplicarFiltrosAvancados(true);
+      }
     });
   }
 
@@ -372,7 +483,146 @@
     gerenciarLoopAlerta(abertosCount > 0);
   }
 
+  // --- FUNÇÕES DE FILTRO AVANÇADO E RELATÓRIO ---
+
+  function aplicarFiltrosAvancados(isUpdate = false) {
+    modoFiltroAvancado = true;
+    
+    // Desmarca botões de Abas padrão
+    document.querySelectorAll('.wg-tab-btn').forEach(btn => btn.classList.remove('active-tab'));
+    
+    // Atualiza Textos
+    document.getElementById('titulo-lista').innerText = "Resultados da Busca";
+    document.getElementById('subtitulo-lista').innerText = "Exibindo os chamados baseados nos filtros";
+
+    // Pega valores
+    const termoEmpresa = document.getElementById('filtro-empresa').value.toLowerCase().trim();
+    const termoEmail = document.getElementById('filtro-email').value.toLowerCase().trim();
+    const filtroStatus = document.getElementById('filtro-status').value;
+    const dataInicioStr = document.getElementById('filtro-data-inicio').value;
+    const dataFimStr = document.getElementById('filtro-data-fim').value;
+
+    // Converte datas para comparação (início do dia e fim do dia)
+    const dataInicio = dataInicioStr ? new Date(dataInicioStr + 'T00:00:00') : null;
+    const dataFim = dataFimStr ? new Date(dataFimStr + 'T23:59:59') : null;
+
+    const lista = document.getElementById('lista-tarefas');
+    if (!isUpdate) {
+      lista.innerHTML = `<div class="flex flex-col items-center justify-center h-40 text-slate-400"><i data-lucide="loader-2" class="w-8 h-8 animate-spin mb-2"></i><p>Filtrando...</p></div>`;
+      lucide.createIcons();
+    }
+
+    setTimeout(() => {
+      let html = '';
+
+      // Filtra Chamados
+      const chamadosFiltrados = snapChamados.filter(c => {
+        let matchEmpresa = true, matchEmail = true, matchStatus = true, matchData = true;
+
+        if (termoEmpresa) {
+          const nomeStr = (c.empresa || c.nome || '').toLowerCase();
+          matchEmpresa = nomeStr.includes(termoEmpresa);
+        }
+
+        if (termoEmail) {
+          // Busca em email, usuario ou email do criador. 
+          const emailStr = (c.email || c.usuario || c.criadoPor || '').toLowerCase();
+          matchEmail = emailStr.includes(termoEmail);
+        }
+
+        if (filtroStatus) {
+          if (filtroStatus === 'Resolvido') matchStatus = (c.status === 'Resolvido');
+          else matchStatus = (c.status === filtroStatus);
+        }
+
+        if (dataInicio || dataFim) {
+          const dt = c.criadoEm?.toDate ? c.criadoEm.toDate() : new Date(c.criadoEm || 0);
+          if (dataInicio && dt < dataInicio) matchData = false;
+          if (dataFim && dt > dataFim) matchData = false;
+        }
+
+        return matchEmpresa && matchEmail && matchStatus && matchData;
+      });
+
+      // Filtra Agendamentos
+      const agendamentosFiltrados = snapAgendamentos.filter(a => {
+        let matchEmpresa = true, matchEmail = true, matchStatus = true, matchData = true;
+
+        if (termoEmpresa) {
+          const nomeStr = (a.cliente || '').toLowerCase();
+          matchEmpresa = nomeStr.includes(termoEmpresa);
+        }
+
+        if (termoEmail) {
+          const emailStr = (a.email || a.usuario || '').toLowerCase();
+          matchEmail = emailStr.includes(termoEmail);
+        }
+
+        if (filtroStatus) {
+          if (filtroStatus === 'Aberto') matchStatus = (a.status === 'Agendado');
+          if (filtroStatus === 'Em Andamento') matchStatus = (a.status === 'Em Atendimento');
+          if (filtroStatus === 'Resolvido') matchStatus = (a.status === 'Finalizado');
+        }
+
+        if (dataInicio || dataFim) {
+          // data formato yyyy-mm-dd
+          const dt = new Date(a.data + 'T12:00:00'); // T12 para evitar bugs de fuso horário
+          if (dataInicio && dt < dataInicio) matchData = false;
+          if (dataFim && dt > dataFim) matchData = false;
+        }
+
+        return matchEmpresa && matchEmail && matchStatus && matchData;
+      });
+
+      // Monta HTML
+      if (chamadosFiltrados.length > 0) {
+        html += `<h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 mt-2">Chamados (${chamadosFiltrados.length})</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+        chamadosFiltrados.forEach(c => html += gerarHTMLChamado(c));
+        html += `</div>`;
+      }
+      
+      if (agendamentosFiltrados.length > 0) {
+        html += `<h3 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-3 mt-6">Agendamentos (${agendamentosFiltrados.length})</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+        agendamentosFiltrados.forEach(a => html += gerarHTMLAgendamento(a));
+        html += `</div>`;
+      }
+
+      if (html === '') {
+        html = `<div class="flex flex-col items-center justify-center h-40 text-zinc-500"><i data-lucide="search-x" class="w-12 h-12 mb-3 text-zinc-700"></i><p>Nenhum resultado encontrado para estes filtros.</p></div>`;
+      }
+
+      lista.innerHTML = html;
+      lucide.createIcons();
+    }, isUpdate ? 0 : 300);
+  }
+
+  function limparFiltros() {
+    document.getElementById('filtro-empresa').value = '';
+    document.getElementById('filtro-email').value = '';
+    document.getElementById('filtro-status').value = '';
+    document.getElementById('filtro-data-inicio').value = '';
+    document.getElementById('filtro-data-fim').value = '';
+    
+    // Retorna pra aba de "Abertos" padrão
+    const btnAbertos = document.querySelector('#nav-buttons button:first-child');
+    if (btnAbertos) btnAbertos.click();
+  }
+
+  function imprimirRelatorio() {
+    // Se o usuário não filtrou nada ainda, sugerir o filtro ou aplicar o que está em tela.
+    // Atualiza a data no cabeçalho de impressão
+    const dateStr = new Date().toLocaleString('pt-BR');
+    document.getElementById('print-date').innerText = "Gerado em: " + dateStr;
+    
+    window.print();
+  }
+
+  // --- FUNÇÃO ORIGINAL DE MOSTRAR TAREFAS (COM AS ABAS) ---
   function mostrarTarefas(statusFiltro, el, isUpdate = false) {
+    modoFiltroAvancado = false; // Desativa modo filtro
+    document.getElementById('titulo-lista').innerText = "Fila de Atendimento";
+    document.getElementById('subtitulo-lista').innerText = "Gerencie os tickets ativos";
+
     if (!isUpdate) {
       document.querySelectorAll('.wg-tab-btn').forEach(btn => btn.classList.remove('active-tab'));
       if(el) el.classList.add('active-tab');
@@ -417,7 +667,7 @@
         </div>
         <div class="pt-4 border-t border-zinc-800 flex items-center justify-between mt-auto">
           <span class="text-xs text-zinc-500 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> ${formatarData(c.criadoEm)}</span>
-          <div class="flex gap-2">
+          <div class="flex gap-2 print:hidden"> <!-- Esconde os botões na impressão -->
             <!-- BOTÃO DE CHAT DO CHAMADO -->
             <a href="chat-tecnico.html?id=${c.id}" title="Abrir Chat com Cliente" class="flex items-center justify-center h-8 w-8 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 hover:text-white transition-colors">
               <i data-lucide="message-square" class="w-4 h-4"></i>
@@ -440,7 +690,7 @@
         </div>
         <div class="pt-4 border-t border-zinc-800 flex items-center justify-between mt-auto">
           <span class="text-xs text-zinc-500 flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i> ${formatarDataAgenda(a.data)}</span>
-          <div class="flex gap-2">
+          <div class="flex gap-2 print:hidden"> <!-- Esconde os botões na impressão -->
             <!-- BOTÃO DE CHAT DO AGENDAMENTO -->
             <a href="chat-tecnico.html?id=${a.id}" title="Abrir Chat com Cliente" class="flex items-center justify-center h-8 w-8 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 hover:text-white transition-colors">
               <i data-lucide="message-square" class="w-4 h-4"></i>
@@ -483,7 +733,7 @@
   }
   function formatarDataAgenda(v) {
     if (!v) return '--';
-    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return new Date(v + 'T00:00:00').toLocaleDateString('pt-BR');
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return new Date(v + 'T12:00:00').toLocaleDateString('pt-BR');
     return v;
   }
   function esc(v='') { return String(v).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
