@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WG Informática - Gestão de Clientes e Recibos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        /* Scrollbar customizada */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Estilos específicos para impressão do recibo e do contrato */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            /* Classes de impressão para exibir apenas a área desejada */
+            .print-active, .print-active * {
+                visibility: visible !important;
+            }
+            .print-active {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+            /* Ocultar elementos de UI durante a impressão */
+            .no-print {
+                display: none !important;
+            }
+            
+            /* Ajustes específicos para o contrato A4 */
+            .contract-page {
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 1cm !important;
+                page-break-after: auto;
+            }
+            
+            /* Ajuste de fonte do contrato para caber na página A4 */
+            .contract-text {
+                font-size: 11pt !important;
+                line-height: 1.5 !important;
+            }
+            .contract-title {
+                font-size: 12pt !important;
+            }
+        }
+        
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Simulação de folha A4 na tela */
+        .a4-paper {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800">
+
+    <!-- Tela de Carregamento Inicial -->
+    <div id="loading-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+        <div class="loader mb-4"></div>
+        <h2 class="text-xl font-semibold text-blue-600">Conectando ao Banco de Dados...</h2>
+    </div>
+
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col no-print shadow-xl z-20">
+            <div class="p-6 flex items-center justify-center border-b border-slate-800 bg-white">
+                <img src="logo-wg.png" alt="WG Informática" class="h-16 object-contain hover:scale-105 transition-transform duration-300" onerror="this.src='https://via.placeholder.com/150x60?text=WG+Informatica'; this.onerror=null;">
+            </div>
+            <nav class="flex-1 p-4 space-y-2 mt-4">
+                <a href="#" onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item flex items-center p-3 bg-blue-600 text-white rounded-xl shadow-sm transition-all hover:bg-blue-500 hover:shadow-md">
+                    <i class="fas fa-chart-pie w-6 text-lg"></i> <span class="font-medium">Painel de Controle</span>
+                </a>
+                <a href="#" onclick="switchView('clients')" id="nav-clients" class="nav-item flex items-center p-3 rounded-xl transition-all hover:bg-slate-800 hover:text-white">
+                    <i class="fas fa-users w-6 text-lg"></i> <span class="font-medium">Meus Clientes</span>
+                </a>
+            </nav>
+            <div class="p-6 border-t border-slate-800">
+                <div class="bg-slate-800 rounded-xl p-4 text-center">
+                    <p class="text-sm font-semibold text-white">WG Informática</p>
+                    <p class="text-xs text-slate-400 mt-1">CNPJ: 18.227.202/0001-36</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col overflow-y-auto relative bg-slate-50">
+            
+            <!-- Header -->
+            <header class="bg-white shadow-sm px-8 py-5 flex justify-between items-center no-print z-10 sticky top-0">
+                <h1 id="page-title" class="text-2xl font-bold text-slate-800 tracking-tight">Painel de Controle</h1>
+                <div class="flex items-center gap-4 bg-slate-100 px-4 py-2 rounded-full border border-slate-200">
+                    <div class="relative flex h-3 w-3">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                    </div>
+                    <span id="user-status" class="text-sm text-slate-600 font-medium">Sistema Online</span>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="p-8">
+                <!-- ALERTS -->
+                <div id="alert-container" class="mb-4 hidden no-print fixed top-4 right-4 z-50">
+                    <div id="alert-message" class="p-4 rounded-lg text-white font-medium shadow-lg"></div>
+                </div>
+
+                <!-- VIEW: DASHBOARD -->
+                <div id="view-dashboard" class="view-section animate-fade-in">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow p-6 border border-slate-100 flex items-center gap-4">
+                            <div class="bg-blue-100 text-blue-600 h-14 w-14 rounded-xl flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-users"></i></div>
+                            <div>
+                                <h3 class="text-slate-500 text-sm font-semibold uppercase tracking-wider">Total de Clientes</h3>
+                                <p id="dash-total-clients" class="text-3xl font-black text-slate-800 mt-1">0</p>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow p-6 border border-slate-100 flex items-center gap-4">
+                            <div class="bg-emerald-100 text-emerald-600 h-14 w-14 rounded-xl flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-file-signature"></i></div>
+                            <div>
+                                <h3 class="text-slate-500 text-sm font-semibold uppercase tracking-wider">Contratos Ativos</h3>
+                                <p id="dash-contracts" class="text-3xl font-black text-slate-800 mt-1">0</p>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow p-6 border border-slate-100 flex items-center gap-4">
+                            <div class="bg-orange-100 text-orange-600 h-14 w-14 rounded-xl flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-toolbox"></i></div>
+                            <div>
+                                <h3 class="text-slate-500 text-sm font-semibold uppercase tracking-wider">Avulsos</h3>
+                                <p id="dash-avulsos" class="text-3xl font-black text-slate-800 mt-1">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fas fa-bell text-amber-500"></i> Faturamento Mensal (<span id="current-month-name" class="text-blue-600 uppercase tracking-widest text-sm"></span>)
+                            </h2>
+                            <div class="relative w-full md:w-80">
+                                <i class="fas fa-search absolute left-4 top-3 text-slate-400"></i>
+                                <input type="text" id="search-dashboard" placeholder="Buscar cliente nos vencimentos..." class="w-full pl-11 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow shadow-sm text-sm" onkeyup="filterDashboard()">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-widest border-b border-slate-200">
+                                        <th class="p-4 font-semibold">Cliente</th>
+                                        <th class="p-4 font-semibold">Vencimento</th>
+                                        <th class="p-4 font-semibold">Valor</th>
+                                        <th class="p-4 font-semibold text-right">Ações Rápidas</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboard-due-list" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                            <div id="no-due-clients" class="hidden p-8 text-center text-slate-400 font-medium">
+                                <i class="fas fa-check-circle text-4xl mb-3 text-slate-300 block"></i>
+                                Nenhum cliente com vencimento configurado.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW: CLIENTS -->
+                <div id="view-clients" class="view-section hidden animate-fade-in">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Gerenciar Clientes</h2>
+                        <div class="flex gap-2">
+                            <button onclick="importarLotePDF()" id="btn-import-lote" class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-2 font-medium transform hover:-translate-y-0.5">
+                                <i class="fas fa-file-import"></i> Importar PDF Antigo
+                            </button>
+                            <button onclick="openClientModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-2 font-medium transform hover:-translate-y-0.5">
+                                <i class="fas fa-plus-circle"></i> Novo Cliente
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                            <div class="relative w-full max-w-md">
+                                <i class="fas fa-search absolute left-4 top-3.5 text-slate-400"></i>
+                                <input type="text" id="search-client" placeholder="Buscar por nome ou e-mail..." class="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow shadow-sm" onkeyup="filterClients()">
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-widest border-b border-slate-200">
+                                        <th class="p-4 font-semibold">Nome / Empresa</th>
+                                        <th class="p-4 font-semibold">Tipo</th>
+                                        <th class="p-4 font-semibold">Contato</th>
+                                        <th class="p-4 font-semibold">Dia Venc.</th>
+                                        <th class="p-4 font-semibold">Valor Base</th>
+                                        <th class="p-4 font-semibold text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="clients-table-body" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                            <div id="no-clients-msg" class="hidden p-12 text-center text-slate-400 font-medium">
+                                <i class="fas fa-folder-open text-5xl mb-4 text-slate-200 block"></i>
+                                Nenhum cliente encontrado.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RECEIPT GENERATION AREA (Hidden until needed) -->
+                <div id="receipt-container" class="hidden bg-white shadow-lg rounded-xl p-8 max-w-3xl mx-auto border border-gray-200 mt-4 relative">
+                    <div class="absolute top-4 right-4 flex gap-2 no-print">
+                        <button onclick="printArea('print-area')" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded shadow flex items-center gap-2">
+                            <i class="fas fa-print"></i> Imprimir / Salvar PDF
+                        </button>
+                        <button onclick="closePrintView()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow">
+                            <i class="fas fa-times"></i> Fechar
+                        </button>
+                    </div>
+
+                    <div id="print-area" class="bg-white printable-content">
+                        <!-- Conteúdo do Recibo Original mantido -->
+                        <div class="flex justify-between items-start border-b-2 border-gray-800 pb-6 mb-6">
+                            <div class="flex items-center gap-4">
+                                <img src="logo-wg.png" alt="WG Informática" class="h-20" onerror="this.src='https://via.placeholder.com/150x60?text=WG+Informatica'; this.onerror=null;">
+                                <div>
+                                    <h2 class="text-xl font-bold text-gray-900">WG INFORMATICA</h2>
+                                    <p class="text-xs text-gray-600">SUPORTE E MANUTENÇÃO DE COMPUTADORES LTDA.</p>
+                                    <p class="text-xs text-gray-600">CNPJ: 18.227.202/0001-36</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <h1 class="text-3xl font-black text-gray-800 uppercase tracking-widest">Recibo</h1>
+                                <p class="text-lg font-bold text-gray-700 mt-2">Nº <span id="receipt-number"></span></p>
+                            </div>
+                        </div>
+
+                        <div class="mb-8">
+                            <div class="bg-gray-100 p-4 rounded-lg flex justify-between items-center mb-6">
+                                <span class="font-bold text-gray-700 uppercase">Valor do Recibo:</span>
+                                <span class="text-2xl font-black text-gray-900" id="receipt-value-display">R$ 0,00</span>
+                            </div>
+
+                            <p class="text-gray-800 leading-loose text-justify text-lg">
+                                Recebi(emos) de <strong id="receipt-client-name" class="uppercase border-b border-gray-400 inline-block px-2">NOME DO CLIENTE</strong>, 
+                                a quantia de <strong id="receipt-value-extenso" class="uppercase border-b border-gray-400 inline-block px-2">VALOR POR EXTENSO</strong>, 
+                                correspondente à prestação de serviços de suporte e manutenção de computadores referente ao período de <strong id="receipt-reference">MÊS/ANO</strong>, 
+                                e para clareza firmo(amos) o presente recibo.
+                            </p>
+                        </div>
+
+                        <div class="flex justify-between items-end mt-16 pt-8">
+                            <div>
+                                <p class="text-gray-700"><span class="font-bold">Emissão:</span> São Gonçalo - RJ, <span id="receipt-date"></span></p>
+                                <p class="text-xs text-gray-500 mt-4 w-64">
+                                    Endereço: R. Doutor Feliciano Sodre, 182, Sala 301 - Centro, São Gonçalo - RJ, CEP 24440-440
+                                </p>
+                            </div>
+                            <div class="text-center w-72">
+                                <div class="border-b border-gray-800 w-full mb-2"></div>
+                                <p class="font-bold text-gray-800">WG INFORMATICA LTDA</p>
+                                <p class="text-xs text-gray-600">Assinatura</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONTRACT GENERATION AREA (Hidden until needed) -->
+                <div id="contract-container" class="hidden bg-slate-200 py-8 relative -mx-8 -my-8 z-30">
+                    <div class="fixed top-8 right-8 flex gap-2 no-print z-40">
+                        <button onclick="printArea('contract-print-area')" class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl shadow-lg flex items-center gap-2 font-medium">
+                            <i class="fas fa-print"></i> Imprimir / Salvar PDF
+                        </button>
+                        <button onclick="closePrintView()" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl shadow-lg font-medium flex items-center gap-2">
+                            <i class="fas fa-times"></i> Fechar
+                        </button>
+                    </div>
+
+                    <!-- Folha do Contrato A4 -->
+                    <div id="contract-print-area" class="a4-paper p-12 printable-content contract-page text-slate-800 contract-text">
+                        <div class="text-center mb-6 border-b-2 border-slate-800 pb-4">
+                            <h1 class="text-xl font-bold uppercase contract-title">Contrato de Prestação de Serviços de Manutenção</h1>
+                        </div>
+
+                        <div class="space-y-4 text-justify">
+                            <p>
+                                <strong>WORK GROUP SUPORTE E MANUTENÇÃO COMPUTADORES LTDA</strong>, com sede na Av. Doutor Feliciano Sodré, 182 Sala 501 – Centro - São Gonçalo – RJ, CNPJ: 18.227.202/0001-36 a seguir denominada <strong>CONTRATADA</strong>, e de outro lado 
+                                <strong id="contract-client-name" class="uppercase border-b border-slate-300 inline-block">NOME DO CLIENTE</strong>, com sede na 
+                                <span id="contract-client-address" class="border-b border-slate-300 inline-block">ENDEREÇO DO CLIENTE</span>, 
+                                CNPJ/CPF: <strong id="contract-client-cnpj" class="border-b border-slate-300 inline-block">00.000.000/0000-00</strong>, a seguir denominada <strong>CONTRATANTE</strong>, ambas representadas por quem de direito, tem entre si, justo e acordado o presente Contrato, que se regerá pelas seguintes cláusulas e condições estipuladas, para a prestação de serviços de manutenção nos equipamentos discriminados no Anexo I.
+                            </p>
+
+                            <h3 class="font-bold contract-title mt-6">1. OBJETO</h3>
+                            <p>O presente Contrato tem por objeto a disponibilidade e a execução dos serviços de manutenção preventiva e corretiva dos equipamentos discriminados no Anexo I.</p>
+
+                            <h3 class="font-bold contract-title mt-4">2. MANUTENÇÃO</h3>
+                            <p>2.1. A CONTRATADA através de manutenções preventivas, que poderão ser conjugadas, manterá os equipamentos em condições de funcionamento, efetuando os necessários ajustes e reparos nas partes envolvidas.</p>
+                            <p>2.2. Somente os técnicos da CONTRATADA, ou de empresas credenciadas por esta de comum acordo com CONTRATANTE, poderão realizar nos equipamentos os serviços de manutenção preventiva e corretiva a que se refere este Contrato, sendo que para tanto, terão pleno e livre acesso aos equipamentos discriminados no Anexo I.</p>
+                            <p>2.3. Os serviços prestados pela CONTRATADA serão sempre entre 08:00 (oito) e 17:00 (dezessete) horas, de segunda a sexta, excluindo-se os feriados.</p>
+                            <p>2.4. A manutenção preventiva tem por finalidade conservar os equipamentos em condições de operação, incluindo ajustes às especificações e lubrificação (exceto limpeza externa, que deverá ser executada pela CONTRATANTE, segundo orientação da CONTRATADA, bem como a introdução de melhorias a critério da CONTRATADA com a devida autorização da CONTRATANTE).</p>
+                            <p>2.5. A CONTRATADA realizará por força deste contrato 1 (uma) manutenção preventiva por mês, suporte técnico através de acesso remoto ilimitado e suporte técnico presencial para manutenção corretiva, ficando disponível para o evento dentro do prazo estipulado no contrato.</p>
+                            <p>2.6. Chamado de suporte técnico presencial, onde for detectado defeito por falha na operação do equipamento por parte do cliente (usuário) ou terceiros (outros prestadores de serviço), será faturado à parte. O valor será de R$ 80,00 (Oitenta reais).</p>
+                            <p>2.7. A manutenção corretiva do equipamento será realizada mediante solicitação da CONTRATANTE, e terá por finalidade corrigir defeitos nos equipamentos discriminados no Anexo I.</p>
+                            <p>2.8. Não estão inclusos nos serviços contratados, devendo ser cobrados à parte, os seguintes serviços: Serviços elétricos externos ao equipamento, manutenção de equipamentos ou partes não discriminados no Anexo I; fornecimento ou troca de peças, componentes e suprimentos; serviços de desinstalação e reinstalação em caso de mudança de local.</p>
+
+                            <h3 class="font-bold contract-title mt-4">3. ATENDIMENTO E PRAZOS</h3>
+                            <p>O atendimento ao equipamento defeituoso deverá ser efetuado no prazo máximo de 24 H (vinte e quatro) horas, após o recebimento do chamado. O atendimento para locais em um raio de 40 km será iniciado dentro de 12 horas úteis. Caberá exclusivamente à CONTRATANTE a execução de cópias de segurança (BACKUP) de seus dados.</p>
+
+                            <h3 class="font-bold contract-title mt-4">4. PREÇO E CONDIÇÕES DE PAGAMENTO</h3>
+                            <p>Pela disponibilidade e execução dos serviços técnicos, a CONTRATANTE pagará à CONTRATADA a importância descrita no Anexo I. A observância da data de pagamento (<strong id="contract-client-duedate">DIA</strong> de cada mês) incorrerá em multa de 2% mais juros de 1% ao mês. Atraso por 2 meses consecutivos cancela o contrato.</p>
+
+                            <h3 class="font-bold contract-title mt-4">5. VIGÊNCIA E RESCISÃO</h3>
+                            <p>O contrato terá duração de 12 meses contados de sua assinatura, sendo renovado automaticamente. Poderá ser rescindido por qualquer das partes mediante notificação com 30 dias de antecedência.</p>
+
+                            <h3 class="font-bold contract-title mt-4">6. CONDIÇÕES GERAIS</h3>
+                            <p>As partes elegem o foro da cidade de São Gonçalo, RJ, para dirimir dúvidas. Assinam em 02 (duas) vias de igual teor.</p>
+
+                            <!-- ANEXO I -->
+                            <div class="mt-8 border border-slate-400 p-4 rounded bg-slate-50">
+                                <h3 class="font-bold text-center mb-4 uppercase">ANEXO I</h3>
+                                <div class="flex justify-between mb-2">
+                                    <span class="font-bold">CLIENTE: <span id="contract-anexo-client" class="font-normal uppercase">NOME</span></span>
+                                </div>
+                                <table class="w-full border-collapse border border-slate-300 text-sm mt-2">
+                                    <thead>
+                                        <tr class="bg-slate-200">
+                                            <th class="border border-slate-300 p-2">QUANT.</th>
+                                            <th class="border border-slate-300 p-2 text-left">DESCRIÇÃO DO EQUIPAMENTO</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="border border-slate-300 p-2 text-center text-transparent">_</td>
+                                            <td class="border border-slate-300 p-2 text-slate-400 italic">Preencher equipamentos aqui...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div class="mt-4 font-bold text-lg text-right">
+                                    VALOR TOTAL MENSAL: <span id="contract-client-value" class="underline">R$ 0,00</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-8 text-right">
+                                <p>São Gonçalo, <span id="contract-date" class="font-medium">__ de _______ de 20__</span></p>
+                            </div>
+
+                            <div class="mt-12 grid grid-cols-2 gap-8 text-center">
+                                <div>
+                                    <div class="border-t border-slate-800 pt-2 w-full max-w-xs mx-auto"></div>
+                                    <p class="font-bold uppercase mt-2 text-sm" id="contract-signature-client">NOME DO CLIENTE</p>
+                                    <p class="text-xs">CONTRATANTE</p>
+                                </div>
+                                <div>
+                                    <div class="border-t border-slate-800 pt-2 w-full max-w-xs mx-auto"></div>
+                                    <p class="font-bold uppercase mt-2 text-sm">WORK GROUP SUPORTE E MANUTENÇÃO</p>
+                                    <p class="text-xs">CONTRATADA (CNPJ: 18.227.202/0001-36)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL: CLIENTE -->
+    <div id="modal-client" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden max-h-[95vh] flex flex-col transform transition-transform">
+            <div class="bg-slate-800 text-white p-5 flex justify-between items-center shrink-0">
+                <h3 id="modal-title" class="text-lg font-bold flex items-center gap-2"><i class="fas fa-building text-blue-400"></i> Cadastrar Cliente</h3>
+                <button onclick="closeClientModal()" class="text-slate-300 hover:text-white bg-slate-700 hover:bg-slate-600 h-8 w-8 rounded-full flex items-center justify-center transition-colors"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="overflow-y-auto p-8 flex-1 bg-slate-50/30">
+                <form id="client-form" class="space-y-8">
+                    <input type="hidden" id="client-id">
+                    
+                    <div>
+                        <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 border-b pb-1">Dados da Empresa</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div class="md:col-span-1">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">CNPJ / CPF</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="client-cnpj" placeholder="Apenas números" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none shadow-sm transition-all">
+                                    <button type="button" id="btn-buscar-cnpj" onclick="fetchCNPJ()" class="bg-slate-800 text-white px-4 rounded-xl hover:bg-slate-700 shadow-sm transition-all duration-200 transform hover:-translate-y-0.5" title="Buscar CNPJ na Receita">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Razão Social / Nome *</label>
+                                <input type="text" id="client-name" required class="w-full bg-white border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none shadow-sm transition-all">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
+                                <input type="email" id="client-email" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none shadow-sm transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Telefone / WhatsApp</label>
+                                <input type="text" id="client-phone" placeholder="Ex: 21999999999" class="w-full bg-white border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none shadow-sm transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><i class="fas fa-map-marker-alt"></i> Endereço</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                            <div class="md:col-span-1">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">CEP</label>
+                                <input type="text" id="client-cep" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm transition-all">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Logradouro</label>
+                                <input type="text" id="client-logradouro" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm transition-all">
+                            </div>
+                            <div class="md:col-span-1">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Número</label>
+                                <input type="text" id="client-numero" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm transition-all">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Bairro</label>
+                                <input type="text" id="client-bairro" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Cidade</label>
+                                <input type="text" id="client-cidade" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">UF</label>
+                                <input type="text" id="client-uf" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2.5 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50/50 p-5 rounded-xl border border-blue-100 shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-xs font-bold text-blue-500 uppercase tracking-widest flex items-center gap-2"><i class="fas fa-file-contract"></i> Configuração de Cobrança</h4>
+                            <!-- Checkbox para gerar contrato automaticamente ao salvar -->
+                            <label class="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-lg border border-blue-200 shadow-sm">
+                                <input type="checkbox" id="auto-generate-contract" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" checked>
+                                <span class="text-sm font-medium text-blue-700">Gerar contrato após salvar</span>
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Tipo *</label>
+                                <select id="client-type" required class="w-full bg-white border border-blue-200 rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm transition-all font-medium text-slate-700">
+                                    <option value="Contrato">Mensalista (Contrato)</option>
+                                    <option value="Avulso">Serviço Avulso</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Status *</label>
+                                <select id="client-status" required class="w-full bg-white border border-blue-200 rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm transition-all font-medium text-slate-700">
+                                    <option value="Ativo">Ativo</option>
+                                    <option value="Inativo">Inativo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Dia do Vencimento</label>
+                                <div class="relative">
+                                    <i class="far fa-calendar-alt absolute left-3 top-3 text-slate-400"></i>
+                                    <input type="number" id="client-duedate" min="1" max="31" placeholder="Ex: 10" class="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm transition-all">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Valor Base (R$)</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2.5 text-slate-400 font-medium">R$</span>
+                                    <input type="number" step="0.01" id="client-value" placeholder="0.00" class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm transition-all font-semibold text-slate-800">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="p-5 border-t border-slate-200 bg-slate-50 flex justify-end gap-3 shrink-0">
+                <button type="button" onclick="closeClientModal()" class="px-5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-700 font-medium hover:bg-slate-100 transition-colors shadow-sm">Cancelar</button>
+                <button type="submit" form="client-form" class="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 flex items-center gap-2 shadow-sm hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5">
+                    <i class="fas fa-check-circle"></i> Salvar Cadastro
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts do Firebase e Lógica -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let db;
+        let auth;
+        let currentUser = null;
+        let clients = [];
+        let currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'wg-informatica-prod-1'; 
+        let clientsUnsubscribe = null;
+
+        const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+        async function initApp() {
+            try {
+                let firebaseConfig;
+                if (typeof __firebase_config !== 'undefined') {
+                    firebaseConfig = JSON.parse(__firebase_config);
+                } else {
+                    // CONFIGURAÇÃO LOCAL: Substitua com seus dados caso baixe o HTML
+                    firebaseConfig = {
+                        apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
+                        authDomain: "sistema-chamados-99e49.firebaseapp.com",
+                        projectId: "sistema-chamados-99e49",
+                        appId: "1:680351942005:web:896b35a40f094d42297f3c"
+                    };
+                }
+                
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        document.getElementById('loading-screen').style.display = 'none';
+                        setupRealtimeListener();
+                    } else {
+                        currentUser = null;
+                    }
+                });
+            } catch (error) {
+                console.error("Erro Firebase:", error);
+            }
+        }
+
+        function setupRealtimeListener() {
+            if (!currentUser) return;
+            if (clientsUnsubscribe) clientsUnsubscribe();
+
+            const clientsRef = collection(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'wg_clientes_recibos');
+            
+            clientsUnsubscribe = onSnapshot(clientsRef, (snapshot) => {
+                clients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                updateDashboard();
+                renderClientsTable();
+            }, (error) => {
+                showAlert("Erro ao carregar dados.", "error");
+            });
+        }
+
+        window.switchView = function(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('receipt-container').classList.add('hidden');
+            document.getElementById('contract-container').classList.add('hidden');
+            
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('bg-blue-600', 'text-white', 'shadow-sm', 'hover:bg-blue-500');
+                el.classList.add('hover:bg-slate-800', 'hover:text-white');
+            });
+            
+            const activeEl = document.getElementById(`nav-${viewId}`);
+            if(activeEl) {
+                activeEl.classList.remove('hover:bg-slate-800', 'hover:text-white');
+                activeEl.classList.add('bg-blue-600', 'text-white', 'shadow-sm', 'hover:bg-blue-500');
+            }
+
+            document.getElementById('page-title').innerText = viewId === 'dashboard' ? "Painel de Controle" : "Meus Clientes";
+        }
+
+        window.showAlert = function(message, type = "success") {
+            const container = document.getElementById('alert-container');
+            const msgEl = document.getElementById('alert-message');
+            container.classList.remove('hidden');
+            
+            if(type === 'success') {
+                msgEl.className = "p-4 rounded-lg text-white font-medium bg-emerald-500 shadow-lg";
+                msgEl.innerHTML = `<i class="fas fa-check-circle mr-2"></i> ${message}`;
+            } else {
+                msgEl.className = "p-4 rounded-lg text-white font-medium bg-red-500 shadow-lg";
+                msgEl.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i> ${message}`;
+            }
+
+            setTimeout(() => { container.classList.add('hidden'); }, 4000);
+        }
+
+        // --- DASHBOARD ---
+        function updateDashboard() {
+            const d = new Date();
+            document.getElementById('current-month-name').innerText = months[d.getMonth()];
+            const activeClients = clients.filter(c => c.status !== 'Inativo');
+            document.getElementById('dash-total-clients').innerText = activeClients.length;
+            document.getElementById('dash-contracts').innerText = activeClients.filter(c => c.type === 'Contrato').length;
+            document.getElementById('dash-avulsos').innerText = activeClients.filter(c => c.type === 'Avulso').length;
+            renderDueReceipts();
+        }
+
+        function renderDueReceipts() {
+            const tbody = document.getElementById('dashboard-due-list');
+            const noData = document.getElementById('no-due-clients');
+            tbody.innerHTML = '';
+            
+            const searchTerm = (document.getElementById('search-dashboard')?.value || '').toLowerCase();
+
+            let dueClients = clients.filter(c => c.type === 'Contrato' && c.dueDate && c.status !== 'Inativo');
+            
+            if (searchTerm) {
+                dueClients = dueClients.filter(c => c.name.toLowerCase().includes(searchTerm) || (c.email && c.email.toLowerCase().includes(searchTerm)));
+            }
+
+            dueClients.sort((a, b) => parseInt(a.dueDate) - parseInt(b.dueDate));
+
+            if(dueClients.length === 0) {
+                noData.classList.remove('hidden'); 
+                if (searchTerm) {
+                    noData.innerHTML = `<i class="fas fa-search text-4xl mb-3 text-slate-300 block"></i>Nenhum cliente encontrado na busca.`;
+                } else {
+                    noData.innerHTML = `<i class="fas fa-check-circle text-4xl mb-3 text-slate-300 block"></i>Nenhum cliente com vencimento configurado.`;
+                }
+                return;
+            }
+            noData.classList.add('hidden');
+
+            const d = new Date();
+            const today = d.getDate();
+            const currentMonthStr = `${d.getMonth() + 1}/${d.getFullYear()}`;
+
+            dueClients.forEach(client => {
+                const isPaid = client.lastPaidMonth === currentMonthStr;
+                const isLate = parseInt(client.dueDate) < today && !isPaid;
+                
+                const tr = document.createElement('tr');
+                tr.className = `border-b border-slate-100 ${isPaid ? 'bg-slate-50/50 opacity-80' : 'hover:bg-slate-50/80'}`;
+
+                let statusBadge = '';
+                if (isPaid) {
+                    statusBadge = `<span class="bg-blue-50 text-blue-700 border border-blue-200 text-xs px-2.5 py-1 rounded-full font-medium ml-2 shadow-sm"><i class="fas fa-check-double mr-1"></i> Pago</span>`;
+                } else if (isLate) {
+                    statusBadge = `<span class="bg-red-50 text-red-700 border border-red-200 text-xs px-2.5 py-1 rounded-full font-medium ml-2 shadow-sm"><i class="fas fa-exclamation-circle mr-1"></i> Atrasado</span>`;
+                } else {
+                    statusBadge = `<span class="bg-amber-50 text-amber-700 border border-amber-200 text-xs px-2.5 py-1 rounded-full font-medium ml-2 shadow-sm"><i class="fas fa-clock mr-1"></i> Pendente</span>`;
+                }
+                
+                let btnAction = isPaid ? 
+                    `<button onclick='undoPayment("${client.id}")' class="px-2 py-1 bg-slate-200 text-slate-500 rounded"><i class="fas fa-undo"></i></button>` : 
+                    `<button onclick='markAsPaid("${client.id}")' class="px-3 py-1 bg-emerald-500 text-white rounded font-semibold text-xs"><i class="fas fa-check"></i> Baixa</button>`;
+
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-800">${client.name}</td>
+                    <td class="p-4 text-slate-600">Dia ${client.dueDate} ${statusBadge}</td>
+                    <td class="p-4 font-bold">${formatCurrency(client.value)}</td>
+                    <td class="p-4 text-right flex gap-1 justify-end">
+                        ${btnAction}
+                        <button onclick='generateReceipt("${client.id}")' class="px-3 py-1 bg-slate-50 border border-slate-200 rounded text-slate-700 text-xs font-semibold hover:bg-slate-600 hover:text-white transition-colors" title="Gerar Recibo"><i class="fas fa-file-invoice"></i></button>
+                        <button onclick='sendEmail("${client.email || ''}", "${client.name}")' class="px-3 py-1 bg-purple-50 border border-purple-100 rounded text-purple-700 text-xs font-semibold hover:bg-purple-600 hover:text-white transition-colors" title="Enviar por E-mail"><i class="fas fa-envelope"></i></button>
+                        <button onclick='sendWhatsApp("${client.phone || ''}", "${client.name}", ${client.value})' class="px-3 py-1 bg-emerald-50 border border-emerald-100 rounded text-emerald-700 text-xs font-semibold hover:bg-emerald-500 hover:text-white transition-colors" title="Avisar por WhatsApp"><i class="fab fa-whatsapp"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        window.filterDashboard = function() {
+            renderDueReceipts();
+        }
+
+        window.markAsPaid = async function(id) {
+            if(!currentUser) return;
+            const d = new Date();
+            try {
+                await updateDoc(doc(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'wg_clientes_recibos', id), {
+                    lastPaidMonth: `${d.getMonth() + 1}/${d.getFullYear()}`,
+                    updatedAt: new Date().toISOString()
+                });
+                showAlert("Pagamento registrado com sucesso!");
+            } catch (error) {
+                console.error("Erro ao registrar pagamento:", error);
+                showAlert("Erro ao registrar o pagamento no banco de dados.", "error");
+            }
+        }
+        
+        window.undoPayment = async function(id) {
+            if(!currentUser) return;
+            try {
+                await updateDoc(doc(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'wg_clientes_recibos', id), { 
+                    lastPaidMonth: null,
+                    updatedAt: new Date().toISOString()
+                });
+                showAlert("Baixa desfeita com sucesso!");
+            } catch (error) {
+                console.error("Erro ao desfazer baixa:", error);
+                showAlert("Erro ao cancelar a baixa no banco de dados.", "error");
+            }
+        }
+
+        // --- CLIENTES CRUD ---
+        window.openClientModal = function(clientId = null) {
+            document.getElementById('client-form').reset();
+            document.getElementById('client-id').value = '';
+            document.getElementById('modal-title').innerHTML = `<i class="fas fa-building text-blue-400"></i> Cadastrar Cliente`;
+
+            if (clientId) {
+                const client = clients.find(c => c.id === clientId);
+                if(client) {
+                    document.getElementById('modal-title').innerHTML = `<i class="fas fa-edit text-blue-400"></i> Editar Cliente`;
+                    document.getElementById('client-id').value = client.id;
+                    document.getElementById('client-cnpj').value = client.cnpj || '';
+                    document.getElementById('client-name').value = client.name || '';
+                    document.getElementById('client-email').value = client.email || '';
+                    document.getElementById('client-phone').value = client.phone || '';
+                    document.getElementById('client-cep').value = client.cep || '';
+                    document.getElementById('client-logradouro').value = client.logradouro || '';
+                    document.getElementById('client-numero').value = client.numero || '';
+                    document.getElementById('client-bairro').value = client.bairro || '';
+                    document.getElementById('client-cidade').value = client.cidade || '';
+                    document.getElementById('client-uf').value = client.uf || '';
+                    document.getElementById('client-type').value = client.type;
+                    document.getElementById('client-status').value = client.status || 'Ativo';
+                    document.getElementById('client-duedate').value = client.dueDate || '';
+                    document.getElementById('client-value').value = client.value || '';
+                }
+            }
+            document.getElementById('modal-client').classList.remove('hidden');
+        }
+
+        window.closeClientModal = function() {
+            document.getElementById('modal-client').classList.add('hidden');
+        }
+
+        document.getElementById('client-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if(!currentUser) return;
+
+            const id = document.getElementById('client-id').value;
+            const autoGenerateContract = document.getElementById('auto-generate-contract').checked;
+            const typeValue = document.getElementById('client-type').value;
+
+            const data = {
+                cnpj: document.getElementById('client-cnpj').value.trim(),
+                name: document.getElementById('client-name').value.trim(),
+                email: document.getElementById('client-email').value.trim(),
+                phone: document.getElementById('client-phone').value.trim(),
+                cep: document.getElementById('client-cep').value.trim(),
+                logradouro: document.getElementById('client-logradouro').value.trim(),
+                numero: document.getElementById('client-numero').value.trim(),
+                bairro: document.getElementById('client-bairro').value.trim(),
+                cidade: document.getElementById('client-cidade').value.trim(),
+                uf: document.getElementById('client-uf').value.trim(),
+                type: typeValue,
+                status: document.getElementById('client-status').value,
+                dueDate: document.getElementById('client-duedate').value || null,
+                value: document.getElementById('client-value').value ? parseFloat(document.getElementById('client-value').value) : 0,
+                updatedAt: new Date().toISOString()
+            };
+
+            const clientsRef = collection(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'wg_clientes_recibos');
+            const submitBtn = document.querySelector('button[form="client-form"]');
+            submitBtn.disabled = true;
+
+            try {
+                let savedId = id;
+                if (id) {
+                    await updateDoc(doc(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'wg_clientes_recibos', id), data);
+                    showAlert("Cliente atualizado com sucesso!");
+                } else {
+                    data.createdAt = new Date().toISOString();
+                    const docRef = await addDoc(clientsRef, data);
+                    savedId = docRef.id;
+                    showAlert("Cliente cadastrado com sucesso!");
+                }
+                
+                closeClientModal();
+
+                // LÓGICA NOVA: Se o checkbox estiver marcado e for contrato, abre o contrato automaticamente
+                if (autoGenerateContract && typeValue === 'Contrato') {
+                    // Timeout rápido para garantir que o snapshot sincronizou o novo cliente no array local
+                    setTimeout(() => {
+                        generateContract(savedId, data);
+                    }, 500);
+                }
+
+            } catch (error) {
+                console.error(error);
+                showAlert("Erro ao salvar.", "error");
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+
+        window.deleteClient = async function(id) {
+            await deleteDoc(doc(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'wg_clientes_recibos', id));
+        }
+
+        window.renderClientsTable = function() {
+            const tbody = document.getElementById('clients-table-body');
+            const term = document.getElementById('search-client').value.toLowerCase();
+            tbody.innerHTML = '';
+            
+            let filtered = clients.filter(c => c.name.toLowerCase().includes(term));
+
+            filtered.forEach(client => {
+                const tr = document.createElement('tr');
+                tr.className = `border-b border-slate-100 hover:bg-slate-50/80`;
+                
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-800">${client.name}</td>
+                    <td class="p-4">${client.type === 'Contrato' ? '<span class="text-blue-600 font-bold text-xs bg-blue-50 px-2 py-1 rounded">Contrato</span>' : '<span class="text-gray-500 font-bold text-xs bg-gray-100 px-2 py-1 rounded">Avulso</span>'}</td>
+                    <td class="p-4 text-slate-600 text-sm">${client.phone || '-'}</td>
+                    <td class="p-4 text-slate-600">${client.dueDate || '-'}</td>
+                    <td class="p-4 font-bold">${formatCurrency(client.value)}</td>
+                    <td class="p-4 text-right flex justify-end gap-1">
+                        <!-- Novo botão de Gerar Contrato na Tabela -->
+                        <button onclick="generateContract('${client.id}')" class="h-8 w-8 rounded bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white flex items-center justify-center transition-colors" title="Gerar Contrato"><i class="fas fa-file-contract"></i></button>
+                        
+                        <button onclick="generateReceipt('${client.id}')" class="h-8 w-8 rounded bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition-colors" title="Gerar Recibo"><i class="fas fa-file-invoice"></i></button>
+                        <button onclick="openClientModal('${client.id}')" class="h-8 w-8 rounded bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white flex items-center justify-center transition-colors" title="Editar"><i class="fas fa-pen"></i></button>
+                        <button onclick="deleteClient('${client.id}')" class="h-8 w-8 rounded bg-red-50 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center transition-colors" title="Excluir"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        window.filterClients = renderClientsTable;
+
+        // Função para Buscar CNPJ via BrasilAPI
+        window.fetchCNPJ = async function() {
+            let cnpj = document.getElementById('client-cnpj').value.replace(/\D/g, '');
+            if (cnpj.length !== 14) {
+                showAlert("CNPJ inválido. Digite apenas os 14 números.", "error");
+                return;
+            }
+
+            const btn = document.getElementById('btn-buscar-cnpj');
+            const icon = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+                if (!response.ok) throw new Error('CNPJ não encontrado na base de dados.');
+                const data = await response.json();
+
+                document.getElementById('client-name').value = data.razao_social || '';
+                if(data.email) document.getElementById('client-email').value = data.email;
+                if(data.ddd_telefone_1) document.getElementById('client-phone').value = data.ddd_telefone_1;
+
+                document.getElementById('client-cep').value = data.cep || '';
+                document.getElementById('client-logradouro').value = data.logradouro || '';
+                document.getElementById('client-numero').value = data.numero || '';
+                document.getElementById('client-bairro').value = data.bairro || '';
+                document.getElementById('client-cidade').value = data.municipio || '';
+                document.getElementById('client-uf').value = data.uf || '';
+
+                showAlert("Dados da empresa importados com sucesso!");
+            } catch (error) {
+                showAlert("Erro ao buscar CNPJ. Verifique se o número está correto.", "error");
+            } finally {
+                btn.innerHTML = icon;
+                btn.disabled = false;
+            }
+        }
+
+        // --- IMPORTAÇÃO DO PDF ANTIGO ---
+        window.importarLotePDF = async function() {
+            if (!currentUser) return;
+            const btn = document.getElementById('btn-import-lote');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importando...';
+            btn.disabled = true;
+
+            const pdfClients = [
+                { cnpj: "13.051.904/0001-98", name: "EUDES ALBERTO DE ANDRADE ASSESSORIA CONTABIL (DALMAC)", logradouro: "RUA QUINZE DE NOVEMBRO, 106", bairro: "CENTRO", cidade: "NITERÓI", uf: "RJ" },
+                { cnpj: "60.808.097/0001-95", name: "PAIVA COMERCIO E SERVICOS TECNICOS LTDA (M KASA)", logradouro: "RUA ZULMIRA, 441", bairro: "SANTA CATARINA", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "01.097.783/0009-93", name: "BODIPASA BOMBAS DIESEL PAULISTA LTDA", logradouro: "RUA CONDE DE AGROLONGO, 00723", bairro: "PENHA", cidade: "RIO DE JANEIRO", uf: "RJ", phone: "5130276151" },
+                { cnpj: "13.913.148/0001-69", name: "EASY POWER COMERCIO DE MAQUINAS E EQUIPAMENTOS", logradouro: "RUA PAULO BARRETO, 28", bairro: "LARANJAL", cidade: "SÃO GONÇALO", uf: "RJ" },
+                { cnpj: "28.560.001/0001-00", name: "BALIX ALCANTARA COMERCIO DE ROUPAS LTDA", logradouro: "RUA IOLANDA SAAD ABUZAID, 51", bairro: "ALCANTARA", cidade: "SÃO GONÇALO", uf: "RJ" },
+                { cnpj: "29.137.957/0001-66", name: "BALIX NITEROI COMERCIO DE ROUPAS LTDA", logradouro: "R VISCONDE DO RIO BRANCO, 345", bairro: "CENTRO", cidade: "NITERÓI", uf: "RJ" },
+                { cnpj: "28.708.576/0012-80", name: "SINDICATO EST DOS PROFIS DA EDUCACAO (SEPE)", logradouro: "RUA CORONEL RODRIGUES, 256", bairro: "CENTRO", cidade: "SÃO GONÇALO", uf: "RJ" },
+                { cnpj: "30.063.564/0001-34", name: "CASA DE SAUDE NOSSA SENHORA AUXILIADORA SA", logradouro: "RUA VEREADOR DUQUE ESTRADA, 157", bairro: "SANTA ROSA", cidade: "NITERÓI", uf: "RJ" },
+                { cnpj: "20.006.214/0001-82", name: "CONDOMINIO DO EDIFICIO ADMIRA ICARAI", logradouro: "RUA DOUTOR PAULO CESAR, 7", bairro: "ICARAI", cidade: "NITERÓI", uf: "RJ" },
+                { cnpj: "20.596.423/0001-23", name: "DGX TERCEIRIZACAO DE SERVICOS LTDA (ECOL)", logradouro: "AV DUQUE DE CAXIAS, 4025", bairro: "VILA SAO CAETANO", cidade: "LONDRINA", uf: "PR" },
+                { cnpj: "28.973.591/0001-00", name: "KI MODAS DE SAO GONCALO COMERCIO DE ROUPAS LTDA", logradouro: "AVENIDA DEZOITO DO FORTE, 20", bairro: "MUTUA", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "39.846.365/0001-77", name: "CONDOMINIO DO EDIFICIO SAO GONCALO CENTER", logradouro: "PRC DOUTOR LUIZ PALMIER, 53", bairro: "CENTRO", cidade: "SÃO GONÇALO", uf: "RJ" },
+                { cnpj: "08.964.597/0001-04", name: "REPUBLICA DO SOM ELETRONICA LTDA. (FARO SOM)", logradouro: "R REPUBLICA DO LIBANO, 38.", bairro: "CENTRO", cidade: "RIO DE JANEIRO", uf: "RJ" },
+                { cnpj: "03.697.284/0001-05", name: "CLINICA EUDA DE MEDICINA E PSICOLOGIA DE TRANSITO", logradouro: "RUA GIANELI, 586", bairro: "VILA IARA", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "03.244.495/0001-92", name: "BORANY CONSTRUCOES E REFORMAS LTDA", logradouro: "ROD GOVERNADOR MARIO COVAS BR 101, S/N", bairro: "MANILHA", cidade: "ITABORAI", uf: "RJ" },
+                { cnpj: "15.030.237/0002-73", name: "RCDAGUIAR COMERCIO DE VEICULOS (ATTRACTIVE)", logradouro: "RUA OLIVEIRA BOTELHO, 520", bairro: "NEVES", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "28.636.579/0001-00", name: "MUNICIPIO DE SAO GONCALO", logradouro: "RUA FELICIANO SODRE, 100", bairro: "SAO GONCALO", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "34.951.868/0001-99", name: "AL DA SILVA SOARES COMERCIO DE EQUIPAMENTOS (SOARES)", logradouro: "RUA JONATAS BOTELHO, 21", bairro: "SANTA ROSA", cidade: "NITEROI", uf: "RJ" },
+                { cnpj: "44.207.810/0001-99", name: "PONTO A PONTO DE SAO GONCALO PIZZARIA", logradouro: "RUA ZEFERINO REIS, 102", bairro: "CENTRO", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "05.288.892/0001-91", name: "NIT-LAGOS TRANSPORTES RODOVIARIOS LTDA", logradouro: "RUA RENE DE SOUZA PESTRE, 100", bairro: "FONSECA", cidade: "NITEROI", uf: "RJ" },
+                { cnpj: "11.032.359/0001-67", name: "SL CONTABILIDADE LTDA (GRUPO CONTABIL)", logradouro: "R MELO E SOUZA, 89", bairro: "MUTONDO", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "40.073.527/0001-60", name: "FORTES SOCIEDADE INDIVIDUAL DE ADVOCACIA", logradouro: "RUA DOUTOR FELICIANO SODRE, 182", bairro: "CENTRO", cidade: "SÃO GONÇALO", uf: "RJ" },
+                { cnpj: "05.365.147/0001-07", name: "CONDOMINIO HORIZONTAL VILA RICA 1", logradouro: "RUA PREFEITO ANTONIO RAPOSO, 2985", bairro: "PONTE DOS LEITES", cidade: "ARARUAMA", uf: "RJ" },
+                { cnpj: "31.717.390/0001-49", name: "CLUBE NAUTICO GONCALENSE", logradouro: "RUA CRUZEIRO DO SUL, 115", bairro: "GRADIM", cidade: "SÃO GONÇALO", uf: "RJ", phone: "21999978454" },
+                { cnpj: "28.238.665/0001-57", name: "PALOMA LOTERIAS LTDA", logradouro: "RUA DOUTOR FELICIANO SODRE, 215", bairro: "CENTRO", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "37.933.201/0001-51", name: "GLAUJAR COMERCIO E ESTAMPARIA LTDA (JARDEL ATACADAO)", logradouro: "R LAUREANO ROSA, 180", bairro: "ALCANTARA", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "04.343.826/0001-04", name: "ORLANDO SERVICOS FUNERARIOS LIMITADA", logradouro: "AVENIDA PRESIDENTE KENNEDY, 987", bairro: "SAO MIGUEL", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "", name: "CLOVIS ABRAHIM CAVALCANTE", logradouro: "RUA DOUTOR FELICIANO SODRÉ, 182", bairro: "CENTRO", cidade: "SÃO GONÇALO", uf: "RJ" },
+                { cnpj: "02.270.873/0001-40", name: "ALEX MARCELLO MATERIAIS DE CONSTRUCAO LTDA", logradouro: "RUA VICENTE DE LIMA CLETO, 120", bairro: "ITAUNA", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "", name: "ALMEIDA IMOVEIS", logradouro: "RUA DOUTOR FELICIANO SODRÉ, 182", bairro: "CENTRO", cidade: "SÃO GONÇALO", uf: "RJ" },
+                { cnpj: "03.818.528/0001-60", name: "TRANSITAR CLINICA MEDICA E PSICOLOGICA DE TRANSITO", logradouro: "RUA GERVASIO NERY, 26", bairro: "VILA IARA", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "30.594.337/0001-35", name: "CALCULEX CONTABILIDADE LIMITADA", logradouro: "RUA DR FELICIANO SODRE, 182", bairro: "CENTRO", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "", name: "LUIZ CARLOS DE SOUZA", logradouro: "RUA DOUTOR FELICIANO SODRÉ, 182", bairro: "CENTRO", cidade: "São GONÇALO", uf: "RJ" },
+                { cnpj: "18.126.568/0001-19", name: "LEKA PSICOLOGIA INTEGRADA LTDA", logradouro: "RUA DOUTOR FELICIANO SODRE, 182", bairro: "CENTRO", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "31.865.985/0001-41", name: "LE-CHICK MODAS LTDA", logradouro: "AVENIDA TOME DE SOUZA, 00120", bairro: "CENTRO", cidade: "RIO DE JANEIRO", uf: "RJ" },
+                { cnpj: "10.729.668/0001-28", name: "E. FERNANDES FONSECA LTDA (KALLU MOTOS)", logradouro: "RUA MARQUES DE CAXIAS, 151", bairro: "CENTRO", cidade: "NITEROI", uf: "RJ" },
+                { cnpj: "20.154.062/0001-65", name: "W.E.F.N BRAZ COMERCIO (CANTIN DOS BRAZ)", logradouro: "RUA IMBOASSU, 292", bairro: "BOACU", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "97.343.073/0001-18", name: "GEORGE QUINTES AVANCE", logradouro: "RUA PALMIRA NINHO, 79", bairro: "ALCANTARA", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "", name: "CRISTIANE DE FÁTIMA SALES NAYLOR", logradouro: "RUA DOUTOR FELICIANO SODRÉ, 182", bairro: "CENTRO", cidade: "São GONÇALO", uf: "RJ" },
+                { cnpj: "39.515.671/0001-20", name: "INTERFLORA IMPORTACAO E EXPORTACAO LTDA", logradouro: "ESTRADA DO PAU FERRO, S/N", bairro: "MONJOLOS", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "29.793.320/0001-28", name: "SERTOP ADMINISTRACAO E PROJETOS LTDA", logradouro: "RUA DR FELICIANO SODRE, 182", bairro: "CENTRO", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "86.786.571/0001-19", name: "PACTO ADMINISTRADORA E CORRETORA DE SEGUROS", logradouro: "RUA CORONEL RODRIIGUES, 422", bairro: "CENTRO", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "", name: "GONÇALVES & GONÇALVES ADVOGADOS", logradouro: "RUA DOUTOR FELICIANO SODRÉ, 182", bairro: "CENTRO", cidade: "São GONÇALO", uf: "RJ" },
+                { cnpj: "", name: "CARLOS ROBERTO DA SILVA COUTO", logradouro: "RUA DOUTOR FELICIANO SODRÉ, 182", bairro: "CENTRO", cidade: "São GONÇALO", uf: "RJ" },
+                { cnpj: "11.039.904/0001-47", name: "EMILIANO FERREIRA DA SILVA (OPCAO BABY)", logradouro: "RUA DR ALFREDO BACKER, 785", bairro: "ALCANTARA", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "03.832.260/0001-11", name: "J.G.BABY ROUPAS LTDA", logradouro: "RUA DR. ALFREDO BACKER, 785", bairro: "ALCANTARA", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "97.343.073/0001-18", name: "BAKURI ROUPAS INFANTIS LTDA", logradouro: "RUA PALMIRA NINHO, 79", bairro: "ALCANTARA", cidade: "SAO GONCALO", uf: "RJ" },
+                { cnpj: "44.372.487/0001-09", name: "PLENAR MANUTENCOES E OBRAS LTDA", logradouro: "RUA QUINZE DE NOVEMBRO, 106", bairro: "CENTRO", cidade: "NITEROI", uf: "RJ" },
+                { cnpj: "03.454.553/0001-02", name: "ENF MED LIFE ASSISTENCIA DOMICILIAR LTDA", logradouro: "RUA DOMINGUES DE SA, 436", bairro: "ICARAI", cidade: "NITEROI", uf: "RJ" }
+            ];
+
+            let addedCount = 0;
+            const clientsRef = collection(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'wg_clientes_recibos');
+
+            for (let c of pdfClients) {
+                if (!clients.some(existing => existing.name === c.name)) {
+                    const data = {
+                        cnpj: c.cnpj ? c.cnpj.replace(/\D/g, '') : '',
+                        name: c.name,
+                        email: '',
+                        phone: c.phone || '',
+                        cep: '',
+                        logradouro: c.logradouro,
+                        numero: '',
+                        bairro: c.bairro,
+                        cidade: c.cidade,
+                        uf: c.uf,
+                        type: 'Avulso',
+                        status: 'Ativo',
+                        dueDate: null,
+                        value: 0,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    };
+                    try {
+                        await addDoc(clientsRef, data);
+                        addedCount++;
+                    } catch(e) {}
+                }
+            }
+            showAlert(`Importação concluída! ${addedCount} novos clientes adicionados.`);
+            btn.style.display = 'none';
+        }
+
+        // --- IMPRESSÃO / GERAÇÃO DOCS ---
+        window.printArea = function(elementId) {
+            // Remove a classe print-active de todos
+            document.querySelectorAll('.printable-content').forEach(el => el.classList.remove('print-active'));
+            // Adiciona a classe apenas ao elemento que queremos imprimir
+            document.getElementById(elementId).classList.add('print-active');
+            window.print();
+        }
+
+        window.closePrintView = function() {
+            document.getElementById('receipt-container').classList.add('hidden');
+            document.getElementById('contract-container').classList.add('hidden');
+            switchView('clients');
+        }
+
+        // NOVO: Gerar Contrato
+        window.generateContract = function(clientId, fallbackData = null) {
+            // Pega o cliente da lista, ou usa o fallbackData se acabou de ser cadastrado e a lista não atualizou
+            const client = clients.find(c => c.id === clientId) || fallbackData;
+            if(!client) return;
+
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('receipt-container').classList.add('hidden');
+            
+            const container = document.getElementById('contract-container');
+            container.classList.remove('hidden');
+            document.getElementById('page-title').innerText = "Visualização de Contrato";
+
+            // Montar Endereço
+            let enderecoCompleto = "";
+            if (client.logradouro) enderecoCompleto += client.logradouro;
+            if (client.numero) enderecoCompleto += ", " + client.numero;
+            if (client.bairro) enderecoCompleto += " - " + client.bairro;
+            if (client.cidade) enderecoCompleto += ", " + client.cidade;
+            if (client.uf) enderecoCompleto += " - " + client.uf;
+            if (enderecoCompleto === "") enderecoCompleto = "____________________________________";
+
+            // Formatar CNPJ
+            let cnpjFormatado = client.cnpj ? client.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2}).*/, "$1.$2.$3/$4-$5") : "_________________";
+
+            // Preencher campos dinâmicos no Contrato
+            document.getElementById('contract-client-name').innerText = client.name || "______________________";
+            document.getElementById('contract-client-address').innerText = enderecoCompleto;
+            document.getElementById('contract-client-cnpj').innerText = cnpjFormatado;
+            document.getElementById('contract-client-duedate').innerText = client.dueDate || "___";
+            document.getElementById('contract-anexo-client').innerText = client.name || "______________________";
+            document.getElementById('contract-client-value').innerText = formatCurrency(client.value);
+            document.getElementById('contract-signature-client').innerText = client.name || "CONTRATANTE";
+
+            // Data atual para assinatura
+            const d = new Date();
+            const dateStr = `${String(d.getDate()).padStart(2, '0')} de ${months[d.getMonth()]} de ${d.getFullYear()}`;
+            document.getElementById('contract-date').innerText = dateStr;
+            
+            window.scrollTo(0, 0);
+        }
+
+        // Existente: Gerar Recibo
+        window.generateReceipt = function(clientId) {
+            const client = clients.find(c => c.id === clientId);
+            if(!client) return;
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('contract-container').classList.add('hidden');
+            document.getElementById('receipt-container').classList.remove('hidden');
+            document.getElementById('page-title').innerText = "Visualização de Recibo";
+
+            const d = new Date();
+            const dateStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth()+1).padStart(2, '0')}/${d.getFullYear()}`;
+            const refMonth = `${months[d.getMonth()]} de ${d.getFullYear()}`;
+            const receiptNum = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(Math.floor(Math.random() * 9999)).padStart(4,'0')}`;
+
+            let clientNameDisplay = client.name;
+            if (client.cnpj) {
+                let c = client.cnpj.replace(/\D/g, '');
+                let formattedCnpj = c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2}).*/, "$1.$2.$3/$4-$5");
+                clientNameDisplay += ` (CNPJ: ${formattedCnpj})`;
+            }
+
+            document.getElementById('receipt-number').innerText = receiptNum;
+            document.getElementById('receipt-value-display').innerText = formatCurrency(client.value);
+            document.getElementById('receipt-client-name').innerText = clientNameDisplay;
+            document.getElementById('receipt-value-extenso').innerText = valueToText(client.value || 0);
+            document.getElementById('receipt-reference').innerText = refMonth;
+            document.getElementById('receipt-date').innerText = dateStr;
+        }
+
+        window.sendEmail = function(email, clientName) {
+            if(!email) {
+                showAlert("Cliente não possui e-mail cadastrado.", "error");
+                return;
+            }
+            const d = new Date();
+            const refMonth = `${months[d.getMonth()]}/${d.getFullYear()}`;
+            
+            const subject = encodeURIComponent(`Recibo de Prestação de Serviços - ${refMonth} - WG Informática`);
+            const body = encodeURIComponent(`Olá ${clientName},\n\nSegue em anexo o recibo referente aos serviços de suporte e manutenção de computadores do mês de ${refMonth}.\n\nAtenciosamente,\nWG Informática\nCNPJ: 18.227.202/0001-36`);
+            
+            window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+            showAlert("Abrindo seu gerenciador de e-mail...");
+        }
+
+        window.sendWhatsApp = function(phone, clientName, value) {
+            let cleanPhone = phone ? phone.replace(/\D/g, '') : '';
+            const d = new Date();
+            const refMonth = `${months[d.getMonth()]}/${d.getFullYear()}`;
+            const formattedValue = formatCurrency(value);
+            
+            const message = `Olá ${clientName}, tudo bem? Aqui é da *WG Informática*.\n\nEstamos enviando os detalhes do seu recibo referente aos serviços de suporte e manutenção do mês de *${refMonth}*.\n\n*Valor:* ${formattedValue}\n\n(Envie o PDF em anexo aqui).`;
+            
+            const encodedMessage = encodeURIComponent(message);
+            
+            let url = '';
+            if (cleanPhone && cleanPhone.length >= 10) {
+                if (!cleanPhone.startsWith('55')) cleanPhone = '55' + cleanPhone;
+                url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}`;
+            } else {
+                url = `https://api.whatsapp.com/send?text=${encodedMessage}`;
+                showAlert("Telefone não cadastrado. Abrindo WhatsApp para você escolher o contato...");
+            }
+            
+            window.open(url, '_blank');
+        }
+
+        function formatCurrency(value) {
+            return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function valueToText(valor) {
+            if (!valor || valor === 0) return "Zero Reais";
+
+            const unidades = ["", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove"];
+            const dezenas1 = ["dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove"];
+            const dezenas = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"];
+            const centenas = ["", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos", "seiscentos", "setecentos", "oitocentos", "novecentos"];
+
+            function converteGrupo(n) {
+                let texto = "";
+                let c = Math.floor(n / 100);
+                let d = Math.floor((n % 100) / 10);
+                let u = n % 10;
+
+                if (n === 100) return "cem";
+
+                if (c > 0) {
+                    texto += centenas[c];
+                    if (d > 0 || u > 0) texto += " e ";
+                }
+
+                if (d === 1) {
+                    texto += dezenas1[u];
+                } else {
+                    if (d > 1) {
+                        texto += dezenas[d];
+                        if (u > 0) texto += " e ";
+                    }
+                    if (u > 0) {
+                        texto += unidades[u];
+                    }
+                }
+                return texto;
+            }
+
+            let reais = Math.floor(valor);
+            let centavos = Math.round((valor - reais) * 100);
+            let extenso = [];
+
+            if (reais > 0) {
+                let milhoes = Math.floor(reais / 1000000);
+                let milhares = Math.floor((reais % 1000000) / 1000);
+                let unidadesReais = reais % 1000;
+
+                if (milhoes > 0) {
+                    extenso.push(converteGrupo(milhoes) + (milhoes === 1 ? " milhão" : " milhões"));
+                }
+                if (milhares > 0) {
+                    extenso.push(converteGrupo(milhares) + " mil");
+                }
+                if (unidadesReais > 0) {
+                    if ((milhoes > 0 || milhares > 0) && (unidadesReais < 100 || unidadesReais % 100 === 0)) {
+                        extenso.push("e " + converteGrupo(unidadesReais));
+                    } else {
+                        extenso.push(converteGrupo(unidadesReais));
+                    }
+                }
+
+                let strReais = extenso.join(" ");
+                if (reais === 1) strReais += " real";
+                else if (milhoes > 0 && milhares === 0 && unidadesReais === 0) strReais += " de reais";
+                else strReais += " reais";
+                
+                extenso = [strReais];
+            }
+
+            if (centavos > 0) {
+                let strCentavos = converteGrupo(centavos) + (centavos === 1 ? " centavo" : " centavos");
+                if (reais > 0) extenso.push("e " + strCentavos);
+                else extenso.push(strCentavos);
+            }
+
+            return extenso.join(" ");
+        }
+
+        // Iniciar
+        window.onload = initApp;
+
+    </script>
+</body>
+</html>
