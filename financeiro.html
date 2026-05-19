@@ -10,7 +10,12 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
+            
+            background:
+                radial-gradient(circle at top left, rgba(59,130,246,0.15), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(16,185,129,0.12), transparent 30%),
+                #f1f5f9;
+        
         }
 
         /* Scrollbar customizada */
@@ -74,6 +79,51 @@
         }
 
         /* Simulação de folha A4 na tela */
+        
+
+        .glass-card {
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.4);
+            box-shadow: 0 10px 35px rgba(15,23,42,0.08);
+        }
+
+        .premium-gradient {
+            background: linear-gradient(135deg,#0f172a 0%, #1e293b 50%, #2563eb 100%);
+        }
+
+        .metric-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: "";
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 999px;
+            right: -30px;
+            top: -30px;
+        }
+
+        .dashboard-title {
+            background: linear-gradient(90deg,#0f172a,#2563eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .table-modern tbody tr {
+            transition: all .2s ease;
+        }
+
+        .table-modern tbody tr:hover {
+            transform: scale(1.002);
+            box-shadow: 0 4px 12px rgba(15,23,42,0.06);
+        }
+
+
         .a4-paper {
             width: 210mm;
             min-height: 297mm;
@@ -83,6 +133,19 @@
         }
     </style>
 </head>
+
+<!--
+ARQUITETURA FINANCEIRA WG
+
+Collections:
+- financeiro_clientes
+- financeiro_pagamentos
+- financeiro_recibos
+- financeiro_contratos
+- financeiro_configuracoes
+
+-->
+
 <body class="bg-gray-100 font-sans text-gray-800">
 
     <!-- Tela de Carregamento Inicial -->
@@ -94,7 +157,7 @@
     <div class="flex h-screen overflow-hidden">
         
         <!-- Sidebar -->
-        <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col no-print shadow-xl z-20">
+        <aside class="w-72 premium-gradient text-slate-200 flex flex-col no-print shadow-2xl z-20 border-r border-white/10">
             <div class="p-6 flex items-center justify-center border-b border-slate-800 bg-white">
                 <img src="logo-wg.png" alt="WG Informática" class="h-16 object-contain hover:scale-105 transition-transform duration-300" onerror="this.src='https://via.placeholder.com/150x60?text=WG+Informatica'; this.onerror=null;">
             </div>
@@ -118,8 +181,8 @@
         <main class="flex-1 flex flex-col overflow-y-auto relative bg-slate-50">
             
             <!-- Header -->
-            <header class="bg-white shadow-sm px-8 py-5 flex justify-between items-center no-print z-10 sticky top-0">
-                <h1 id="page-title" class="text-2xl font-bold text-slate-800 tracking-tight">Painel de Controle</h1>
+            <header class="glass-card px-8 py-5 flex justify-between items-center no-print z-10 sticky top-4 mx-6 mt-4 rounded-3xl">
+                <h1 id="page-title" class="text-3xl font-black dashboard-title tracking-tight">Painel de Controle</h1>
                 <div class="flex items-center gap-4 bg-slate-100 px-4 py-2 rounded-full border border-slate-200">
                     <div class="relative flex h-3 w-3">
                       <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -138,22 +201,65 @@
 
                 <!-- VIEW: DASHBOARD -->
                 <div id="view-dashboard" class="view-section animate-fade-in">
+<div class="premium-gradient rounded-[32px] p-8 mb-8 text-white shadow-2xl relative overflow-hidden">
+    <div class="absolute -top-10 -right-10 w-64 h-64 bg-white/10 rounded-full"></div>
+    <div class="absolute bottom-0 left-0 w-48 h-48 bg-blue-400/20 rounded-full blur-2xl"></div>
+
+    <div class="relative z-10 flex flex-col lg:flex-row justify-between gap-8">
+        <div>
+            <p class="uppercase tracking-[0.3em] text-blue-200 text-sm mb-3">
+                WG INFORMÁTICA FINANCEIRO
+            </p>
+
+            <h1 class="text-4xl font-black leading-tight mb-4">
+                Painel Financeiro Inteligente
+            </h1>
+
+            <p class="text-slate-200 max-w-2xl text-lg">
+                Controle completo de clientes, contratos, pagamentos, recibos e faturamento em tempo real.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 min-w-[320px]">
+            <div class="bg-white/10 rounded-2xl p-5 backdrop-blur-xl border border-white/10">
+                <div class="text-sm text-slate-300 mb-1">Status Sistema</div>
+                <div class="text-2xl font-black text-emerald-300">ONLINE</div>
+            </div>
+
+            <div class="bg-white/10 rounded-2xl p-5 backdrop-blur-xl border border-white/10">
+                <div class="text-sm text-slate-300 mb-1">Banco Dados</div>
+                <div class="text-2xl font-black">FIREBASE</div>
+            </div>
+
+            <div class="bg-white/10 rounded-2xl p-5 backdrop-blur-xl border border-white/10">
+                <div class="text-sm text-slate-300 mb-1">Módulo</div>
+                <div class="text-2xl font-black">FINANCEIRO</div>
+            </div>
+
+            <div class="bg-white/10 rounded-2xl p-5 backdrop-blur-xl border border-white/10">
+                <div class="text-sm text-slate-300 mb-1">Realtime</div>
+                <div class="text-2xl font-black text-cyan-300">ATIVO</div>
+            </div>
+        </div>
+    </div>
+</div>
+
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow p-6 border border-slate-100 flex items-center gap-4">
+                        <div class="metric-card glass-card rounded-3xl hover:shadow-2xl transition-all duration-300 p-7 flex items-center gap-5 hover:-translate-y-1">
                             <div class="bg-blue-100 text-blue-600 h-14 w-14 rounded-xl flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-users"></i></div>
                             <div>
                                 <h3 class="text-slate-500 text-sm font-semibold uppercase tracking-wider">Total de Clientes</h3>
                                 <p id="dash-total-clients" class="text-3xl font-black text-slate-800 mt-1">0</p>
                             </div>
                         </div>
-                        <div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow p-6 border border-slate-100 flex items-center gap-4">
+                        <div class="metric-card glass-card rounded-3xl hover:shadow-2xl transition-all duration-300 p-7 flex items-center gap-5 hover:-translate-y-1">
                             <div class="bg-emerald-100 text-emerald-600 h-14 w-14 rounded-xl flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-file-signature"></i></div>
                             <div>
                                 <h3 class="text-slate-500 text-sm font-semibold uppercase tracking-wider">Contratos Ativos</h3>
                                 <p id="dash-contracts" class="text-3xl font-black text-slate-800 mt-1">0</p>
                             </div>
                         </div>
-                        <div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow p-6 border border-slate-100 flex items-center gap-4">
+                        <div class="metric-card glass-card rounded-3xl hover:shadow-2xl transition-all duration-300 p-7 flex items-center gap-5 hover:-translate-y-1">
                             <div class="bg-orange-100 text-orange-600 h-14 w-14 rounded-xl flex items-center justify-center text-2xl shadow-inner"><i class="fas fa-toolbox"></i></div>
                             <div>
                                 <h3 class="text-slate-500 text-sm font-semibold uppercase tracking-wider">Avulsos</h3>
@@ -162,7 +268,7 @@
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="glass-card rounded-3xl overflow-hidden border border-white/40">
                         <div class="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                                 <i class="fas fa-bell text-amber-500"></i> Faturamento Mensal (<span id="current-month-name" class="text-blue-600 uppercase tracking-widest text-sm"></span>)
@@ -172,8 +278,31 @@
                                 <input type="text" id="search-dashboard" placeholder="Buscar cliente nos vencimentos..." class="w-full pl-11 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow shadow-sm text-sm" onkeyup="filterDashboard()">
                             </div>
                         </div>
+                        <div class="px-6 py-4 border-b border-slate-100 bg-white flex flex-wrap gap-3 items-center">
+                            <select id="dashboard-filter-status" onchange="filterDashboard()" class="px-4 py-2 border border-slate-300 rounded-xl bg-white shadow-sm">
+                                <option value="">Todos Status</option>
+                                <option value="pago">Pagos</option>
+                                <option value="pendente">Pendentes</option>
+                                <option value="atrasado">Atrasados</option>
+                            </select>
+
+                            <select id="dashboard-filter-type" onchange="filterDashboard()" class="px-4 py-2 border border-slate-300 rounded-xl bg-white shadow-sm">
+                                <option value="">Todos Tipos</option>
+                                <option value="Contrato">Contrato</option>
+                                <option value="Avulso">Avulso</option>
+                            </select>
+
+                            <input 
+                                type="number" 
+                                id="dashboard-filter-day" 
+                                placeholder="Dia venc." 
+                                onkeyup="filterDashboard()"
+                                class="px-4 py-2 border border-slate-300 rounded-xl bg-white shadow-sm w-36"
+                            >
+                        </div>
+
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
+                            <table class="table-modern w-full text-left border-collapse">
                                 <thead>
                                     <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-widest border-b border-slate-200">
                                         <th class="p-4 font-semibold">Cliente</th>
@@ -195,7 +324,7 @@
                 <!-- VIEW: CLIENTS -->
                 <div id="view-clients" class="view-section hidden animate-fade-in">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                        <h2 class="text-2xl font-bold text-slate-800 tracking-tight">Gerenciar Clientes</h2>
+                        <h2 class="text-3xl font-black dashboard-title tracking-tight">Gerenciar Clientes</h2>
                         <div class="flex gap-2">
                             <button onclick="importarLotePDF()" id="btn-import-lote" class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-2 font-medium transform hover:-translate-y-0.5">
                                 <i class="fas fa-file-import"></i> Importar PDF Antigo
@@ -206,7 +335,7 @@
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="glass-card rounded-3xl overflow-hidden border border-white/40">
                         <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                             <div class="relative w-full max-w-md">
                                 <i class="fas fa-search absolute left-4 top-3.5 text-slate-400"></i>
@@ -214,7 +343,7 @@
                             </div>
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
+                            <table class="table-modern w-full text-left border-collapse">
                                 <thead>
                                     <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-widest border-b border-slate-200">
                                         <th class="p-4 font-semibold">Nome / Empresa</th>
@@ -573,7 +702,7 @@
             if (!currentUser) return;
             if (clientsUnsubscribe) clientsUnsubscribe();
 
-            const clientsRef = collection(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'wg_clientes_recibos');
+            const clientsRef = collection(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'financeiro_clientes');
             
             clientsUnsubscribe = onSnapshot(clientsRef, (snapshot) => {
                 clients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -632,94 +761,227 @@
             renderDueReceipts();
         }
 
-        function renderDueReceipts() {
+        
+function renderDueReceipts() {
+
             const tbody = document.getElementById('dashboard-due-list');
             const noData = document.getElementById('no-due-clients');
+
             tbody.innerHTML = '';
-            
+
             const searchTerm = (document.getElementById('search-dashboard')?.value || '').toLowerCase();
 
-            let dueClients = clients.filter(c => c.type === 'Contrato' && c.dueDate && c.status !== 'Inativo');
-            
+            const statusFilter = document.getElementById('dashboard-filter-status')?.value || '';
+            const typeFilter = document.getElementById('dashboard-filter-type')?.value || '';
+            const dayFilter = document.getElementById('dashboard-filter-day')?.value || '';
+
+            let dueClients = clients.filter(c =>
+                c.status !== 'Inativo'
+            );
+
+            // Busca textual
             if (searchTerm) {
-                dueClients = dueClients.filter(c => c.name.toLowerCase().includes(searchTerm) || (c.email && c.email.toLowerCase().includes(searchTerm)));
+                dueClients = dueClients.filter(c =>
+                    (c.name || '').toLowerCase().includes(searchTerm)
+                );
             }
 
-            dueClients.sort((a, b) => parseInt(a.dueDate) - parseInt(b.dueDate));
-
-            if(dueClients.length === 0) {
-                noData.classList.remove('hidden'); 
-                if (searchTerm) {
-                    noData.innerHTML = `<i class="fas fa-search text-4xl mb-3 text-slate-300 block"></i>Nenhum cliente encontrado na busca.`;
-                } else {
-                    noData.innerHTML = `<i class="fas fa-check-circle text-4xl mb-3 text-slate-300 block"></i>Nenhum cliente com vencimento configurado.`;
-                }
-                return;
+            // Tipo
+            if (typeFilter) {
+                dueClients = dueClients.filter(c => c.type === typeFilter);
             }
-            noData.classList.add('hidden');
 
             const d = new Date();
             const today = d.getDate();
             const currentMonthStr = `${d.getMonth() + 1}/${d.getFullYear()}`;
 
+            // Status financeiro
+            if (statusFilter) {
+
+                dueClients = dueClients.filter(client => {
+
+                    const isPaid = client.lastPaidMonth === currentMonthStr;
+                    const isLate = parseInt(client.dueDate || 0) < today && !isPaid;
+
+                    if (statusFilter === 'pago') return isPaid;
+                    if (statusFilter === 'atrasado') return isLate;
+                    if (statusFilter === 'pendente') return !isPaid;
+
+                    return true;
+                });
+            }
+
+            // Dia vencimento
+            if (dayFilter) {
+                dueClients = dueClients.filter(c =>
+                    String(c.dueDate || '') === String(dayFilter)
+                );
+            }
+
+            dueClients.sort((a, b) =>
+                parseInt(a.dueDate || 0) - parseInt(b.dueDate || 0)
+            );
+
+            if (dueClients.length === 0) {
+                noData.classList.remove('hidden');
+                tbody.innerHTML = '';
+                return;
+            }
+
+            noData.classList.add('hidden');
+
             dueClients.forEach(client => {
+
                 const isPaid = client.lastPaidMonth === currentMonthStr;
-                const isLate = parseInt(client.dueDate) < today && !isPaid;
-                
+                const isLate = parseInt(client.dueDate || 0) < today && !isPaid;
+
                 const tr = document.createElement('tr');
+
                 tr.className = `border-b border-slate-100 ${isPaid ? 'bg-slate-50/50 opacity-80' : 'hover:bg-slate-50/80'}`;
 
                 let statusBadge = '';
+
                 if (isPaid) {
-                    statusBadge = `<span class="bg-blue-50 text-blue-700 border border-blue-200 text-xs px-2.5 py-1 rounded-full font-medium ml-2 shadow-sm"><i class="fas fa-check-double mr-1"></i> Pago</span>`;
+                    statusBadge = `<span class="bg-blue-50 text-blue-700 border border-blue-200 text-xs px-2.5 py-1 rounded-full font-medium ml-2 shadow-sm">
+                        <i class="fas fa-check-double mr-1"></i> Pago
+                    </span>`;
                 } else if (isLate) {
-                    statusBadge = `<span class="bg-red-50 text-red-700 border border-red-200 text-xs px-2.5 py-1 rounded-full font-medium ml-2 shadow-sm"><i class="fas fa-exclamation-circle mr-1"></i> Atrasado</span>`;
+                    statusBadge = `<span class="bg-red-50 text-red-700 border border-red-200 text-xs px-2.5 py-1 rounded-full font-medium ml-2 shadow-sm">
+                        <i class="fas fa-exclamation-circle mr-1"></i> Atrasado
+                    </span>`;
                 } else {
-                    statusBadge = `<span class="bg-amber-50 text-amber-700 border border-amber-200 text-xs px-2.5 py-1 rounded-full font-medium ml-2 shadow-sm"><i class="fas fa-clock mr-1"></i> Pendente</span>`;
+                    statusBadge = `<span class="bg-amber-50 text-amber-700 border border-amber-200 text-xs px-2.5 py-1 rounded-full font-medium ml-2 shadow-sm">
+                        <i class="fas fa-clock mr-1"></i> Pendente
+                    </span>`;
                 }
-                
-                let btnAction = isPaid ? 
-                    `<button onclick='undoPayment("${client.id}")' class="px-2 py-1 bg-slate-200 text-slate-500 rounded"><i class="fas fa-undo"></i></button>` : 
-                    `<button onclick='markAsPaid("${client.id}")' class="px-3 py-1 bg-emerald-500 text-white rounded font-semibold text-xs"><i class="fas fa-check"></i> Baixa</button>`;
+
+                let btnAction = isPaid ?
+                    `<button onclick='undoPayment("${client.id}")' class="px-2 py-1 bg-slate-200 text-slate-500 rounded">
+                        <i class="fas fa-undo"></i>
+                    </button>` :
+                    `<button onclick='markAsPaid("${client.id}")' class="px-3 py-1 bg-emerald-500 text-white rounded font-semibold text-xs">
+                        <i class="fas fa-check"></i> Baixa
+                    </button>`;
 
                 tr.innerHTML = `
                     <td class="p-4 font-semibold text-slate-800">${client.name}</td>
-                    <td class="p-4 text-slate-600">Dia ${client.dueDate} ${statusBadge}</td>
+                    <td class="p-4 text-slate-600">Dia ${client.dueDate || '-'} ${statusBadge}</td>
                     <td class="p-4 font-bold">${formatCurrency(client.value)}</td>
                     <td class="p-4 text-right flex gap-1 justify-end">
                         ${btnAction}
-                        <button onclick='generateReceipt("${client.id}")' class="px-3 py-1 bg-slate-50 border border-slate-200 rounded text-slate-700 text-xs font-semibold hover:bg-slate-600 hover:text-white transition-colors" title="Gerar Recibo"><i class="fas fa-file-invoice"></i></button>
-                        <button onclick='sendEmail("${client.email || ''}", "${client.name}")' class="px-3 py-1 bg-purple-50 border border-purple-100 rounded text-purple-700 text-xs font-semibold hover:bg-purple-600 hover:text-white transition-colors" title="Enviar por E-mail"><i class="fas fa-envelope"></i></button>
-                        <button onclick='sendWhatsApp("${client.phone || ''}", "${client.name}", ${client.value})' class="px-3 py-1 bg-emerald-50 border border-emerald-100 rounded text-emerald-700 text-xs font-semibold hover:bg-emerald-500 hover:text-white transition-colors" title="Avisar por WhatsApp"><i class="fab fa-whatsapp"></i></button>
+
+                        <button onclick='generateReceipt("${client.id}")'
+                            class="px-3 py-1 bg-slate-50 border border-slate-200 rounded text-slate-700 text-xs font-semibold hover:bg-slate-600 hover:text-white transition-colors">
+                            <i class="fas fa-file-invoice"></i>
+                        </button>
+
+                        <button onclick='sendEmail("${client.email || ''}", "${client.name}")'
+                            class="px-3 py-1 bg-purple-50 border border-purple-100 rounded text-purple-700 text-xs font-semibold hover:bg-purple-600 hover:text-white transition-colors">
+                            <i class="fas fa-envelope"></i>
+                        </button>
+
+                        <button onclick='sendWhatsApp("${client.phone || ''}", "${client.name}", ${client.value})'
+                            class="px-3 py-1 bg-emerald-50 border border-emerald-100 rounded text-emerald-700 text-xs font-semibold hover:bg-emerald-500 hover:text-white transition-colors">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>
                     </td>
                 `;
+
                 tbody.appendChild(tr);
             });
         }
-        
+
         window.filterDashboard = function() {
             renderDueReceipts();
         }
 
-        window.markAsPaid = async function(id) {
-            if(!currentUser) return;
+
+        
+        async function registrarPagamento(client) {
+
+            if (!currentUser) return;
+
             const d = new Date();
+
+            const referencia = `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+
+            const pagamentoData = {
+                clienteId: client.id,
+                clienteNome: client.name || '',
+                referencia: referencia,
+                valor: Number(client.value || 0),
+                formaPagamento: "PIX",
+                observacao: "Pagamento registrado manualmente",
+                pagoEm: new Date().toISOString(),
+                recebidoPor: "Sistema WG",
+                createdAt: new Date().toISOString()
+            };
+
+            await addDoc(
+                collection(
+                    db,
+                    'artifacts',
+                    currentAppId,
+                    'users',
+                    currentUser.uid,
+                    'financeiro_pagamentos'
+                ),
+                pagamentoData
+            );
+        }
+
+
+window.markAsPaid = async function(id) {
+
+            if (!currentUser) return;
+
+            const client = clients.find(c => c.id === id);
+
+            if (!client) {
+                showAlert("Cliente não encontrado.", "error");
+                return;
+            }
+
+            const d = new Date();
+
             try {
-                await updateDoc(doc(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'wg_clientes_recibos', id), {
-                    lastPaidMonth: `${d.getMonth() + 1}/${d.getFullYear()}`,
-                    updatedAt: new Date().toISOString()
-                });
-                showAlert("Pagamento registrado com sucesso!");
+
+                // Salva histórico financeiro
+                await registrarPagamento(client);
+
+                // Atualiza cliente
+                await updateDoc(
+                    doc(
+                        db,
+                        'artifacts',
+                        currentAppId,
+                        'users',
+                        currentUser.uid,
+                        'financeiro_clientes',
+                        id
+                    ),
+                    {
+                        lastPaidMonth: `${d.getMonth() + 1}/${d.getFullYear()}`,
+                        ultimoPagamento: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }
+                );
+
+                showAlert("Pagamento registrado no histórico financeiro!");
+
             } catch (error) {
+
                 console.error("Erro ao registrar pagamento:", error);
-                showAlert("Erro ao registrar o pagamento no banco de dados.", "error");
+
+                showAlert("Erro ao salvar pagamento.", "error");
             }
         }
-        
-        window.undoPayment = async function(id) {
+
+        window.undoPayment
+ = async function(id) {
             if(!currentUser) return;
             try {
-                await updateDoc(doc(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'wg_clientes_recibos', id), { 
+                await updateDoc(doc(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'financeiro_clientes', id), { 
                     lastPaidMonth: null,
                     updatedAt: new Date().toISOString()
                 });
@@ -790,14 +1052,14 @@
                 updatedAt: new Date().toISOString()
             };
 
-            const clientsRef = collection(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'wg_clientes_recibos');
+            const clientsRef = collection(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'financeiro_clientes');
             const submitBtn = document.querySelector('button[form="client-form"]');
             submitBtn.disabled = true;
 
             try {
                 let savedId = id;
                 if (id) {
-                    await updateDoc(doc(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'wg_clientes_recibos', id), data);
+                    await updateDoc(doc(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'financeiro_clientes', id), data);
                     showAlert("Cliente atualizado com sucesso!");
                 } else {
                     data.createdAt = new Date().toISOString();
@@ -825,7 +1087,7 @@
         });
 
         window.deleteClient = async function(id) {
-            await deleteDoc(doc(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'wg_clientes_recibos', id));
+            await deleteDoc(doc(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'financeiro_clientes', id));
         }
 
         window.renderClientsTable = function() {
@@ -957,7 +1219,7 @@
             ];
 
             let addedCount = 0;
-            const clientsRef = collection(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'wg_clientes_recibos');
+            const clientsRef = collection(db, 'artifacts', currentAppId, 'users', currentUser.uid, 'financeiro_clientes');
 
             for (let c of pdfClients) {
                 if (!clients.some(existing => existing.name === c.name)) {
