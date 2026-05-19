@@ -156,10 +156,10 @@ Collections:
             <div class="text-center mb-8">
                 <div class="flex justify-center mb-6">
                     <img 
-                        src="logo-financeiro.png" 
+                        src="./logo-financeiro.png" 
                         alt="WG Financeiro"
                         class="w-40 drop-shadow-[0_0_25px_rgba(59,130,246,0.45)] hover:scale-105 transition-all duration-300 object-contain"
-                        onerror="this.src='https://via.placeholder.com/220x220?text=WG+Financeiro';"
+                        
                     >
                 </div>
 
@@ -284,7 +284,7 @@ Collections:
         <!-- Sidebar -->
         <aside class="w-72 premium-gradient text-slate-200 flex flex-col no-print shadow-2xl z-20 border-r border-white/10">
             <div class="p-6 flex items-center justify-center border-b border-slate-800 bg-white">
-                <img src="logo-wg.png" alt="WG Informática" class="h-16 object-contain hover:scale-105 transition-transform duration-300" onerror="this.src='https://via.placeholder.com/150x60?text=WG+Informatica'; this.onerror=null;">
+                <img src="logo-wg.png" alt="WG Informática" class="h-16 object-contain hover:scale-105 transition-transform duration-300" >
             </div>
             <nav class="flex-1 p-4 space-y-2 mt-4">
                 <a href="#" onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item flex items-center p-3 bg-blue-600 text-white rounded-xl shadow-sm transition-all hover:bg-blue-500 hover:shadow-md">
@@ -516,7 +516,7 @@ Collections:
                         <!-- Conteúdo do Recibo Original mantido -->
                         <div class="flex justify-between items-start border-b-2 border-gray-800 pb-6 mb-6">
                             <div class="flex items-center gap-4">
-                                <img src="logo-wg.png" alt="WG Informática" class="h-20" onerror="this.src='https://via.placeholder.com/150x60?text=WG+Informatica'; this.onerror=null;">
+                                <img src="logo-wg.png" alt="WG Informática" class="h-20" >
                                 <div>
                                     <h2 class="text-xl font-bold text-gray-900">WG INFORMATICA</h2>
                                     <p class="text-xs text-gray-600">SUPORTE E MANUTENÇÃO DE COMPUTADORES LTDA.</p>
@@ -901,7 +901,7 @@ firebaseConfig = {
                 db = getFirestore(app);
 
                 
-                onAuthStateChanged(auth, (user) => {
+                onAuthStateChanged(auth, async (user) => {
 
                     if (user) {
 
@@ -917,9 +917,17 @@ firebaseConfig = {
 
                             const userRef = doc(db, 'usuarios', user.uid);
 
-                            const userSnap = await getDoc(userRef);
+                            
+                            let userSnap = null;
 
-                            if(userSnap.exists()) {
+                            try {
+                                userSnap = await getDoc(userRef);
+                            } catch(err) {
+                                console.error('Erro getDoc:', err);
+                            }
+
+
+                            if(userSnap && userSnap.exists()) {
 
                                 const userData = userSnap.data();
 
