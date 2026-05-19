@@ -148,6 +148,131 @@ Collections:
 
 <body class="bg-gray-100 font-sans text-gray-800">
 
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 z-[9999] premium-gradient flex items-center justify-center p-6">
+
+        <div class="glass-card rounded-[32px] w-full max-w-md p-8 border border-blue-200/30 shadow-[0_20px_80px_rgba(37,99,235,0.25)]">
+
+            <div class="text-center mb-8">
+                <div class="flex justify-center mb-6">
+                    <img 
+                        src="logo-financeiro.png" 
+                        alt="WG Financeiro"
+                        class="w-40 drop-shadow-[0_0_25px_rgba(59,130,246,0.45)] hover:scale-105 transition-all duration-300 object-contain"
+                        onerror="this.src='https://via.placeholder.com/220x220?text=WG+Financeiro';"
+                    >
+                </div>
+
+                <h1 class="text-3xl font-black text-slate-800 mb-2">
+                    WG Financeiro
+                </h1>
+
+                <p class="text-slate-500">
+                    Controle financeiro inteligente e profissional
+                </p>
+            </div>
+
+            <div class="space-y-4">
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">
+                        E-mail
+                    </label>
+
+                    <input
+                        type="email"
+                        id="login-email"
+                        placeholder="Digite seu e-mail"
+                        class="w-full px-4 py-3 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">
+                        Senha
+                    </label>
+
+                    <input
+                        type="password"
+                        id="login-password"
+                        placeholder="Digite sua senha"
+                        class="w-full px-4 py-3 rounded-2xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                    >
+                </div>
+
+                <button
+                    onclick="loginSistema()"
+                    class="w-full premium-gradient text-white py-3 rounded-2xl font-bold shadow-xl hover:scale-[1.01] transition-all"
+                >
+                    ENTRAR NO SISTEMA
+                </button>
+
+                
+
+            
+<div id="admin-panel-btn" class="hidden mt-4">
+    <button
+        onclick="toggleAdminPanel()"
+        class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-2xl font-bold shadow-xl transition-all"
+    >
+        <i class="fas fa-user-shield mr-2"></i>
+        PAINEL ADMINISTRATIVO
+    </button>
+</div>
+
+<div id="admin-create-panel" class="hidden mt-5 border-t border-slate-200 pt-5">
+
+    <h3 class="text-lg font-black text-slate-800 mb-4">
+        Criar Usuário
+    </h3>
+
+    <div class="space-y-3">
+
+        <input
+            type="text"
+            id="admin-new-name"
+            placeholder="Nome usuário"
+            class="w-full px-4 py-3 rounded-2xl border border-slate-300"
+        >
+
+        <input
+            type="email"
+            id="admin-new-email"
+            placeholder="E-mail"
+            class="w-full px-4 py-3 rounded-2xl border border-slate-300"
+        >
+
+        <input
+            type="password"
+            id="admin-new-password"
+            placeholder="Senha"
+            class="w-full px-4 py-3 rounded-2xl border border-slate-300"
+        >
+
+        <select
+            id="admin-new-role"
+            class="w-full px-4 py-3 rounded-2xl border border-slate-300"
+        >
+            <option value="financeiro">Financeiro</option>
+            <option value="admin">Administrador</option>
+        </select>
+
+        <button
+            onclick="adminCreateUser()"
+            class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-2xl font-bold"
+        >
+            <i class="fas fa-user-plus mr-2"></i>
+            CRIAR USUÁRIO
+        </button>
+
+    </div>
+</div>
+
+</div>
+        </div>
+    </div>
+
+
     <!-- Tela de Carregamento Inicial -->
     <div id="loading-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
         <div class="loader mb-4"></div>
@@ -190,7 +315,19 @@ Collections:
                     </div>
                     <span id="user-status" class="text-sm text-slate-600 font-medium">Sistema Online</span>
                 </div>
-            </header>
+            
+<div class="flex justify-end px-8 mt-4 no-print">
+    <button
+        onclick="logoutSistema()"
+        class="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-2xl shadow-lg font-semibold"
+    >
+        <i class="fas fa-sign-out-alt mr-2"></i>
+        Sair
+    </button>
+</div>
+
+</header>
+
 
             <!-- Content Area -->
             <div class="p-8">
@@ -647,8 +784,14 @@ Collections:
     <!-- Scripts do Firebase e Lógica -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { 
+    getAuth, 
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         let db;
         let auth;
@@ -659,40 +802,146 @@ Collections:
 
         const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
-        async function initApp() {
+        
+        window.loginSistema = async function() {
+
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            if (!email || !password) {
+                alert('Preencha e-mail e senha.');
+                return;
+            }
+
+            try {
+
+                await signInWithEmailAndPassword(auth, email, password);
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert('Erro login: ' + error.message);
+            }
+        }
+
+        window.logoutSistema = async function() {
+
+            await signOut(auth);
+        }
+
+
+window.toggleAdminPanel = function() {
+
+    const panel = document.getElementById('admin-create-panel');
+
+    panel.classList.toggle('hidden');
+}
+
+window.adminCreateUser = async function() {
+
+    try {
+
+        const nome = document.getElementById('admin-new-name').value.trim();
+        const email = document.getElementById('admin-new-email').value.trim();
+        const password = document.getElementById('admin-new-password').value.trim();
+        const tipo = document.getElementById('admin-new-role').value;
+
+        if(!nome || !email || !password) {
+            alert('Preencha todos os campos');
+            return;
+        }
+
+        const userCredential = await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
+
+        const user = userCredential.user;
+
+        await setDoc(doc(db, 'usuarios', user.uid), {
+            nome,
+            email,
+            tipo,
+            createdAt: new Date().toISOString()
+        });
+
+        alert('Usuário criado com sucesso!');
+
+    } catch(error) {
+
+        console.error(error);
+
+        alert(error.message);
+    }
+}
+
+async function initApp() {
             try {
                 let firebaseConfig;
                 if (typeof __firebase_config !== 'undefined') {
                     firebaseConfig = JSON.parse(__firebase_config);
                 } else {
                     // CONFIGURAÇÃO LOCAL: Substitua com seus dados caso baixe o HTML
-                    firebaseConfig = {
-                        apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
-                        authDomain: "sistema-chamados-99e49.firebaseapp.com",
-                        projectId: "sistema-chamados-99e49",
-                        appId: "1:680351942005:web:896b35a40f094d42297f3c"
-                    };
+                    
+firebaseConfig = {
+  apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
+  authDomain: "sistema-chamados-99e49.firebaseapp.com",
+  projectId: "sistema-chamados-99e49",
+  storageBucket: "sistema-chamados-99e49.firebasestorage.app",
+  messagingSenderId: "680351942005",
+  appId: "1:680351942005:web:896b35a40f094d42297f3c"
+};
+
                 }
                 
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
+                
                 onAuthStateChanged(auth, (user) => {
+
                     if (user) {
+
                         currentUser = user;
+
+                        document.getElementById('login-screen').style.display = 'none';
                         document.getElementById('loading-screen').style.display = 'none';
+
+                        
                         setupRealtimeListener();
+
+                        try {
+
+                            const userRef = doc(db, 'usuarios', user.uid);
+
+                            const userSnap = await getDoc(userRef);
+
+                            if(userSnap.exists()) {
+
+                                const userData = userSnap.data();
+
+                                if(userData.tipo === 'admin') {
+
+                                    document.getElementById('admin-panel-btn').classList.remove('hidden');
+                                }
+                            }
+
+                        } catch(e) {
+                            console.error(e);
+                        }
+
+
                     } else {
+
                         currentUser = null;
+
+                        document.getElementById('login-screen').style.display = 'flex';
                     }
                 });
+
             } catch (error) {
                 console.error("Erro Firebase:", error);
             }
