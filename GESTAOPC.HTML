@@ -12,6 +12,11 @@
 <style>
 body { font-family: 'Poppins', sans-serif; }
 .card:hover { transform: scale(1.02); transition:.2s }
+/* Scrollbar customizada para modais mais longos */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #1e293b; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #64748b; }
 </style>
 </head>
 
@@ -20,8 +25,8 @@ body { font-family: 'Poppins', sans-serif; }
 <!-- SIDEBAR -->
 <aside class="w-64 bg-slate-800 border-r border-slate-700 p-4 flex flex-col">
 
-<button onclick="openAddClientModal()" class="bg-teal-600 hover:bg-teal-500 p-2 rounded mb-4">
-+ Empresa
+<button onclick="openAddClientModal()" class="bg-teal-600 hover:bg-teal-500 p-2 rounded mb-4 shadow-lg transition-colors">
+<i class="fas fa-plus mr-1"></i> Empresa
 </button>
 
 <div id="clientList" class="space-y-2 overflow-y-auto"></div>
@@ -39,15 +44,15 @@ Selecione empresa
 <div class="flex gap-2 items-center">
 
 <input id="searchInput" onkeyup="render()"
-placeholder="Buscar..."
-class="bg-slate-700 border border-slate-600 p-2 rounded text-white focus:ring-2 focus:ring-teal-500">
+placeholder="Buscar PC ou Setor..."
+class="bg-slate-700 border border-slate-600 p-2 rounded text-white focus:ring-2 focus:ring-teal-500 outline-none w-64">
 
 <div id="actions" class="hidden flex gap-2">
-<button onclick="openAddSectorModal()" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded">
+<button onclick="openAddSectorModal()" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded transition-colors border border-slate-600">
 + Setor
 </button>
 
-<button onclick="openAddComputerModal()" class="bg-teal-600 hover:bg-teal-500 px-3 py-2 rounded">
+<button onclick="openAddComputerModal()" class="bg-teal-600 hover:bg-teal-500 px-3 py-2 rounded shadow-lg transition-colors">
 + PC
 </button>
 </div>
@@ -55,69 +60,163 @@ class="bg-slate-700 border border-slate-600 p-2 rounded text-white focus:ring-2 
 </div>
 </div>
 
-<div id="mainContent" class="p-6 overflow-y-auto flex-1"></div>
+<div id="mainContent" class="p-6 overflow-y-auto flex-1">
+    <div class="text-slate-500 flex items-center justify-center h-full">
+        Selecione uma empresa na barra lateral para começar.
+    </div>
+</div>
 
 </main>
 
 <!-- MODAIS DARK -->
 
-<div id="clientModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center">
-<div class="bg-slate-800 border border-slate-700 p-6 rounded-xl w-80">
-
-<input id="newClientName" placeholder="Empresa"
-class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 mb-3">
-
-<button onclick="addClient()" class="w-full bg-teal-600 py-2 rounded">
-Salvar
-</button>
-
-</div>
+<!-- Modal Empresa -->
+<div id="clientModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+<div class="bg-slate-800 border border-slate-700 p-6 rounded-xl w-80 shadow-2xl">
+<div class="flex justify-between items-center mb-4">
+    <h3 class="font-bold text-lg">Nova Empresa</h3>
+    <button onclick="closeModal('clientModal')" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
 </div>
 
-<div id="sectorModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center">
-<div class="bg-slate-800 border border-slate-700 p-6 rounded-xl w-80">
-
-<h3 class="mb-3 font-bold">Setor</h3>
-
-<input id="newSectorName" placeholder="Nome"
-class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 mb-3">
+<input id="newClientName" placeholder="Nome da Empresa"
+class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 mb-4 focus:ring-2 focus:ring-teal-500 outline-none">
 
 <div class="flex gap-2">
-<button onclick="close('sectorModal')" class="w-1/2 bg-slate-600 p-2 rounded">Cancelar</button>
-<button onclick="addSector()" class="w-1/2 bg-teal-600 p-2 rounded">Salvar</button>
+    <button onclick="closeModal('clientModal')" class="w-1/2 bg-slate-600 hover:bg-slate-500 py-2 rounded transition-colors">Cancelar</button>
+    <button onclick="addClient()" class="w-1/2 bg-teal-600 hover:bg-teal-500 py-2 rounded transition-colors">Salvar</button>
 </div>
 
 </div>
 </div>
 
-<div id="computerModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center">
-<div class="bg-slate-800 border border-slate-700 p-6 rounded-xl w-96">
+<!-- Modal Setor -->
+<div id="sectorModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+<div class="bg-slate-800 border border-slate-700 p-6 rounded-xl w-80 shadow-2xl">
+<div class="flex justify-between items-center mb-4">
+    <h3 class="font-bold text-lg">Novo Setor</h3>
+    <button onclick="closeModal('sectorModal')" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+</div>
 
-<input id="pcName" placeholder="Nome PC" class="input">
-<select id="pcSetor" class="input"></select>
-<input id="pcConfig" placeholder="Configuração" class="input">
-<input id="pcAnyId" placeholder="AnyDesk ID" class="input">
-<input id="pcAnyPass" placeholder="Senha" class="input">
+<input id="newSectorName" placeholder="Nome do Setor"
+class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 mb-4 focus:ring-2 focus:ring-teal-500 outline-none">
 
-<button onclick="addComputer()" class="w-full bg-teal-600 py-2 rounded mt-2">
-Salvar
+<div class="flex gap-2">
+<button onclick="closeModal('sectorModal')" class="w-1/2 bg-slate-600 hover:bg-slate-500 py-2 rounded transition-colors">Cancelar</button>
+<button onclick="addSector()" class="w-1/2 bg-teal-600 hover:bg-teal-500 py-2 rounded transition-colors">Salvar</button>
+</div>
+
+</div>
+</div>
+
+<!-- Modal Computador -->
+<div id="computerModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+<div class="bg-slate-800 border border-slate-700 p-6 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+
+<div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
+    <h3 class="font-bold text-xl text-teal-400" id="computerModalTitle">Cadastro de Computador</h3>
+    <button onclick="closeModal('computerModal')" class="text-slate-400 hover:text-white text-xl"><i class="fas fa-times"></i></button>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Informações Básicas -->
+    <div class="col-span-1 md:col-span-2">
+        <h4 class="text-sm font-semibold text-slate-400 mb-2 uppercase tracking-wider"><i class="fas fa-desktop mr-1"></i> Dados Básicos</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+                <label class="text-xs text-slate-400 ml-1">Nome do PC</label>
+                <input id="pcName" placeholder="Ex: PC-RECEPÇÃO" class="input">
+            </div>
+            <div>
+                <label class="text-xs text-slate-400 ml-1">Setor</label>
+                <select id="pcSetor" class="input"></select>
+            </div>
+            <div class="md:col-span-2">
+                <label class="text-xs text-slate-400 ml-1">Configuração (Hardware)</label>
+                <input id="pcConfig" placeholder="Ex: i5 10ª Gen, 8GB RAM, SSD 256GB" class="input">
+            </div>
+        </div>
+    </div>
+
+    <!-- Acesso Remoto -->
+    <div class="col-span-1 md:col-span-2 mt-2">
+        <h4 class="text-sm font-semibold text-slate-400 mb-2 uppercase tracking-wider"><i class="fas fa-network-wired mr-1"></i> Acesso Remoto</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+                <label class="text-xs text-slate-400 ml-1">AnyDesk ID</label>
+                <input id="pcAnyId" placeholder="000 000 000" class="input font-mono">
+            </div>
+            <div>
+                <label class="text-xs text-slate-400 ml-1">Senha AnyDesk</label>
+                <input id="pcAnyPass" placeholder="Senha de acesso" class="input">
+            </div>
+        </div>
+    </div>
+
+    <!-- Licenças e Software (NOVOS CAMPOS) -->
+    <div class="col-span-1 md:col-span-2 mt-2">
+        <h4 class="text-sm font-semibold text-slate-400 mb-2 uppercase tracking-wider"><i class="fas fa-key mr-1"></i> Licenças & Softwares</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            
+            <!-- Windows -->
+            <div class="md:col-span-2 bg-slate-700/50 p-3 rounded-lg border border-slate-700">
+                <label class="text-xs text-slate-300 ml-1 font-bold"><i class="fab fa-windows text-blue-400"></i> Windows</label>
+                <input id="pcWinLic" placeholder="Chave de Licença do Windows" class="input mt-1 mb-0">
+            </div>
+
+            <!-- Office -->
+            <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-700 flex flex-col gap-2">
+                <label class="text-xs text-slate-300 ml-1 font-bold"><i class="fab fa-microsoft text-orange-400"></i> Pacote Office</label>
+                <input id="pcOfficeEd" placeholder="Edição (Ex: Office 2019 Pro)" class="input m-0">
+                <input id="pcOfficeLic" placeholder="Chave de Licença" class="input m-0">
+            </div>
+
+            <!-- Antivírus -->
+            <div class="bg-slate-700/50 p-3 rounded-lg border border-slate-700 flex flex-col gap-2">
+                <label class="text-xs text-slate-300 ml-1 font-bold"><i class="fas fa-shield-alt text-green-400"></i> Antivírus</label>
+                <input id="pcAvName" placeholder="Nome (Ex: Kaspersky, Bitdefender)" class="input m-0">
+                <input id="pcAvLic" placeholder="Chave de Licença" class="input m-0">
+                <div>
+                    <label class="text-xs text-slate-400 ml-1 block mb-1">Data de Validade</label>
+                    <input type="date" id="pcAvVal" class="input m-0">
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="flex gap-3 mt-6 border-t border-slate-700 pt-4">
+<button onclick="closeModal('computerModal')" class="w-1/3 bg-slate-600 hover:bg-slate-500 py-3 rounded-lg font-semibold transition-colors">
+    Cancelar
 </button>
+<button onclick="addComputer()" class="w-2/3 bg-teal-600 hover:bg-teal-500 py-3 rounded-lg font-semibold shadow-lg transition-colors">
+    <i class="fas fa-save mr-1"></i> Salvar Computador
+</button>
+</div>
 
 </div>
 </div>
 
-<!-- TOAST -->
-<div id="toast" class="hidden fixed bottom-5 right-5 bg-teal-600 px-4 py-2 rounded shadow"></div>
+<!-- TOAST NOTIFICATION -->
+<div id="toast" class="hidden fixed bottom-5 right-5 bg-teal-600 text-white font-semibold px-6 py-3 rounded-lg shadow-xl z-[60] flex items-center gap-2 transform transition-all duration-300 translate-y-0 opacity-100">
+    <i class="fas fa-check-circle"></i>
+    <span id="toastMsg">Mensagem</span>
+</div>
 
 <style>
 .input{
 width:100%;
-padding:10px;
-margin-bottom:8px;
+padding:10px 12px;
+margin-bottom:4px;
 background:#334155;
 border:1px solid #475569;
 border-radius:8px;
 color:white;
+outline:none;
+transition: border-color 0.2s;
+}
+.input:focus {
+border-color: #14b8a6; /* Teal 500 */
 }
 </style>
 
@@ -139,9 +238,13 @@ let clients=[], computers=[], sectors=[];
 let selectedClientId=null;
 let editingComputerId=null;
 
+// Redireciona para o login se não estiver autenticado (Pronto para Produção)
 onAuthStateChanged(auth,user=>{
-if(!user) window.location.href="login-tecnico.html";
-else start();
+if(!user) {
+    window.location.href="login-tecnico.html";
+} else {
+    start();
+}
 });
 
 function start(){
@@ -162,53 +265,63 @@ sectors=[]; snap.forEach(d=>sectors.push({id:d.id,...d.data()}));
 }
 
 window.addClient=async()=>{
+if(!newClientName.value) return toast("Digite o nome da empresa", true);
 await addDoc(collection(db,"clientes"),{name:newClientName.value});
-close("clientModal"); toast("Empresa criada");
+closeModal("clientModal"); 
+toast("Empresa criada com sucesso");
+newClientName.value = "";
 };
 
 window.addSector=async()=>{
+if(!newSectorName.value) return toast("Digite o nome do setor", true);
 await addDoc(collection(db,"setores"),{
 name:newSectorName.value,
 clientId:selectedClientId
 });
-close("sectorModal"); toast("Setor criado");
+closeModal("sectorModal"); 
+toast("Setor criado com sucesso");
+newSectorName.value = "";
 };
 
 window.addComputer=async()=>{
+if(!pcName.value) return toast("O nome do PC é obrigatório!", true);
+
 const sectorId=pcSetor.value;
 const setor=sectors.find(s=>s.id===sectorId);
 
+const computerData = {
+name: pcName.value,
+sectorId,
+sectorName: setor?.name || "",
+config: pcConfig.value,
+anyId: pcAnyId.value,
+anyPass: pcAnyPass.value,
+// Novos campos de licenças
+winLic: pcWinLic.value,
+officeEd: pcOfficeEd.value,
+officeLic: pcOfficeLic.value,
+avName: pcAvName.value,
+avLic: pcAvLic.value,
+avVal: pcAvVal.value
+};
+
 if(editingComputerId){
-await updateDoc(doc(db,"computadores",editingComputerId),{
-name:pcName.value,
-sectorId,
-sectorName:setor?.name||"",
-config:pcConfig.value,
-anyId:pcAnyId.value,
-anyPass:pcAnyPass.value
-});
-toast("Atualizado");
+await updateDoc(doc(db,"computadores",editingComputerId), computerData);
+toast("Computador atualizado!");
 }else{
-await addDoc(collection(db,"computadores"),{
-clientId:selectedClientId,
-name:pcName.value,
-sectorId,
-sectorName:setor?.name||"",
-config:pcConfig.value,
-anyId:pcAnyId.value,
-anyPass:pcAnyPass.value
-});
-toast("Cadastrado");
+computerData.clientId = selectedClientId;
+await addDoc(collection(db,"computadores"), computerData);
+toast("Computador cadastrado!");
 }
 
 editingComputerId=null;
-close("computerModal");
+closeModal("computerModal");
 };
 
 window.deleteComputer=async(id)=>{
-if(confirm("Excluir?")){
+if(confirm("Tem certeza que deseja excluir este computador?")){
 await deleteDoc(doc(db,"computadores",id));
-toast("Removido");
+toast("Removido com sucesso");
 }
 };
 
@@ -216,20 +329,36 @@ window.editComputer=id=>{
 const pc=computers.find(p=>p.id===id);
 editingComputerId=id;
 
-pcName.value=pc.name;
-pcConfig.value=pc.config;
-pcAnyId.value=pc.anyId;
-pcAnyPass.value=pc.anyPass;
+document.getElementById('computerModalTitle').innerText = "Editar Computador";
+
+// Preenchendo campos básicos
+pcName.value = pc.name || "";
+pcConfig.value = pc.config || "";
+pcAnyId.value = pc.anyId || "";
+pcAnyPass.value = pc.anyPass || "";
+
+// Preenchendo novos campos de licenças
+pcWinLic.value = pc.winLic || "";
+pcOfficeEd.value = pc.officeEd || "";
+pcOfficeLic.value = pc.officeLic || "";
+pcAvName.value = pc.avName || "";
+pcAvLic.value = pc.avLic || "";
+pcAvVal.value = pc.avVal || "";
 
 loadSectors();
 pcSetor.value=pc.sectorId;
 
-open("computerModal");
+openModal("computerModal");
 };
 
 window.selectClient=id=>{
 selectedClientId=id;
 actions.classList.remove("hidden");
+
+// Atualiza estilização da lista de clientes
+document.querySelectorAll('.client-item').forEach(el => el.classList.remove('bg-teal-600', 'border-teal-500'));
+const selectedEl = document.getElementById(`client-${id}`);
+if(selectedEl) selectedEl.classList.add('bg-teal-600', 'border-teal-500');
 
 currentClientTitle.innerText=clients.find(c=>c.id===id).name;
 render();
@@ -237,9 +366,17 @@ render();
 
 function renderClients(){
 clientList.innerHTML=clients.map(c=>`
-<div onclick="selectClient('${c.id}')" class="p-2 bg-slate-700 rounded cursor-pointer hover:bg-slate-600">
-${c.name}
+<div id="client-${c.id}" onclick="selectClient('${c.id}')" 
+class="client-item p-3 border border-transparent bg-slate-700 rounded-lg cursor-pointer hover:bg-slate-600 font-semibold transition-colors flex items-center">
+<i class="fas fa-building mr-2 text-slate-400"></i> ${c.name}
 </div>`).join("");
+}
+
+// Função para formatar data BR
+function formatData(dataString) {
+    if(!dataString) return "";
+    const [ano, mes, dia] = dataString.split('-');
+    return `${dia}/${mes}/${ano}`;
 }
 
 function render(){
@@ -261,22 +398,46 @@ if(!grouped[key])grouped[key]=[];
 grouped[key].push(p);
 });
 
-mainContent.innerHTML=Object.keys(grouped).map(setor=>`
-<h2 class="mb-2 mt-4 text-teal-400 font-bold">${setor} (${grouped[setor].length})</h2>
+if(Object.keys(grouped).length === 0) {
+    mainContent.innerHTML = `<div class="text-slate-500 mt-10 text-center w-full">Nenhum computador encontrado nesta empresa.</div>`;
+    return;
+}
 
-<div class="grid md:grid-cols-3 gap-3">
+mainContent.innerHTML=Object.keys(grouped).map(setor=>`
+<h2 class="mb-3 mt-6 text-teal-400 font-bold text-lg border-b border-slate-700 pb-1 flex items-center">
+    <i class="fas fa-network-wired mr-2"></i> ${setor} 
+    <span class="ml-2 bg-slate-700 text-xs px-2 py-1 rounded-full text-slate-300">${grouped[setor].length}</span>
+</h2>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 
 ${grouped[setor].map(pc=>`
-<div class="bg-slate-800 p-4 rounded-xl border border-slate-700 card relative">
+<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 card relative flex flex-col shadow-md">
 
-<div class="absolute top-2 right-2 flex gap-2">
-<i class="fas fa-pen cursor-pointer" onclick="editComputer('${pc.id}')"></i>
-<i class="fas fa-trash text-red-400 cursor-pointer" onclick="deleteComputer('${pc.id}')"></i>
+<div class="absolute top-3 right-3 flex gap-3">
+<button onclick="editComputer('${pc.id}')" class="text-slate-400 hover:text-teal-400 transition-colors" title="Editar"><i class="fas fa-pen"></i></button>
+<button onclick="deleteComputer('${pc.id}')" class="text-slate-400 hover:text-red-400 transition-colors" title="Excluir"><i class="fas fa-trash"></i></button>
 </div>
 
-<b>${pc.name}</b>
-<div class="text-sm text-slate-400">${pc.config||""}</div>
-<div class="text-xs mt-2">ID: ${pc.anyId}</div>
+<div class="font-bold text-lg text-slate-100 flex items-center pr-16 mb-1">
+    <i class="fas fa-desktop text-slate-500 mr-2"></i> ${pc.name}
+</div>
+
+<div class="text-xs text-slate-400 mb-3 line-clamp-2 min-h-[32px]">${pc.config||"Sem hardware definido"}</div>
+
+<div class="bg-slate-900 rounded p-2 mb-3">
+    <div class="text-xs flex justify-between items-center text-slate-300">
+        <span class="font-bold">AnyDesk:</span> 
+        <span class="font-mono text-teal-400">${pc.anyId || "---"}</span>
+    </div>
+</div>
+
+<!-- Indicadores de Software Visuais nos Cards -->
+<div class="flex gap-2 mt-auto pt-2 border-t border-slate-700 justify-start text-lg">
+    ${pc.winLic ? `<i class="fab fa-windows text-blue-400" title="Windows Registrado"></i>` : `<i class="fab fa-windows text-slate-600 opacity-50" title="Sem Windows"></i>`}
+    ${pc.officeLic ? `<i class="fab fa-microsoft text-orange-400" title="Office: ${pc.officeEd}"></i>` : `<i class="fab fa-microsoft text-slate-600 opacity-50" title="Sem Office"></i>`}
+    ${pc.avName ? `<i class="fas fa-shield-alt text-green-400" title="Antivírus: ${pc.avName} (Val: ${formatData(pc.avVal)})"></i>` : `<i class="fas fa-shield-alt text-slate-600 opacity-50" title="Sem Antivírus"></i>`}
+</div>
 
 </div>
 `).join("")}
@@ -285,31 +446,62 @@ ${grouped[setor].map(pc=>`
 `).join("");
 }
 
-window.openAddClientModal=()=>open("clientModal");
-window.openAddSectorModal=()=>open("sectorModal");
+// Funções de Modal Seguras
+window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
+window.closeModal = (id) => document.getElementById(id).classList.add("hidden");
+
+window.openAddClientModal=()=>openModal("clientModal");
+window.openAddSectorModal=()=>openModal("sectorModal");
 
 window.openAddComputerModal=()=>{
 editingComputerId=null;
+document.getElementById('computerModalTitle').innerText = "Novo Computador";
+
+// Limpar básicos
 pcName.value="";
 pcConfig.value="";
 pcAnyId.value="";
 pcAnyPass.value="";
+
+// Limpar novas licenças
+pcWinLic.value = "";
+pcOfficeEd.value = "";
+pcOfficeLic.value = "";
+pcAvName.value = "";
+pcAvLic.value = "";
+pcAvVal.value = "";
+
 loadSectors();
-open("computerModal");
+openModal("computerModal");
 };
 
 function loadSectors(){
 const list=sectors.filter(s=>s.clientId===selectedClientId);
-pcSetor.innerHTML=list.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
+if(list.length === 0){
+    pcSetor.innerHTML = `<option value="">Nenhum setor cadastrado</option>`;
+} else {
+    pcSetor.innerHTML=list.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
+}
 }
 
-function open(id){document.getElementById(id).classList.remove("hidden")}
-function close(id){document.getElementById(id).classList.add("hidden")}
+function toast(msg, isError = false){
+const toastEl = document.getElementById('toast');
+const msgEl = document.getElementById('toastMsg');
+const icon = toastEl.querySelector('i');
 
-function toast(msg){
-toast.innerText=msg;
-toast.classList.remove("hidden");
-setTimeout(()=>toast.classList.add("hidden"),2000);
+toastEl.className = `fixed bottom-5 right-5 text-white font-semibold px-6 py-3 rounded-lg shadow-xl z-[60] flex items-center gap-2 transform transition-all duration-300 ${isError ? 'bg-red-500' : 'bg-teal-600'}`;
+
+icon.className = isError ? "fas fa-exclamation-triangle" : "fas fa-check-circle";
+msgEl.innerText=msg;
+toastEl.classList.remove("hidden");
+
+setTimeout(()=>{
+    toastEl.classList.add("opacity-0", "translate-y-2");
+    setTimeout(()=> {
+        toastEl.classList.add("hidden");
+        toastEl.classList.remove("opacity-0", "translate-y-2");
+    }, 300);
+},3000);
 }
 </script>
 
