@@ -379,7 +379,8 @@ function formatData(dataString) {
     return `${dia}/${mes}/${ano}`;
 }
 
-function render(){
+// CORREÇÃO: Transformamos a função `render` numa função global (window.render)
+window.render = function render(){
 if(!selectedClientId)return;
 
 const search=searchInput.value.toLowerCase();
@@ -399,7 +400,7 @@ grouped[key].push(p);
 });
 
 if(Object.keys(grouped).length === 0) {
-    mainContent.innerHTML = `<div class="text-slate-500 mt-10 text-center w-full">Nenhum computador encontrado nesta empresa.</div>`;
+    mainContent.innerHTML = `<div class="text-slate-500 mt-10 text-center w-full">Nenhum computador encontrado nesta pesquisa.</div>`;
     return;
 }
 
