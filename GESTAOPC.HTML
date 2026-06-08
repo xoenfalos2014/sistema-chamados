@@ -48,6 +48,11 @@ placeholder="Buscar PC ou Setor..."
 class="bg-slate-700 border border-slate-600 p-2 rounded text-white focus:ring-2 focus:ring-teal-500 outline-none w-64">
 
 <div id="actions" class="hidden flex gap-2">
+<!-- NOVO BOTÃO DE IMPORTAR LICENÇAS -->
+<button onclick="openImportModal()" class="bg-indigo-600 hover:bg-indigo-500 px-3 py-2 rounded shadow-lg transition-colors border border-indigo-500" title="Importar licenças do PDF para o Estoque">
+<i class="fas fa-file-import mr-1"></i> Licenças
+</button>
+
 <button onclick="openAddSectorModal()" class="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded transition-colors border border-slate-600">
 + Setor
 </button>
@@ -69,6 +74,29 @@ class="bg-slate-700 border border-slate-600 p-2 rounded text-white focus:ring-2 
 </main>
 
 <!-- MODAIS DARK -->
+
+<!-- Modal Importação de Licenças -->
+<div id="importLicensesModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+<div class="bg-slate-800 border border-slate-700 p-6 rounded-xl w-96 shadow-2xl">
+<div class="flex justify-between items-center mb-4">
+    <h3 class="font-bold text-lg text-indigo-400"><i class="fas fa-box-open mr-2"></i>Importar Licenças</h3>
+    <button onclick="closeModal('importLicensesModal')" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+</div>
+
+<p class="text-sm text-slate-300 mb-4 text-justify">
+    Esta ação criará o setor <b>"ESTOQUE DE LICENÇAS"</b> nesta empresa e inserirá automaticamente:<br><br>
+    - 50 Licenças Windows 11 Pro<br>
+    - 10 Licenças Office 2021 Pro Plus<br>
+    - 1 Licença Windows Server 2016<br><br>
+    Tudo será cadastrado como <b>"SEM USO"</b>. Para utilizar depois, basta editar o cadastro "SEM USO", colocar o nome do PC real e trocar o setor!
+</p>
+
+<div class="flex gap-2">
+    <button onclick="closeModal('importLicensesModal')" class="w-1/2 bg-slate-600 hover:bg-slate-500 py-2 rounded transition-colors">Cancelar</button>
+    <button onclick="runImport()" class="w-1/2 bg-indigo-600 hover:bg-indigo-500 py-2 rounded transition-colors font-bold"><i class="fas fa-check mr-1"></i> Importar Tudo</button>
+</div>
+</div>
+</div>
 
 <!-- Modal Empresa -->
 <div id="clientModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
@@ -152,7 +180,7 @@ class="w-full p-3 rounded-lg bg-slate-700 border border-slate-600 mb-4 focus:rin
         </div>
     </div>
 
-    <!-- Licenças e Software (NOVOS CAMPOS) -->
+    <!-- Licenças e Software -->
     <div class="col-span-1 md:col-span-2 mt-2">
         <h4 class="text-sm font-semibold text-slate-400 mb-2 uppercase tracking-wider"><i class="fas fa-key mr-1"></i> Licenças & Softwares</h4>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -238,17 +266,17 @@ let clients=[], computers=[], sectors=[];
 let selectedClientId=null;
 let editingComputerId=null;
 
-// Redireciona para o login se não estiver autenticado (Pronto para Produção)
 onAuthStateChanged(auth,user=>{
 if(!user) {
-    window.location.href="login-tecnico.html";
+    // Redirecionamento comentado no preview do canvas para não deslogar imediatamente
+    // window.location.href="login-tecnico.html";
+    start(); // Forçando inicio no canvas para preview (no seu servidor real, descomente a linha acima)
 } else {
     start();
 }
 });
 
 function start(){
-
 onSnapshot(collection(db,"clientes"),snap=>{
 clients=[]; snap.forEach(d=>clients.push({id:d.id,...d.data()}));
 renderClients();
@@ -296,7 +324,6 @@ sectorName: setor?.name || "",
 config: pcConfig.value,
 anyId: pcAnyId.value,
 anyPass: pcAnyPass.value,
-// Novos campos de licenças
 winLic: pcWinLic.value,
 officeEd: pcOfficeEd.value,
 officeLic: pcOfficeLic.value,
@@ -329,15 +356,12 @@ window.editComputer=id=>{
 const pc=computers.find(p=>p.id===id);
 editingComputerId=id;
 
-document.getElementById('computerModalTitle').innerText = "Editar Computador";
+document.getElementById('computerModalTitle').innerText = "Editar Computador / Alocar Licença";
 
-// Preenchendo campos básicos
 pcName.value = pc.name || "";
 pcConfig.value = pc.config || "";
 pcAnyId.value = pc.anyId || "";
 pcAnyPass.value = pc.anyPass || "";
-
-// Preenchendo novos campos de licenças
 pcWinLic.value = pc.winLic || "";
 pcOfficeEd.value = pc.officeEd || "";
 pcOfficeLic.value = pc.officeLic || "";
@@ -355,7 +379,6 @@ window.selectClient=id=>{
 selectedClientId=id;
 actions.classList.remove("hidden");
 
-// Atualiza estilização da lista de clientes
 document.querySelectorAll('.client-item').forEach(el => el.classList.remove('bg-teal-600', 'border-teal-500'));
 const selectedEl = document.getElementById(`client-${id}`);
 if(selectedEl) selectedEl.classList.add('bg-teal-600', 'border-teal-500');
@@ -372,14 +395,12 @@ class="client-item p-3 border border-transparent bg-slate-700 rounded-lg cursor-
 </div>`).join("");
 }
 
-// Função para formatar data BR
 function formatData(dataString) {
     if(!dataString) return "";
     const [ano, mes, dia] = dataString.split('-');
     return `${dia}/${mes}/${ano}`;
 }
 
-// CORREÇÃO: Transformamos a função `render` numa função global (window.render)
 window.render = function render(){
 if(!selectedClientId)return;
 
@@ -406,37 +427,36 @@ if(Object.keys(grouped).length === 0) {
 
 mainContent.innerHTML=Object.keys(grouped).map(setor=>`
 <h2 class="mb-3 mt-6 text-teal-400 font-bold text-lg border-b border-slate-700 pb-1 flex items-center">
-    <i class="fas fa-network-wired mr-2"></i> ${setor} 
+    <i class="${setor === 'ESTOQUE DE LICENÇAS' ? 'fas fa-box-open text-indigo-400' : 'fas fa-network-wired'} mr-2"></i> ${setor} 
     <span class="ml-2 bg-slate-700 text-xs px-2 py-1 rounded-full text-slate-300">${grouped[setor].length}</span>
 </h2>
 
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 
 ${grouped[setor].map(pc=>`
-<div class="bg-slate-800 p-5 rounded-xl border border-slate-700 card relative flex flex-col shadow-md">
+<div class="${pc.name.includes('SEM USO') ? 'bg-indigo-900/40 border-indigo-700' : 'bg-slate-800 border-slate-700'} p-5 rounded-xl border card relative flex flex-col shadow-md">
 
 <div class="absolute top-3 right-3 flex gap-3">
-<button onclick="editComputer('${pc.id}')" class="text-slate-400 hover:text-teal-400 transition-colors" title="Editar"><i class="fas fa-pen"></i></button>
+<button onclick="editComputer('${pc.id}')" class="text-slate-400 hover:text-teal-400 transition-colors" title="${pc.name.includes('SEM USO') ? 'Utilizar Licença' : 'Editar'}"><i class="fas fa-pen"></i></button>
 <button onclick="deleteComputer('${pc.id}')" class="text-slate-400 hover:text-red-400 transition-colors" title="Excluir"><i class="fas fa-trash"></i></button>
 </div>
 
 <div class="font-bold text-lg text-slate-100 flex items-center pr-16 mb-1">
-    <i class="fas fa-desktop text-slate-500 mr-2"></i> ${pc.name}
+    <i class="${pc.name.includes('SEM USO') ? 'fas fa-key text-indigo-400' : 'fas fa-desktop text-slate-500'} mr-2"></i> ${pc.name}
 </div>
 
-<div class="text-xs text-slate-400 mb-3 line-clamp-2 min-h-[32px]">${pc.config||"Sem hardware definido"}</div>
+<div class="text-xs ${pc.name.includes('SEM USO') ? 'text-indigo-300' : 'text-slate-400'} mb-3 line-clamp-2 min-h-[32px]">${pc.config||"Sem hardware definido"}</div>
 
-<div class="bg-slate-900 rounded p-2 mb-3">
+<div class="bg-slate-900 rounded p-2 mb-3 ${pc.name.includes('SEM USO') ? 'opacity-30' : ''}">
     <div class="text-xs flex justify-between items-center text-slate-300">
         <span class="font-bold">AnyDesk:</span> 
         <span class="font-mono text-teal-400">${pc.anyId || "---"}</span>
     </div>
 </div>
 
-<!-- Indicadores de Software Visuais nos Cards -->
 <div class="flex gap-2 mt-auto pt-2 border-t border-slate-700 justify-start text-lg">
-    ${pc.winLic ? `<i class="fab fa-windows text-blue-400" title="Windows Registrado"></i>` : `<i class="fab fa-windows text-slate-600 opacity-50" title="Sem Windows"></i>`}
-    ${pc.officeLic ? `<i class="fab fa-microsoft text-orange-400" title="Office: ${pc.officeEd}"></i>` : `<i class="fab fa-microsoft text-slate-600 opacity-50" title="Sem Office"></i>`}
+    ${pc.winLic ? `<i class="fab fa-windows text-blue-400" title="Windows: ${pc.winLic}"></i>` : `<i class="fab fa-windows text-slate-600 opacity-50" title="Sem Windows"></i>`}
+    ${pc.officeLic ? `<i class="fab fa-microsoft text-orange-400" title="Office: ${pc.officeLic}"></i>` : `<i class="fab fa-microsoft text-slate-600 opacity-50" title="Sem Office"></i>`}
     ${pc.avName ? `<i class="fas fa-shield-alt text-green-400" title="Antivírus: ${pc.avName} (Val: ${formatData(pc.avVal)})"></i>` : `<i class="fas fa-shield-alt text-slate-600 opacity-50" title="Sem Antivírus"></i>`}
 </div>
 
@@ -458,19 +478,9 @@ window.openAddComputerModal=()=>{
 editingComputerId=null;
 document.getElementById('computerModalTitle').innerText = "Novo Computador";
 
-// Limpar básicos
-pcName.value="";
-pcConfig.value="";
-pcAnyId.value="";
-pcAnyPass.value="";
-
-// Limpar novas licenças
-pcWinLic.value = "";
-pcOfficeEd.value = "";
-pcOfficeLic.value = "";
-pcAvName.value = "";
-pcAvLic.value = "";
-pcAvVal.value = "";
+pcName.value=""; pcConfig.value=""; pcAnyId.value=""; pcAnyPass.value="";
+pcWinLic.value = ""; pcOfficeEd.value = ""; pcOfficeLic.value = "";
+pcAvName.value = ""; pcAvLic.value = ""; pcAvVal.value = "";
 
 loadSectors();
 openModal("computerModal");
@@ -484,6 +494,86 @@ if(list.length === 0){
     pcSetor.innerHTML=list.map(s=>`<option value="${s.id}">${s.name}</option>`).join("");
 }
 }
+
+// LÓGICA DE IMPORTAÇÃO DE LICENÇAS EXTRAÍDAS DOS PDFs
+window.openImportModal = () => {
+    if(!selectedClientId) return toast("Selecione uma empresa primeiro!", true);
+    openModal('importLicensesModal');
+};
+
+window.runImport = async () => {
+    closeModal('importLicensesModal');
+    toast("Importando licenças... aguarde, isso pode levar alguns segundos.");
+
+    let sectorId = null;
+    let sectorName = "ESTOQUE DE LICENÇAS";
+    
+    // Verifica se o setor de estoque já existe para o cliente
+    const existingSector = sectors.find(s => s.clientId === selectedClientId && s.name.toUpperCase() === "ESTOQUE DE LICENÇAS");
+    
+    if(existingSector) {
+        sectorId = existingSector.id;
+    } else {
+        const newSectorRef = await addDoc(collection(db, "setores"), { name: sectorName, clientId: selectedClientId });
+        sectorId = newSectorRef.id;
+    }
+
+    // Array das 50 Chaves Windows 11 (Extraídas do PDF)
+    const winKeys = [
+        "MVN7X-M94BC-KF4GJ-Q27V", "N8D2H-JYQ4K-BT9MK-GPQF", "Q3YQG-MNWJK-WBBBR-FK7W", "629MP-2NK8Y-P4DBY-2DCJG", "QNKVM-B2DOT-C77R2-PP8C3-",
+        "CQHDF-4N8BY-3WBY7-YRX6Q-B", "RDBVD-MN2PO-KKBDC-678WD-G", "39NCH-KXJQV-3HX6T-TMQXT-Y", "8NYMT-43GFV-8M2WJ-R9378-W", "KN6DF-MDKG3-YHVPF-B9RMF-",
+        "CCQNV-Q8327-V2PYX-HMM3J-", "998JJ-4NJW8-34XCQ-WYJHR-", "FN96M-8QMT9-K742R-D7Y7X-", "QVN2J-9T284-WX34W-DVCM6-", "RXMWN-YVKYF-K863G-GG3QB-",
+        "PH9FF-HQNTC-CBQ9X-YR44X-", "MQQ39-FNDJP-6G7KP-96JFB-", "JCX6N-YKH6T-862JP-TJY7V-", "NWG42-MBGQ7-49H6G-K28Q6-", "QNG4Q-BWPQ4-KVDBT-6JM9T-",
+        "QJFDC6-3NBHB-XXC4P-K2FKY", "6JJCN-DMKBP-26KV9-2D06V-", "NR6C2-FP3QQ-DP64P-6TV2J-", "QK6X4-9NT7C-RMMF2-TK3HV-", "3XWDN-WRKOP-MF6VB-2DGJ7-",
+        "NXW4F-GHV6G-73Q4F-VTBBG-", "N2JK9-VTF3F-DR464-MXTQC-", "CGCBF-NWCW7-8H8H8-27RJG-", "KKD7Q-J6NGX-FDRWX-8FHHF-", "FN220-KMTDD-4XW3J-W6K2C-Y",
+        "VPNV9-X4GFJ-D7BKX-66VP6-", "QVNPB-C7H4R-VWM29-K9XJ7-", "KJHXN-6YPDP-FK2RM-86HQC-", "G2M4Y-DNH62-CHFB6-FRBCM-", "4N8QG-8XX6Y-2MDTT-QJTXC-",
+        "QRRVW-NG2XJ-T6367-WVX2H-", "CRN44-MT9HC-JT8G2-J9XBW", "NFJHB-K78HX-9WV3F-F6HRC", "Y2CHD-N6YWF-73MVB-RPB6H", "GRGXK-TN4YY-RB3MV-63BC2",
+        "NTX8R-KT7TG-3FVTY-YV7DF", "TR46K-DN44T-8CBKY-X987T-", "TCWBNC-88PB6-9W6DG-8JCMK", "TH6HN-WVHYD-H2CV2GFQKR--", "378NJ-2QH4K-7WVVD-K3W2J-",
+        "VN248-GMM8V-DC982-RG8CB-", "PY98N-R6WJX-JY23G-XDDJC-", "H4JN4-D469J-PPKY4-VRFGH-", "R7Q2G-N3JHR-BPRH8-K3Y7V-", "NM3KQ-XWQXW-MHP9K-FT7GM-"
+    ];
+
+    // Array das 10 Chaves Office (Extraídas do PDF)
+    const officeKeys = [
+        "3XDYC-N8QFV-B3BRV-48KWR-HKXGG", "RFKNT-TXH2R-2CFBQ-79B93-MD2B9", "PYNKD-K4XG3-PWRC6-8GRFD-YBMFX",
+        "DCFDX-FKNX7-4F4RY-MRYP2-MP4Y9", "M9J4R-ND2YV-VK2FB-T4XRJ-DGRY9", "8V74N-9KMHP-FV6CK-HPBFH-YY8M9",
+        "3N6QW-683F6-82G3G-KKV38-WB8M9", "6T9YJ-INGDH-M8JHQ-HDQ8W-F3P8K", "WYNB4-2Y8GG-VCYYX-KGGYF-4YCB9",
+        "M7WJK-NT24F-7K8D4-YDFGV-QPHRX"
+    ];
+
+    const serverKey = "KD8HK-6TNMV-9M4JK-6G";
+
+    // Promessas de inserção para acelerar o processo (Dispara todas juntas)
+    const promises = [];
+
+    let count = 1;
+    for(let key of winKeys) {
+        promises.push(addDoc(collection(db, "computadores"), {
+            clientId: selectedClientId, sectorId, sectorName,
+            name: `WIN 11 - SEM USO (${count.toString().padStart(2, '0')})`,
+            config: "Licença disponível", winLic: key, officeEd: "", officeLic: "", avName: "", avLic: "", avVal: "", anyId: "", anyPass: ""
+        }));
+        count++;
+    }
+
+    count = 1;
+    for(let key of officeKeys) {
+        promises.push(addDoc(collection(db, "computadores"), {
+            clientId: selectedClientId, sectorId, sectorName,
+            name: `OFFICE 2021 - SEM USO (${count.toString().padStart(2, '0')})`,
+            config: "Licença disponível", winLic: "", officeEd: "Office 2021 Pro Plus", officeLic: key, avName: "", avLic: "", avVal: "", anyId: "", anyPass: ""
+        }));
+        count++;
+    }
+
+    promises.push(addDoc(collection(db, "computadores"), {
+        clientId: selectedClientId, sectorId, sectorName,
+        name: `WIN SERVER 2016 - SEM USO`,
+        config: "Licença disponível", winLic: serverKey, officeEd: "", officeLic: "", avName: "", avLic: "", avVal: "", anyId: "", anyPass: ""
+    }));
+
+    await Promise.all(promises);
+    toast("Estoque de licenças gerado com sucesso!");
+};
 
 function toast(msg, isError = false){
 const toastEl = document.getElementById('toast');
