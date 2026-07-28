@@ -10,18 +10,16 @@
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.4/index.global.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+  <!-- Scripts do Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
 
   <style>
-    /* Cores das Prioridades no Calendário */
     .fc-event.prioridade-Urgente { background-color: #ef4444 !important; border-color: #dc2626 !important; color: white !important;}
     .fc-event.prioridade-Alta { background-color: #f97316 !important; border-color: #ea580c !important; color: white !important;}
     .fc-event.prioridade-Média { background-color: #eab308 !important; border-color: #ca8a04 !important; color: black !important;}
     .fc-event.prioridade-Baixa { background-color: #22c55e !important; border-color: #16a34a !important; color: white !important;}
-    
-    /* Cores de Status no Calendário */
     .fc-event.status-Aberto { opacity: 1; }
     .fc-event.status-Em-Atendimento { border-left: 5px solid #000 !important; opacity: 0.9; }
     .fc-event.status-Finalizado { background-color: #64748b !important; border-color: #475569 !important; text-decoration: line-through; opacity: 0.7;}
@@ -29,7 +27,6 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans pb-10">
 
-  <!-- Imagem oculta da Logo para puxar no PDF -->
   <img id="logoPrint" src="img/logo-wg.png" style="display:none;" crossorigin="anonymous">
 
   <header class="bg-slate-900 text-white py-6 shadow-md mb-6 text-center">
@@ -40,7 +37,7 @@
   <div class="container mx-auto px-4 max-w-7xl">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
-      <!-- COLUNA ESQUERDA: Formulário de Cadastro e Edição -->
+      <!-- FORMULÁRIO -->
       <div class="lg:col-span-1 bg-white p-5 rounded-xl shadow border-t-4 border-blue-600 h-fit">
         <h2 id="tituloFormulario" class="text-lg font-bold text-blue-700 mb-4 flex items-center gap-2">
           <span>➕</span> Nova Ordem de Serviço
@@ -103,6 +100,7 @@
         </form>
       </div>
 
+      <!-- CALENDÁRIO -->
       <div class="lg:col-span-2">
         <div class="bg-white p-4 rounded-xl shadow mb-4 flex flex-col md:flex-row gap-4 items-center justify-between">
           <div class="flex items-center gap-2 flex-wrap">
@@ -115,7 +113,6 @@
           
           <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
             <input type="text" id="inputBusca" placeholder="Buscar cliente, serviço..." class="w-full sm:w-64 p-2 border border-slate-300 rounded text-sm bg-white outline-none focus:border-blue-500">
-            
             <select id="filtroStatus" class="w-full sm:w-auto p-2 border border-slate-300 rounded text-sm bg-white outline-none focus:border-blue-500">
               <option value="Todos">Todas as OS</option>
               <option value="Aberto">🔵 Abertas</option>
@@ -130,6 +127,7 @@
     </div>
   </div>
 
+  <!-- MODAL DETALHES -->
   <div id="modalDetalhes" class="fixed inset-0 bg-slate-900 bg-opacity-75 hidden flex items-center justify-center z-50 p-4">
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
       
@@ -139,17 +137,29 @@
       </div>
 
       <div class="p-5 flex-1 space-y-4">
+        
+        <!-- INFO BÁSICA -->
         <div id="detalhesConteudo" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-slate-700 bg-slate-50 p-4 rounded border border-slate-200">
           <!-- Injetado via JS -->
         </div>
 
+        <!-- INFO CHECK-IN / CHECK-OUT (NOVO) -->
+        <div id="areaRastreio" class="hidden flex flex-col gap-2 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-slate-800">
+          <!-- Injetado via JS -->
+        </div>
+
         <div>
-          <label class="block font-semibold text-sm mb-1 text-slate-800">Status da OS:</label>
-          <select id="statusSelect" class="w-full p-2 border border-slate-300 rounded text-sm outline-none bg-white">
-            <option value="Aberto">🔵 Aberto</option>
-            <option value="Em Atendimento">🟠 Em Atendimento</option>
-            <option value="Finalizado">✅ Finalizado</option>
-          </select>
+          <label class="block font-semibold text-sm mb-1 text-slate-800">Alteração Manual de Status:</label>
+          <div class="flex gap-2">
+            <select id="statusSelect" class="w-full p-2 border border-slate-300 rounded text-sm outline-none bg-white">
+              <option value="Aberto">🔵 Aberto</option>
+              <option value="Em Atendimento">🟠 Em Atendimento</option>
+              <option value="Finalizado">✅ Finalizado</option>
+            </select>
+            <button onclick="salvarStatus()" class="bg-slate-600 text-white px-4 py-2 rounded hover:bg-slate-700 shadow text-sm font-bold transition">
+              Salvar
+            </button>
+          </div>
         </div>
 
         <div class="border-t border-slate-200 pt-4">
@@ -158,7 +168,6 @@
             <span id="erroFotosMsg" class="hidden text-red-500 text-xs font-bold bg-red-100 px-2 py-1 rounded">Limite atingido!</span>
           </label>
           <input type="file" id="inputFotos" accept="image/*" multiple class="mb-3 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300 cursor-pointer" onchange="processarFotos(event)">
-          
           <div id="areaFotos" class="flex gap-4 flex-wrap"></div>
         </div>
 
@@ -171,23 +180,27 @@
         </div>
       </div>
 
-      <div class="p-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex flex-wrap gap-2 justify-end items-center">
-        <button id="btnExcluirOS" onclick="excluirOS(this)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded shadow text-sm font-bold mr-auto transition">
+      <div class="p-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex flex-wrap gap-2 justify-between items-center">
+        <button id="btnExcluirOS" onclick="excluirOS(this)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded shadow text-sm font-bold transition">
           🗑️ Excluir
         </button>
 
-        <button onclick="enviarWhatsappTecnico()" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded shadow flex items-center gap-2 text-sm font-bold transition">
-          Avisar Téc
-        </button>
-        <button onclick="editarOS()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded shadow text-sm font-bold transition">
-          ✏️ Editar
-        </button>
-        <button onclick="gerarPDF()" class="bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-700 shadow flex items-center gap-1 text-sm font-bold transition">
-          📄 PDF
-        </button>
-        <button onclick="salvarStatus()" class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 shadow text-sm font-bold transition">
-          Salvar
-        </button>
+        <div class="flex gap-2 items-center flex-wrap justify-end">
+          <button onclick="editarOS()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded shadow text-sm font-bold transition">
+            ✏️ Editar
+          </button>
+          <button onclick="gerarPDF()" class="bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-700 shadow flex items-center gap-1 text-sm font-bold transition">
+            📄 PDF
+          </button>
+          
+          <!-- BOTÕES DE CHECK-IN / OUT -->
+          <button id="btnCheckin" onclick="fazerCheckin()" class="hidden bg-green-500 text-white px-5 py-2 rounded hover:bg-green-600 shadow text-sm font-bold transition">
+            📍 Iniciar (Check-in)
+          </button>
+          <button id="btnCheckout" onclick="fazerCheckout()" class="hidden bg-purple-600 text-white px-5 py-2 rounded hover:bg-purple-700 shadow text-sm font-bold transition">
+            🏁 Finalizar (Check-out)
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -213,10 +226,8 @@
     let aguardandoExclusao = false;
 
     document.addEventListener("DOMContentLoaded", function () {
-      
       auth.onAuthStateChanged(user => {
         if (!user) {
-          // Bloqueia a tela visualmente se não estiver logado (ótimo para preview no Canvas)
           document.body.innerHTML = `
             <div class="min-h-screen flex items-center justify-center bg-slate-100 w-full fixed inset-0 z-50">
               <div class="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center border-t-4 border-red-500">
@@ -229,7 +240,6 @@
           `;
           return;
         }
-
         iniciarInterface();
       });
     });
@@ -294,7 +304,6 @@
 
       document.getElementById('formNovoServico').addEventListener('submit', async function(e) {
         e.preventDefault();
-        
         const dadosForm = {
           cliente: document.getElementById('inputCliente').value,
           data: document.getElementById('inputData').value,
@@ -318,17 +327,14 @@
             dadosForm.fotos = [];
             await db.collection("agendamentos").add(dadosForm);
           }
-
           calendarioGlobal.refetchEvents();
           cancelarEdicao(); 
-          
           btn.innerText = "✅ Salvo com Sucesso!";
           btn.classList.replace('bg-blue-600', 'bg-green-600');
           setTimeout(() => {
             btn.innerText = originalText;
             btn.classList.replace('bg-green-600', 'bg-blue-600');
           }, 2000);
-          
         } catch (error) {
           console.error("Erro ao salvar:", error);
           alert("Erro ao salvar no banco de dados.");
@@ -342,8 +348,12 @@
       idAgendamentoAtual = dados.id;
       const dataBr = dados.data ? dados.data.split('-').reverse().join('/') : '';
 
+      // CONTEÚDO BÁSICO
       document.getElementById("detalhesConteudo").innerHTML = `
-        <div class="col-span-1 sm:col-span-2 text-lg font-bold text-blue-800 border-b pb-2 mb-2">👤 Cliente: ${dados.cliente || 'Não informado'}</div>
+        <div class="col-span-1 sm:col-span-2 text-lg font-bold text-blue-800 border-b pb-2 mb-2 flex justify-between">
+          <span>👤 Cliente: ${dados.cliente || 'Não informado'}</span>
+          <span class="text-sm font-normal bg-slate-200 px-2 py-1 rounded text-slate-700">${dados.status || 'Aberto'}</span>
+        </div>
         <div><strong>Data/Hora:</strong> ${dataBr} às ${dados.hora || 'Não informado'}</div>
         <div><strong>Prioridade:</strong> ${dados.prioridade || 'Não informada'}</div>
         <div><strong>Técnico:</strong> ${dados.tecnico || 'Não informado'}</div>
@@ -352,23 +362,155 @@
         <div class="col-span-1 sm:col-span-2 text-red-600"><strong>Problema:</strong> ${dados.problema || 'Não informado'}</div>
       `;
       
+      // LÓGICA DE CHECK-IN / CHECK-OUT (GPS E TEMPO)
+      const areaRastreio = document.getElementById("areaRastreio");
+      const btnCheckin = document.getElementById("btnCheckin");
+      const btnCheckout = document.getElementById("btnCheckout");
+      
+      btnCheckin.classList.add("hidden");
+      btnCheckout.classList.add("hidden");
+      areaRastreio.classList.add("hidden");
+      areaRastreio.innerHTML = "";
+
+      if(dados.status === "Aberto") {
+        btnCheckin.classList.remove("hidden");
+      } else if (dados.status === "Em Atendimento") {
+        btnCheckout.classList.remove("hidden");
+      }
+
+      if(dados.checkinTime) {
+        areaRastreio.classList.remove("hidden");
+        const horaIn = new Date(dados.checkinTime).toLocaleString('pt-BR');
+        let rastreioHTML = `
+          <div class="flex justify-between items-center">
+            <span><strong>▶️ Início:</strong> ${horaIn}</span>
+            <a href="https://maps.google.com/?q=${dados.checkinLat},${dados.checkinLng}" target="_blank" class="text-blue-600 hover:underline text-xs bg-blue-100 px-2 py-1 rounded">📍 Ver Local Início</a>
+          </div>
+        `;
+        if(dados.checkoutTime) {
+          const horaOut = new Date(dados.checkoutTime).toLocaleString('pt-BR');
+          rastreioHTML += `
+            <div class="flex justify-between items-center border-t border-blue-200 pt-2 mt-1">
+              <span><strong>⏹️ Fim:</strong> ${horaOut}</span>
+              <a href="https://maps.google.com/?q=${dados.checkoutLat},${dados.checkoutLng}" target="_blank" class="text-blue-600 hover:underline text-xs bg-blue-100 px-2 py-1 rounded">📍 Ver Local Fim</a>
+            </div>
+            <div class="text-center font-bold text-blue-800 bg-blue-200 py-1 rounded mt-2">
+              ⏳ Duração total: ${dados.duracao}
+            </div>
+          `;
+        } else {
+          rastreioHTML += `<div class="text-xs text-slate-500 mt-1 italic">Serviço em andamento... aguardando finalização.</div>`;
+        }
+        areaRastreio.innerHTML = rastreioHTML;
+      }
+
       document.getElementById("statusSelect").value = dados.status || "Aberto";
       document.getElementById("erroFotosMsg").classList.add("hidden");
       document.getElementById("inputFotos").value = "";
-
-      // 1. PRIMEIRO exibimos o modal para que os elementos tenham um tamanho real
+      
       document.getElementById("modalDetalhes").classList.remove("hidden");
       
-      // 2. AGORA ajustamos a largura do canvas de assinatura
+      // Ajuste de canvas
       const canvas = document.getElementById("assinatura");
       if(canvas.parentElement) {
         canvas.width = canvas.parentElement.getBoundingClientRect().width;
       }
-
-      // 3. E então limpamos a tela e carregamos as fotos
       limparAssinatura(); 
       renderizarFotos(); 
     }
+
+    // ==========================================
+    // FUNÇÕES DE GPS E TEMPO
+    // ==========================================
+    function pegarGPS() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject("Seu navegador não suporta GPS.");
+        }
+        navigator.geolocation.getCurrentPosition(
+          pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+          err => {
+            if(err.code === 1) reject("Você precisa permitir o acesso à localização para iniciar/finalizar o serviço.");
+            else reject("Erro ao obter GPS. Tente novamente.");
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      });
+    }
+
+    async function fazerCheckin() {
+      const btn = document.getElementById("btnCheckin");
+      const textOriginal = btn.innerText;
+      btn.innerText = "⏳ Pegando GPS...";
+      btn.disabled = true;
+
+      try {
+        const local = await pegarGPS();
+        const agoraIso = new Date().toISOString();
+        
+        await db.collection("agendamentos").doc(idAgendamentoAtual).update({
+          status: 'Em Atendimento',
+          checkinTime: agoraIso,
+          checkinLat: local.lat,
+          checkinLng: local.lng
+        });
+        
+        // Atualiza interface
+        dadosAtuais.status = 'Em Atendimento';
+        dadosAtuais.checkinTime = agoraIso;
+        dadosAtuais.checkinLat = local.lat;
+        dadosAtuais.checkinLng = local.lng;
+        
+        calendarioGlobal.refetchEvents();
+        abrirModal(dadosAtuais); // Recarrega o modal para mostrar novos botões
+      } catch (e) {
+        alert(e);
+      }
+      btn.innerText = textOriginal;
+      btn.disabled = false;
+    }
+
+    async function fazerCheckout() {
+      const btn = document.getElementById("btnCheckout");
+      const textOriginal = btn.innerText;
+      btn.innerText = "⏳ Pegando GPS...";
+      btn.disabled = true;
+
+      try {
+        const local = await pegarGPS();
+        const agoraIso = new Date().toISOString();
+        
+        // Calcula Duração
+        const inicio = new Date(dadosAtuais.checkinTime);
+        const fim = new Date(agoraIso);
+        const diffMs = fim - inicio;
+        const diffHrs = Math.floor(diffMs / 3600000);
+        const diffMins = Math.round(((diffMs % 3600000) / 60000));
+        const stringDuracao = `${diffHrs}h ${diffMins}m`;
+
+        await db.collection("agendamentos").doc(idAgendamentoAtual).update({
+          status: 'Finalizado',
+          checkoutTime: agoraIso,
+          checkoutLat: local.lat,
+          checkoutLng: local.lng,
+          duracao: stringDuracao
+        });
+        
+        dadosAtuais.status = 'Finalizado';
+        dadosAtuais.checkoutTime = agoraIso;
+        dadosAtuais.checkoutLat = local.lat;
+        dadosAtuais.checkoutLng = local.lng;
+        dadosAtuais.duracao = stringDuracao;
+        
+        calendarioGlobal.refetchEvents();
+        abrirModal(dadosAtuais); 
+      } catch (e) {
+        alert(e);
+      }
+      btn.innerText = textOriginal;
+      btn.disabled = false;
+    }
+    // ==========================================
 
     function fecharModal() {
       document.getElementById("modalDetalhes").classList.add("hidden");
@@ -430,11 +572,6 @@
           console.error("Erro ao deletar:", err);
           alert("Erro ao excluir. Tente novamente.");
         }
-        
-        aguardandoExclusao = false;
-        btn.innerHTML = "🗑️ Excluir";
-        btn.classList.replace('bg-red-500', 'bg-slate-200');
-        btn.classList.replace('text-white', 'text-slate-700');
       }
     }
 
@@ -444,7 +581,7 @@
         await db.collection("agendamentos").doc(idAgendamentoAtual).update({ status: novoStatus });
         dadosAtuais.status = novoStatus;
         calendarioGlobal.refetchEvents();
-        fecharModal();
+        abrirModal(dadosAtuais); // Atualiza modal para mostrar/esconder botoes de checkin
       } catch (error) {
         console.error("Erro ao atualizar status:", error);
         alert("Erro ao alterar o status.");
@@ -454,7 +591,6 @@
     function processarFotos(event) {
       const files = event.target.files;
       if (!dadosAtuais.fotos) dadosAtuais.fotos = [];
-      
       if (dadosAtuais.fotos.length + files.length > 2) {
         const erro = document.getElementById("erroFotosMsg");
         erro.classList.remove("hidden");
@@ -471,17 +607,13 @@
             const canvas = document.createElement('canvas');
             const MAX_WIDTH = 800; 
             let scaleSize = 1;
-            
-            if(img.width > MAX_WIDTH) {
-              scaleSize = MAX_WIDTH / img.width;
-            }
+            if(img.width > MAX_WIDTH) scaleSize = MAX_WIDTH / img.width;
             
             canvas.width = img.width * scaleSize;
             canvas.height = img.height * scaleSize;
             
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            
             const base64Compactado = canvas.toDataURL('image/jpeg', 0.6); 
             
             dadosAtuais.fotos.push(base64Compactado);
@@ -517,29 +649,7 @@
     async function salvarDadosGeraisSilencioso() {
       try {
         await db.collection("agendamentos").doc(idAgendamentoAtual).update({ fotos: dadosAtuais.fotos });
-      } catch(e) {
-        console.error("Erro ao salvar a foto silenciosamente:", e);
-      }
-    }
-
-    function enviarWhatsappTecnico() {
-      if (!dadosAtuais) return;
-      const dataBr = dadosAtuais.data ? dadosAtuais.data.split('-').reverse().join('/') : '';
-      const mensagem = `🎫 *NOVA ORDEM DE SERVIÇO*
-👤 *Cliente:* ${dadosAtuais.cliente}
-📅 *Agendamento:* ${dataBr} às ${dadosAtuais.hora}
-🚨 *Prioridade:* ${dadosAtuais.prioridade}
-🔧 *Serviço:* ${dadosAtuais.servico}
-⚠️ *Problema:* ${dadosAtuais.problema}
-
-*Por favor, confirme o recebimento e avise ao finalizar!*`;
-
-      let numeroLimpo = dadosAtuais.numeroTecnico ? dadosAtuais.numeroTecnico.replace(/\D/g, '') : '';
-      if (numeroLimpo && !numeroLimpo.startsWith('55')) {
-          numeroLimpo = '55' + numeroLimpo;
-      }
-      let url = `https://wa.me/${numeroLimpo}?text=${encodeURIComponent(mensagem)}`;
-      window.open(url, 'aba_whatsapp_wg');
+      } catch(e) {}
     }
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -548,14 +658,12 @@
       let desenhando = false;
       
       function resizeCanvas() {
-        // Só redimensiona se o modal estiver aberto
         if (!document.getElementById("modalDetalhes").classList.contains("hidden")) {
           const rect = canvas.parentElement.getBoundingClientRect();
           canvas.width = rect.width;
         }
       }
       window.addEventListener('resize', resizeCanvas);
-      // Removido o resizeCanvas() inicial que forçava a largura para 0
 
       function getPointerPos(e) {
         const rect = canvas.getBoundingClientRect();
@@ -600,7 +708,6 @@
       canvas.addEventListener("mousemove", draw);
       canvas.addEventListener("mouseup", endDraw);
       canvas.addEventListener("mouseout", endDraw);
-
       canvas.addEventListener("touchstart", startDraw, {passive: false});
       canvas.addEventListener("touchmove", draw, {passive: false});
       canvas.addEventListener("touchend", endDraw);
