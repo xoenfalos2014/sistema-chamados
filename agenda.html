@@ -355,10 +355,19 @@
       document.getElementById("statusSelect").value = dados.status || "Aberto";
       document.getElementById("erroFotosMsg").classList.add("hidden");
       document.getElementById("inputFotos").value = "";
+
+      // 1. PRIMEIRO exibimos o modal para que os elementos tenham um tamanho real
+      document.getElementById("modalDetalhes").classList.remove("hidden");
+      
+      // 2. AGORA ajustamos a largura do canvas de assinatura
+      const canvas = document.getElementById("assinatura");
+      if(canvas.parentElement) {
+        canvas.width = canvas.parentElement.getBoundingClientRect().width;
+      }
+
+      // 3. E então limpamos a tela e carregamos as fotos
       limparAssinatura(); 
       renderizarFotos(); 
-
-      document.getElementById("modalDetalhes").classList.remove("hidden");
     }
 
     function fecharModal() {
@@ -539,11 +548,14 @@
       let desenhando = false;
       
       function resizeCanvas() {
-        const rect = canvas.parentElement.getBoundingClientRect();
-        canvas.width = rect.width;
+        // Só redimensiona se o modal estiver aberto
+        if (!document.getElementById("modalDetalhes").classList.contains("hidden")) {
+          const rect = canvas.parentElement.getBoundingClientRect();
+          canvas.width = rect.width;
+        }
       }
       window.addEventListener('resize', resizeCanvas);
-      resizeCanvas(); 
+      // Removido o resizeCanvas() inicial que forçava a largura para 0
 
       function getPointerPos(e) {
         const rect = canvas.getBoundingClientRect();
