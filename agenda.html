@@ -1,12 +1,198 @@
-<!-- ... existing code ... -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atendimento WG - Dashboard Interativo</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.4/index.global.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.4/index.global.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-  <!-- Adicionando o Auth novamente -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
 
   <style>
-<!-- ... existing code ... -->
-    // 1. Inicialização do Firebase (Dados extraídos do agenda33)
+    /* Cores das Prioridades no Calendário */
+    .fc-event.prioridade-Urgente { background-color: #ef4444 !important; border-color: #dc2626 !important; color: white !important;}
+    .fc-event.prioridade-Alta { background-color: #f97316 !important; border-color: #ea580c !important; color: white !important;}
+    .fc-event.prioridade-Média { background-color: #eab308 !important; border-color: #ca8a04 !important; color: black !important;}
+    .fc-event.prioridade-Baixa { background-color: #22c55e !important; border-color: #16a34a !important; color: white !important;}
+    
+    /* Cores de Status no Calendário */
+    .fc-event.status-Aberto { opacity: 1; }
+    .fc-event.status-Em-Atendimento { border-left: 5px solid #000 !important; opacity: 0.9; }
+    .fc-event.status-Finalizado { background-color: #64748b !important; border-color: #475569 !important; text-decoration: line-through; opacity: 0.7;}
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans pb-10">
+
+  <!-- Imagem oculta da Logo para puxar no PDF -->
+  <img id="logoPrint" src="img/logo-wg.png" style="display:none;" crossorigin="anonymous">
+
+  <header class="bg-slate-900 text-white py-6 shadow-md mb-6 text-center">
+    <h1 class="text-2xl font-bold">Painel de Atendimento WG</h1>
+    <p class="text-slate-400 text-sm mt-1">Gestão de Ordens de Serviço, Despacho e Agenda</p>
+  </header>
+
+  <div class="container mx-auto px-4 max-w-7xl">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- COLUNA ESQUERDA: Formulário de Cadastro e Edição -->
+      <div class="lg:col-span-1 bg-white p-5 rounded-xl shadow border-t-4 border-blue-600 h-fit">
+        <h2 id="tituloFormulario" class="text-lg font-bold text-blue-700 mb-4 flex items-center gap-2">
+          <span>➕</span> Nova Ordem de Serviço
+        </h2>
+        
+        <form id="formNovoServico" class="space-y-4">
+          <div>
+            <label class="block text-sm font-semibold mb-1 text-slate-600">Cliente / Empresa</label>
+            <input type="text" id="inputCliente" required placeholder="Ex: Loja do Centro" class="w-full p-2 border border-slate-300 rounded focus:outline-none focus:border-blue-500">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-sm font-semibold mb-1 text-slate-600">Data Agendada</label>
+              <input type="date" id="inputData" required class="w-full p-2 border border-slate-300 rounded focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1 text-slate-600">Hora</label>
+              <input type="time" id="inputHora" required class="w-full p-2 border border-slate-300 rounded focus:outline-none focus:border-blue-500">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold mb-1 text-slate-600">Técnico Responsável</label>
+            <input type="text" id="inputTecnico" required placeholder="Nome do Técnico" class="w-full p-2 border border-slate-300 rounded focus:outline-none focus:border-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold mb-1 text-slate-600">WhatsApp do Técnico</label>
+            <input type="text" id="inputNumero" required placeholder="Ex: 21999999999" class="w-full p-2 border border-slate-300 rounded focus:outline-none focus:border-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold mb-1 text-slate-600">Prioridade</label>
+            <select id="inputPrioridade" required class="w-full p-2 border border-slate-300 rounded focus:outline-none focus:border-blue-500 bg-white">
+              <option value="Urgente">🚨 Urgente</option>
+              <option value="Alta">🔴 Alta</option>
+              <option value="Média">🟡 Média</option>
+              <option value="Baixa">🟢 Baixa</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold mb-1 text-slate-600">Serviço a ser realizado</label>
+            <input type="text" id="inputServico" required placeholder="Ex: Formatar computadores" class="w-full p-2 border border-slate-300 rounded focus:outline-none focus:border-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold mb-1 text-slate-600">Problema Relatado</label>
+            <textarea id="inputProblema" rows="2" placeholder="Ex: PC não liga, tela preta..." class="w-full p-2 border border-slate-300 rounded focus:outline-none focus:border-blue-500"></textarea>
+          </div>
+
+          <button type="submit" id="btnSubmitForm" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition shadow-md">
+            Salvar e Agendar
+          </button>
+          
+          <button type="button" id="btnCancelarEdicao" onclick="cancelarEdicao()" class="w-full bg-slate-300 hover:bg-slate-400 text-slate-800 font-bold py-2 rounded-lg transition shadow-md hidden">
+            Cancelar Edição
+          </button>
+        </form>
+      </div>
+
+      <div class="lg:col-span-2">
+        <div class="bg-white p-4 rounded-xl shadow mb-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-bold text-slate-700 text-sm">Legenda:</span>
+            <span class="px-2 py-1 bg-red-500 text-white text-xs rounded">Urgente</span>
+            <span class="px-2 py-1 bg-orange-500 text-white text-xs rounded">Alta</span>
+            <span class="px-2 py-1 bg-yellow-500 text-black text-xs rounded">Média</span>
+            <span class="px-2 py-1 bg-green-500 text-white text-xs rounded">Baixa</span>
+          </div>
+          
+          <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+            <input type="text" id="inputBusca" placeholder="Buscar cliente, serviço..." class="w-full sm:w-64 p-2 border border-slate-300 rounded text-sm bg-white outline-none focus:border-blue-500">
+            
+            <select id="filtroStatus" class="w-full sm:w-auto p-2 border border-slate-300 rounded text-sm bg-white outline-none focus:border-blue-500">
+              <option value="Todos">Todas as OS</option>
+              <option value="Aberto">🔵 Abertas</option>
+              <option value="Em Atendimento">🟠 Em Atend.</option>
+              <option value="Finalizado">✅ Finalizadas</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="calendar" class="bg-white rounded-xl shadow p-4 min-h-[500px]"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalDetalhes" class="fixed inset-0 bg-slate-900 bg-opacity-75 hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
+      
+      <div class="bg-slate-800 text-white p-4 rounded-t-xl flex justify-between items-center">
+        <h2 class="text-xl font-bold">🎫 Detalhes da OS</h2>
+        <button onclick="fecharModal()" class="text-slate-300 hover:text-white font-bold text-2xl leading-none">&times;</button>
+      </div>
+
+      <div class="p-5 flex-1 space-y-4">
+        <div id="detalhesConteudo" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-slate-700 bg-slate-50 p-4 rounded border border-slate-200">
+          <!-- Injetado via JS -->
+        </div>
+
+        <div>
+          <label class="block font-semibold text-sm mb-1 text-slate-800">Status da OS:</label>
+          <select id="statusSelect" class="w-full p-2 border border-slate-300 rounded text-sm outline-none bg-white">
+            <option value="Aberto">🔵 Aberto</option>
+            <option value="Em Atendimento">🟠 Em Atendimento</option>
+            <option value="Finalizado">✅ Finalizado</option>
+          </select>
+        </div>
+
+        <div class="border-t border-slate-200 pt-4">
+          <label class="block font-semibold text-sm mb-1 text-slate-800 flex items-center gap-2">
+            <span>📷 Fotos do Serviço (Máx 2):</span>
+            <span id="erroFotosMsg" class="hidden text-red-500 text-xs font-bold bg-red-100 px-2 py-1 rounded">Limite atingido!</span>
+          </label>
+          <input type="file" id="inputFotos" accept="image/*" multiple class="mb-3 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300 cursor-pointer" onchange="processarFotos(event)">
+          
+          <div id="areaFotos" class="flex gap-4 flex-wrap"></div>
+        </div>
+
+        <div class="border-t border-slate-200 pt-4">
+          <label class="block font-semibold text-sm mb-1 text-slate-800 flex justify-between">
+            <span>Assinatura do Cliente:</span>
+            <button type="button" onclick="limparAssinatura()" class="text-xs text-red-500 hover:underline">Limpar Tela</button>
+          </label>
+          <canvas id="assinatura" height="200" class="border-2 border-slate-300 rounded-lg bg-white w-full cursor-crosshair shadow-inner touch-none"></canvas>
+        </div>
+      </div>
+
+      <div class="p-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex flex-wrap gap-2 justify-end items-center">
+        <button id="btnExcluirOS" onclick="excluirOS(this)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded shadow text-sm font-bold mr-auto transition">
+          🗑️ Excluir
+        </button>
+
+        <button onclick="enviarWhatsappTecnico()" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded shadow flex items-center gap-2 text-sm font-bold transition">
+          Avisar Téc
+        </button>
+        <button onclick="editarOS()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded shadow text-sm font-bold transition">
+          ✏️ Editar
+        </button>
+        <button onclick="gerarPDF()" class="bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-700 shadow flex items-center gap-1 text-sm font-bold transition">
+          📄 PDF
+        </button>
+        <button onclick="salvarStatus()" class="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 shadow text-sm font-bold transition">
+          Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
       authDomain: "sistema-chamados-99e49.firebaseapp.com",
@@ -18,35 +204,124 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const auth = firebase.auth(); // Inicializando Auth
+    const auth = firebase.auth();
 
     let calendarioGlobal = null;
     let idAgendamentoAtual = null;
-<!-- ... existing code ... -->
+    let dadosAtuais = null;
     let editandoId = null; 
     let aguardandoExclusao = false;
 
     document.addEventListener("DOMContentLoaded", function () {
       
-      // Verifica se o usuário está autenticado antes de carregar o sistema
       auth.onAuthStateChanged(user => {
         if (!user) {
-          alert("Acesso Negado: Você precisa estar logado para acessar os dados.");
-          window.location.href = "login-tecnico.html";
+          // Bloqueia a tela visualmente se não estiver logado (ótimo para preview no Canvas)
+          document.body.innerHTML = `
+            <div class="min-h-screen flex items-center justify-center bg-slate-100 w-full fixed inset-0 z-50">
+              <div class="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center border-t-4 border-red-500">
+                <div class="text-5xl mb-4">🔒</div>
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Acesso Restrito</h2>
+                <p class="text-slate-600 mb-6">Suas permissões do Firebase exigem login. Você precisa fazer login como técnico ou administrador para acessar o painel de OS.</p>
+                <a href="login-tecnico.html" class="inline-block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition shadow-md">Ir para a Tela de Login</a>
+              </div>
+            </div>
+          `;
           return;
         }
 
-        const calendarEl = document.getElementById("calendar");
-        const filtroSelect = document.getElementById("filtroStatus");
-<!-- ... existing code ... -->
-            // Criação de Nova OS
+        iniciarInterface();
+      });
+    });
+
+    function iniciarInterface() {
+      const calendarEl = document.getElementById("calendar");
+      const filtroSelect = document.getElementById("filtroStatus");
+      const inputBusca = document.getElementById("inputBusca");
+      
+      calendarioGlobal = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        locale: "pt-br",
+        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listWeek' },
+        buttonText: { today: 'Hoje', month: 'Mês', week: 'Semana', list: 'Lista' },
+        events: async function(fetchInfo, successCallback, failureCallback) {
+          try {
+            const snapshot = await db.collection("agendamentos").get();
+            const filtro = filtroSelect.value;
+            const termoBusca = inputBusca.value.toLowerCase();
+            
+            let eventosFormatados = [];
+            snapshot.forEach(doc => {
+              const e = doc.data();
+              e.id = doc.id;
+              
+              const atendeFiltroStatus = filtro === "Todos" || e.status === filtro;
+              const eCliente = e.cliente ? e.cliente.toLowerCase() : "";
+              const eTecnico = e.tecnico ? e.tecnico.toLowerCase() : "";
+              const eServico = e.servico ? e.servico.toLowerCase() : "";
+
+              const atendeBusca = eCliente.includes(termoBusca) || eTecnico.includes(termoBusca) || eServico.includes(termoBusca);
+              
+              if (atendeFiltroStatus && atendeBusca) {
+                const sigla = e.prioridade ? `[${e.prioridade.charAt(0)}] ` : '';
+                let classNames = [`prioridade-${e.prioridade}`];
+                if(e.status === 'Em Atendimento') classNames.push('status-Em-Atendimento');
+                if(e.status === 'Finalizado') classNames.push('status-Finalizado');
+
+                eventosFormatados.push({
+                  id: e.id,
+                  title: `${sigla}${e.hora || ''} | ${e.cliente}`,
+                  start: `${e.data}T${e.hora || '00:00'}:00`,
+                  classNames: classNames,
+                  extendedProps: e
+                });
+              }
+            });
+            successCallback(eventosFormatados);
+          } catch (erro) {
+            console.error("Erro Firebase:", erro);
+            failureCallback(erro);
+          }
+        },
+        eventClick: function(info) {
+          abrirModal(info.event.extendedProps);
+        }
+      });
+      
+      calendarioGlobal.render();
+      filtroSelect.addEventListener("change", () => calendarioGlobal.refetchEvents());
+      inputBusca.addEventListener("keyup", () => calendarioGlobal.refetchEvents());
+
+      document.getElementById('formNovoServico').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const dadosForm = {
+          cliente: document.getElementById('inputCliente').value,
+          data: document.getElementById('inputData').value,
+          hora: document.getElementById('inputHora').value,
+          tecnico: document.getElementById('inputTecnico').value,
+          numeroTecnico: document.getElementById('inputNumero').value,
+          prioridade: document.getElementById('inputPrioridade').value,
+          servico: document.getElementById('inputServico').value,
+          problema: document.getElementById('inputProblema').value,
+        };
+
+        const btn = document.getElementById('btnSubmitForm');
+        const originalText = btn.innerText;
+        btn.innerText = "Salvando...";
+
+        try {
+          if (editandoId) {
+            await db.collection("agendamentos").doc(editandoId).update(dadosForm);
+          } else {
             dadosForm.status = 'Aberto';
             dadosForm.fotos = [];
             await db.collection("agendamentos").add(dadosForm);
           }
 
           calendarioGlobal.refetchEvents();
-<!-- ... existing code ... -->
+          cancelarEdicao(); 
+          
           btn.innerText = "✅ Salvo com Sucesso!";
           btn.classList.replace('bg-blue-600', 'bg-green-600');
           setTimeout(() => {
@@ -56,12 +331,386 @@
           
         } catch (error) {
           console.error("Erro ao salvar:", error);
-          alert("Erro ao salvar no banco de dados. Verifique sua conexão e permissões.");
+          alert("Erro ao salvar no banco de dados.");
           btn.innerText = originalText;
         }
-      }); // Fim do listener do form
-    }); // Fim do Auth State Changed
-  }); // Fim do DOMContentLoaded
+      });
+    }
 
-  function abrirModal(dados) {
-<!-- ... existing code ... -->
+    function abrirModal(dados) {
+      dadosAtuais = dados;
+      idAgendamentoAtual = dados.id;
+      const dataBr = dados.data ? dados.data.split('-').reverse().join('/') : '';
+
+      document.getElementById("detalhesConteudo").innerHTML = `
+        <div class="col-span-1 sm:col-span-2 text-lg font-bold text-blue-800 border-b pb-2 mb-2">👤 Cliente: ${dados.cliente || 'Não informado'}</div>
+        <div><strong>Data/Hora:</strong> ${dataBr} às ${dados.hora || 'Não informado'}</div>
+        <div><strong>Prioridade:</strong> ${dados.prioridade || 'Não informada'}</div>
+        <div><strong>Técnico:</strong> ${dados.tecnico || 'Não informado'}</div>
+        <div><strong>WhatsApp Téc:</strong> ${dados.numeroTecnico || 'Não informado'}</div>
+        <div class="col-span-1 sm:col-span-2 mt-2"><strong>Serviço:</strong> ${dados.servico || 'Não informado'}</div>
+        <div class="col-span-1 sm:col-span-2 text-red-600"><strong>Problema:</strong> ${dados.problema || 'Não informado'}</div>
+      `;
+      
+      document.getElementById("statusSelect").value = dados.status || "Aberto";
+      document.getElementById("erroFotosMsg").classList.add("hidden");
+      document.getElementById("inputFotos").value = "";
+      limparAssinatura(); 
+      renderizarFotos(); 
+
+      document.getElementById("modalDetalhes").classList.remove("hidden");
+    }
+
+    function fecharModal() {
+      document.getElementById("modalDetalhes").classList.add("hidden");
+      aguardandoExclusao = false;
+      const btnExc = document.getElementById("btnExcluirOS");
+      btnExc.innerHTML = "🗑️ Excluir";
+      btnExc.classList.replace('bg-red-500', 'bg-slate-200');
+      btnExc.classList.replace('text-white', 'text-slate-700');
+    }
+
+    function editarOS() {
+      document.getElementById('inputCliente').value = dadosAtuais.cliente || "";
+      document.getElementById('inputData').value = dadosAtuais.data || "";
+      document.getElementById('inputHora').value = dadosAtuais.hora || "";
+      document.getElementById('inputTecnico').value = dadosAtuais.tecnico || "";
+      document.getElementById('inputNumero').value = dadosAtuais.numeroTecnico || "";
+      document.getElementById('inputPrioridade').value = dadosAtuais.prioridade || "Média";
+      document.getElementById('inputServico').value = dadosAtuais.servico || "";
+      document.getElementById('inputProblema').value = dadosAtuais.problema || "";
+
+      editandoId = dadosAtuais.id;
+      document.getElementById('tituloFormulario').innerHTML = '<span>✏️</span> Editando Ordem de Serviço';
+      document.getElementById('btnSubmitForm').innerText = 'Atualizar Agendamento';
+      document.getElementById('btnCancelarEdicao').classList.remove('hidden');
+
+      fecharModal();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelarEdicao() {
+      editandoId = null;
+      document.getElementById('formNovoServico').reset();
+      document.getElementById('tituloFormulario').innerHTML = '<span>➕</span> Nova Ordem de Serviço';
+      document.getElementById('btnSubmitForm').innerText = 'Salvar e Agendar';
+      document.getElementById('btnCancelarEdicao').classList.add('hidden');
+    }
+
+    async function excluirOS(btn) {
+      if (!aguardandoExclusao) {
+        btn.innerHTML = "⚠️ Confirmar?";
+        btn.classList.replace('bg-slate-200', 'bg-red-500');
+        btn.classList.replace('text-slate-700', 'text-white');
+        aguardandoExclusao = true;
+        
+        setTimeout(() => {
+          if(aguardandoExclusao) {
+            aguardandoExclusao = false;
+            btn.innerHTML = "🗑️ Excluir";
+            btn.classList.replace('bg-red-500', 'bg-slate-200');
+            btn.classList.replace('text-white', 'text-slate-700');
+          }
+        }, 3000);
+      } else {
+        try {
+          await db.collection("agendamentos").doc(idAgendamentoAtual).delete();
+          calendarioGlobal.refetchEvents();
+          fecharModal();
+        } catch (err) {
+          console.error("Erro ao deletar:", err);
+          alert("Erro ao excluir. Tente novamente.");
+        }
+        
+        aguardandoExclusao = false;
+        btn.innerHTML = "🗑️ Excluir";
+        btn.classList.replace('bg-red-500', 'bg-slate-200');
+        btn.classList.replace('text-white', 'text-slate-700');
+      }
+    }
+
+    async function salvarStatus() {
+      const novoStatus = document.getElementById("statusSelect").value;
+      try {
+        await db.collection("agendamentos").doc(idAgendamentoAtual).update({ status: novoStatus });
+        dadosAtuais.status = novoStatus;
+        calendarioGlobal.refetchEvents();
+        fecharModal();
+      } catch (error) {
+        console.error("Erro ao atualizar status:", error);
+        alert("Erro ao alterar o status.");
+      }
+    }
+
+    function processarFotos(event) {
+      const files = event.target.files;
+      if (!dadosAtuais.fotos) dadosAtuais.fotos = [];
+      
+      if (dadosAtuais.fotos.length + files.length > 2) {
+        const erro = document.getElementById("erroFotosMsg");
+        erro.classList.remove("hidden");
+        setTimeout(() => erro.classList.add("hidden"), 4000);
+        document.getElementById("inputFotos").value = "";
+        return;
+      }
+      
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 800; 
+            let scaleSize = 1;
+            
+            if(img.width > MAX_WIDTH) {
+              scaleSize = MAX_WIDTH / img.width;
+            }
+            
+            canvas.width = img.width * scaleSize;
+            canvas.height = img.height * scaleSize;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            const base64Compactado = canvas.toDataURL('image/jpeg', 0.6); 
+            
+            dadosAtuais.fotos.push(base64Compactado);
+            salvarDadosGeraisSilencioso();
+            renderizarFotos();
+          }
+          img.src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+      });
+      document.getElementById("inputFotos").value = "";
+    }
+
+    function renderizarFotos() {
+      const container = document.getElementById('areaFotos');
+      container.innerHTML = '';
+      (dadosAtuais.fotos || []).forEach((fotoBase64, index) => {
+        container.innerHTML += `
+          <div class="relative inline-block mt-2">
+            <img src="${fotoBase64}" class="h-24 w-24 object-cover rounded-lg border-2 border-slate-300 shadow-sm">
+            <button onclick="removerFoto(${index})" class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow transition" title="Remover Foto">X</button>
+          </div>
+        `;
+      });
+    }
+
+    function removerFoto(index) {
+      dadosAtuais.fotos.splice(index, 1);
+      salvarDadosGeraisSilencioso();
+      renderizarFotos();
+    }
+
+    async function salvarDadosGeraisSilencioso() {
+      try {
+        await db.collection("agendamentos").doc(idAgendamentoAtual).update({ fotos: dadosAtuais.fotos });
+      } catch(e) {
+        console.error("Erro ao salvar a foto silenciosamente:", e);
+      }
+    }
+
+    function enviarWhatsappTecnico() {
+      if (!dadosAtuais) return;
+      const dataBr = dadosAtuais.data ? dadosAtuais.data.split('-').reverse().join('/') : '';
+      const mensagem = `🎫 *NOVA ORDEM DE SERVIÇO*
+👤 *Cliente:* ${dadosAtuais.cliente}
+📅 *Agendamento:* ${dataBr} às ${dadosAtuais.hora}
+🚨 *Prioridade:* ${dadosAtuais.prioridade}
+🔧 *Serviço:* ${dadosAtuais.servico}
+⚠️ *Problema:* ${dadosAtuais.problema}
+
+*Por favor, confirme o recebimento e avise ao finalizar!*`;
+
+      let numeroLimpo = dadosAtuais.numeroTecnico ? dadosAtuais.numeroTecnico.replace(/\D/g, '') : '';
+      if (numeroLimpo && !numeroLimpo.startsWith('55')) {
+          numeroLimpo = '55' + numeroLimpo;
+      }
+      let url = `https://wa.me/${numeroLimpo}?text=${encodeURIComponent(mensagem)}`;
+      window.open(url, 'aba_whatsapp_wg');
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const canvas = document.getElementById("assinatura");
+      const ctx = canvas.getContext("2d");
+      let desenhando = false;
+      
+      function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas(); 
+
+      function getPointerPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        let clientX, clientY;
+        if (e.touches && e.touches.length > 0) {
+          clientX = e.touches[0].clientX;
+          clientY = e.touches[0].clientY;
+        } else {
+          clientX = e.clientX;
+          clientY = e.clientY;
+        }
+        return { x: clientX - rect.left, y: clientY - rect.top };
+      }
+
+      function startDraw(e) {
+        desenhando = true;
+        const pos = getPointerPos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+        e.preventDefault(); 
+      }
+
+      function draw(e) {
+        if (!desenhando) return;
+        const pos = getPointerPos(e);
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = "#0f172a"; 
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        e.preventDefault();
+      }
+
+      function endDraw(e) {
+        desenhando = false;
+        ctx.beginPath();
+        if(e) e.preventDefault();
+      }
+
+      canvas.addEventListener("mousedown", startDraw);
+      canvas.addEventListener("mousemove", draw);
+      canvas.addEventListener("mouseup", endDraw);
+      canvas.addEventListener("mouseout", endDraw);
+
+      canvas.addEventListener("touchstart", startDraw, {passive: false});
+      canvas.addEventListener("touchmove", draw, {passive: false});
+      canvas.addEventListener("touchend", endDraw);
+    });
+
+    function limparAssinatura() {
+      const canvas = document.getElementById("assinatura");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function gerarPDF() {
+      if(!dadosAtuais) return;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      const corAzulWG = [59, 130, 246]; 
+      const corCinzaEscuro = [51, 65, 85];
+      const corCinzaClaro = [241, 245, 249];
+
+      doc.setFillColor(...corAzulWG);
+      doc.rect(0, 0, 210, 45, 'F');
+
+      try {
+        const logo = document.getElementById('logoPrint');
+        doc.addImage(logo, "PNG", 15, 7, 30, 30);
+      } catch (e) {
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bold");
+        doc.text("WG", 20, 25);
+      }
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text("WG INFORMÁTICA", 55, 17);
+      
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text("Suporte e Manutenção de Computadores LTDA", 55, 23);
+      doc.text("CNPJ: 18.227.202/0001-36", 55, 29);
+      doc.text("Rua Dr. Feliciano Sodré, Nº 182, Sala 301 - São Gonçalo", 55, 35);
+
+      doc.setTextColor(...corAzulWG);
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.text("ORDEM DE SERVIÇO", 105, 60, null, null, "center");
+      
+      const dataBr = dadosAtuais.data ? dadosAtuais.data.split('-').reverse().join('/') : '';
+      doc.setFontSize(10);
+      doc.setTextColor(...corCinzaEscuro);
+      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} - Status: ${dadosAtuais.status}`, 105, 66, null, null, "center");
+
+      doc.setFillColor(...corCinzaClaro);
+      doc.setDrawColor(203, 213, 225); 
+      doc.roundedRect(15, 75, 180, 40, 3, 3, 'FD'); 
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text("INFORMAÇÕES DO ATENDIMENTO", 20, 83);
+      
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Cliente / Empresa:`, 20, 93);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${dadosAtuais.cliente || ''}`, 55, 93);
+
+      doc.setFont("helvetica", "normal");
+      doc.text(`Data/Hora:`, 20, 100);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${dataBr} às ${dadosAtuais.hora || ''}`, 55, 100);
+
+      doc.setFont("helvetica", "normal");
+      doc.text(`Técnico Resp:`, 110, 100);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${dadosAtuais.tecnico || ''}`, 140, 100);
+      
+      doc.setFont("helvetica", "normal");
+      doc.text(`Prioridade:`, 20, 107);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${dadosAtuais.prioridade || ''}`, 55, 107);
+
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(15, 120, 180, 50, 3, 3, 'S');
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text("DESCRIÇÃO DO SERVIÇO / PROBLEMA", 20, 128);
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      
+      const servicoLines = doc.splitTextToSize(`Serviço Solicitado: ${dadosAtuais.servico || ''}`, 170);
+      doc.text(servicoLines, 20, 138);
+
+      const problemaLines = doc.splitTextToSize(`Problema Relatado: ${dadosAtuais.problema || ''}`, 170);
+      doc.text(problemaLines, 20, 153);
+
+      let yFinal = 220;
+      doc.setDrawColor(148, 163, 184); 
+      doc.line(55, yFinal, 155, yFinal);
+      
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text("Assinatura do Cliente", 105, yFinal + 6, null, null, "center");
+      doc.setFont("helvetica", "normal");
+      doc.text(dadosAtuais.cliente || '', 105, yFinal + 12, null, null, "center");
+
+      const canvas = document.getElementById("assinatura");
+      const assinaturaData = canvas.toDataURL("image/png");
+      if (assinaturaData.length > 3000) { 
+        doc.addImage(assinaturaData, "PNG", 55, yFinal - 35, 100, 35);
+      }
+
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text("Documento gerado pelo Painel WG", 105, 285, null, null, "center");
+
+      const nomeArquivo = `OS_${dadosAtuais.cliente || 'Sem_Nome'}_${dataBr.replace(/\//g, '-')}.pdf`;
+      doc.save(nomeArquivo);
+    }
+  </script>
+</body>
+</html>
