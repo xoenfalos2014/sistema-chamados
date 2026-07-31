@@ -143,7 +143,7 @@
           <!-- Injetado via JS -->
         </div>
 
-        <!-- INFO CHECK-IN / CHECK-OUT (NOVO) -->
+        <!-- INFO CHECK-IN / CHECK-OUT -->
         <div id="areaRastreio" class="hidden flex flex-col gap-2 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-slate-800">
           <!-- Injetado via JS -->
         </div>
@@ -171,13 +171,32 @@
           <div id="areaFotos" class="flex gap-4 flex-wrap"></div>
         </div>
 
-        <div class="border-t border-slate-200 pt-4">
-          <label class="block font-semibold text-sm mb-1 text-slate-800 flex justify-between">
-            <span>Assinatura do Cliente:</span>
-            <button type="button" onclick="limparAssinatura()" class="text-xs text-red-500 hover:underline">Limpar Tela</button>
-          </label>
-          <canvas id="assinatura" height="200" class="border-2 border-slate-300 rounded-lg bg-white w-full cursor-crosshair shadow-inner touch-none"></canvas>
+        <!-- NOVO: RELATÓRIO DO TÉCNICO E ASSINATURA -->
+        <div class="border-t border-slate-200 pt-4 bg-slate-100 p-4 rounded-lg shadow-inner">
+          <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+            <span>📝</span> Relatório de Finalização e Assinatura
+          </h3>
+          
+          <div class="mb-4">
+            <label class="block font-semibold text-sm mb-1 text-slate-700">Serviço Realizado (Preenchido pelo Técnico):</label>
+            <textarea id="inputServicoRealizado" rows="3" placeholder="Descreva detalhadamente o serviço que foi executado, peças trocadas, etc..." class="w-full p-2 border border-slate-300 rounded focus:outline-none focus:border-blue-500"></textarea>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-sm mb-1 text-slate-700 flex justify-between">
+              <span>Assinatura do Cliente:</span>
+              <button type="button" onclick="limparAssinatura()" class="text-xs text-red-500 hover:underline font-bold">Limpar Tela</button>
+            </label>
+            <canvas id="assinatura" height="180" class="border-2 border-slate-300 rounded-lg bg-white w-full cursor-crosshair shadow-sm touch-none"></canvas>
+          </div>
+          
+          <div class="mt-3 text-right">
+            <button id="btnSalvarRelatorio" onclick="salvarRelatorio()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 shadow text-sm font-bold transition">
+              💾 Salvar Relatório e Assinatura
+            </button>
+          </div>
         </div>
+
       </div>
 
       <div class="p-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex flex-wrap gap-2 justify-between items-center">
@@ -348,7 +367,6 @@
       idAgendamentoAtual = dados.id;
       const dataBr = dados.data ? dados.data.split('-').reverse().join('/') : '';
 
-      // CONTEÚDO BÁSICO
       document.getElementById("detalhesConteudo").innerHTML = `
         <div class="col-span-1 sm:col-span-2 text-lg font-bold text-blue-800 border-b pb-2 mb-2 flex justify-between">
           <span>👤 Cliente: ${dados.cliente || 'Não informado'}</span>
@@ -358,11 +376,10 @@
         <div><strong>Prioridade:</strong> ${dados.prioridade || 'Não informada'}</div>
         <div><strong>Técnico:</strong> ${dados.tecnico || 'Não informado'}</div>
         <div><strong>WhatsApp Téc:</strong> ${dados.numeroTecnico || 'Não informado'}</div>
-        <div class="col-span-1 sm:col-span-2 mt-2"><strong>Serviço:</strong> ${dados.servico || 'Não informado'}</div>
-        <div class="col-span-1 sm:col-span-2 text-red-600"><strong>Problema:</strong> ${dados.problema || 'Não informado'}</div>
+        <div class="col-span-1 sm:col-span-2 mt-2"><strong>Serviço Solicitado:</strong> ${dados.servico || 'Não informado'}</div>
+        <div class="col-span-1 sm:col-span-2 text-red-600"><strong>Problema Relatado:</strong> ${dados.problema || 'Não informado'}</div>
       `;
       
-      // LÓGICA DE CHECK-IN / CHECK-OUT (GPS E TEMPO)
       const areaRastreio = document.getElementById("areaRastreio");
       const btnCheckin = document.getElementById("btnCheckin");
       const btnCheckout = document.getElementById("btnCheckout");
@@ -408,20 +425,64 @@
       document.getElementById("erroFotosMsg").classList.add("hidden");
       document.getElementById("inputFotos").value = "";
       
+      // Carregar Serviço Realizado
+      document.getElementById("inputServicoRealizado").value = dados.servicoRealizado || "";
+      
       document.getElementById("modalDetalhes").classList.remove("hidden");
       
-      // Ajuste de canvas
       const canvas = document.getElementById("assinatura");
       if(canvas.parentElement) {
         canvas.width = canvas.parentElement.getBoundingClientRect().width;
       }
       limparAssinatura(); 
+
+      // Recuperar assinatura salva do banco
+      if (dados.assinaturaBase64 && dados.assinaturaBase64.length > 3000) {
+        const ctx = canvas.getContext("2d");
+        const img = new Image();
+        img.onload = function() {
+          // Mantendo a proporção ou preenchendo o canvas
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = dados.assinaturaBase64;
+      }
+
       renderizarFotos(); 
     }
 
-    // ==========================================
-    // FUNÇÕES DE GPS E TEMPO
-    // ==========================================
+    async function salvarRelatorio() {
+      const servicoRealizado = document.getElementById("inputServicoRealizado").value;
+      const canvas = document.getElementById("assinatura");
+      const assinaturaBase64 = canvas.toDataURL("image/png");
+
+      const btn = document.getElementById("btnSalvarRelatorio");
+      const originalText = btn.innerHTML;
+      btn.innerHTML = "⏳ Salvando...";
+      btn.disabled = true;
+
+      try {
+        await db.collection("agendamentos").doc(idAgendamentoAtual).update({
+          servicoRealizado: servicoRealizado,
+          assinaturaBase64: assinaturaBase64
+        });
+        
+        dadosAtuais.servicoRealizado = servicoRealizado;
+        dadosAtuais.assinaturaBase64 = assinaturaBase64;
+        
+        btn.innerHTML = "✅ Salvo com sucesso!";
+        btn.classList.replace('bg-blue-600', 'bg-green-600');
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.classList.replace('bg-green-600', 'bg-blue-600');
+          btn.disabled = false;
+        }, 2500);
+      } catch(e) {
+        alert("Erro ao salvar relatório: " + e);
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }
+    }
+
     function pegarGPS() {
       return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
@@ -455,14 +516,13 @@
           checkinLng: local.lng
         });
         
-        // Atualiza interface
         dadosAtuais.status = 'Em Atendimento';
         dadosAtuais.checkinTime = agoraIso;
         dadosAtuais.checkinLat = local.lat;
         dadosAtuais.checkinLng = local.lng;
         
         calendarioGlobal.refetchEvents();
-        abrirModal(dadosAtuais); // Recarrega o modal para mostrar novos botões
+        abrirModal(dadosAtuais); 
       } catch (e) {
         alert(e);
       }
@@ -473,14 +533,13 @@
     async function fazerCheckout() {
       const btn = document.getElementById("btnCheckout");
       const textOriginal = btn.innerText;
-      btn.innerText = "⏳ Pegando GPS...";
+      btn.innerText = "⏳ Finalizando...";
       btn.disabled = true;
 
       try {
         const local = await pegarGPS();
         const agoraIso = new Date().toISOString();
         
-        // Calcula Duração
         const inicio = new Date(dadosAtuais.checkinTime);
         const fim = new Date(agoraIso);
         const diffMs = fim - inicio;
@@ -488,12 +547,19 @@
         const diffMins = Math.round(((diffMs % 3600000) / 60000));
         const stringDuracao = `${diffHrs}h ${diffMins}m`;
 
+        // Captura também o relatório e assinatura ao fazer checkout
+        const servicoRealizado = document.getElementById("inputServicoRealizado").value;
+        const canvas = document.getElementById("assinatura");
+        const assinaturaBase64 = canvas.toDataURL("image/png");
+
         await db.collection("agendamentos").doc(idAgendamentoAtual).update({
           status: 'Finalizado',
           checkoutTime: agoraIso,
           checkoutLat: local.lat,
           checkoutLng: local.lng,
-          duracao: stringDuracao
+          duracao: stringDuracao,
+          servicoRealizado: servicoRealizado,
+          assinaturaBase64: assinaturaBase64
         });
         
         dadosAtuais.status = 'Finalizado';
@@ -501,6 +567,8 @@
         dadosAtuais.checkoutLat = local.lat;
         dadosAtuais.checkoutLng = local.lng;
         dadosAtuais.duracao = stringDuracao;
+        dadosAtuais.servicoRealizado = servicoRealizado;
+        dadosAtuais.assinaturaBase64 = assinaturaBase64;
         
         calendarioGlobal.refetchEvents();
         abrirModal(dadosAtuais); 
@@ -510,7 +578,6 @@
       btn.innerText = textOriginal;
       btn.disabled = false;
     }
-    // ==========================================
 
     function fecharModal() {
       document.getElementById("modalDetalhes").classList.add("hidden");
@@ -581,7 +648,7 @@
         await db.collection("agendamentos").doc(idAgendamentoAtual).update({ status: novoStatus });
         dadosAtuais.status = novoStatus;
         calendarioGlobal.refetchEvents();
-        abrirModal(dadosAtuais); // Atualiza modal para mostrar/esconder botoes de checkin
+        abrirModal(dadosAtuais); 
       } catch (error) {
         console.error("Erro ao atualizar status:", error);
         alert("Erro ao alterar o status.");
@@ -652,6 +719,7 @@
       } catch(e) {}
     }
 
+    // Configuração do Canvas de Assinatura
     document.addEventListener("DOMContentLoaded", () => {
       const canvas = document.getElementById("assinatura");
       const ctx = canvas.getContext("2d");
@@ -660,7 +728,13 @@
       function resizeCanvas() {
         if (!document.getElementById("modalDetalhes").classList.contains("hidden")) {
           const rect = canvas.parentElement.getBoundingClientRect();
+          // Guarda o desenho atual antes de redimensionar
+          const imgData = canvas.toDataURL();
           canvas.width = rect.width;
+          
+          const img = new Image();
+          img.onload = () => ctx.drawImage(img, 0, 0);
+          img.src = imgData;
         }
       }
       window.addEventListener('resize', resizeCanvas);
@@ -683,7 +757,7 @@
         const pos = getPointerPos(e);
         ctx.beginPath();
         ctx.moveTo(pos.x, pos.y);
-        e.preventDefault(); 
+        if(e.type === 'touchstart') e.preventDefault(); 
       }
 
       function draw(e) {
@@ -695,13 +769,12 @@
         ctx.strokeStyle = "#0f172a"; 
         ctx.lineTo(pos.x, pos.y);
         ctx.stroke();
-        e.preventDefault();
+        if(e.type === 'touchmove') e.preventDefault();
       }
 
       function endDraw(e) {
         desenhando = false;
         ctx.beginPath();
-        if(e) e.preventDefault();
       }
 
       canvas.addEventListener("mousedown", startDraw);
@@ -792,7 +865,7 @@
       doc.text(`${dadosAtuais.prioridade || ''}`, 55, 107);
 
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(15, 120, 180, 50, 3, 3, 'S');
+      doc.roundedRect(15, 120, 180, 75, 3, 3, 'S'); // Aumentado para caber o relatório
 
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
@@ -802,12 +875,25 @@
       doc.setFont("helvetica", "normal");
       
       const servicoLines = doc.splitTextToSize(`Serviço Solicitado: ${dadosAtuais.servico || ''}`, 170);
-      doc.text(servicoLines, 20, 138);
+      doc.text(servicoLines, 20, 136);
 
       const problemaLines = doc.splitTextToSize(`Problema Relatado: ${dadosAtuais.problema || ''}`, 170);
-      doc.text(problemaLines, 20, 153);
+      doc.text(problemaLines, 20, 147);
+      
+      // RELATÓRIO TÉCNICO (Novo Bloco)
+      doc.setDrawColor(203, 213, 225); 
+      doc.line(20, 160, 190, 160); // Linha divisória
 
-      let yFinal = 220;
+      doc.setFont("helvetica", "bold");
+      doc.text("RELATÓRIO TÉCNICO (Serviço Realizado):", 20, 167);
+      doc.setFont("helvetica", "normal");
+      
+      const textoRelatorio = dadosAtuais.servicoRealizado || 'Nenhum relatório preenchido pelo técnico.';
+      const relatorioLines = doc.splitTextToSize(textoRelatorio, 170);
+      doc.text(relatorioLines, 20, 174);
+
+      // ASSINATURA
+      let yFinal = 235;
       doc.setDrawColor(148, 163, 184); 
       doc.line(55, yFinal, 155, yFinal);
       
@@ -817,6 +903,7 @@
       doc.setFont("helvetica", "normal");
       doc.text(dadosAtuais.cliente || '', 105, yFinal + 12, null, null, "center");
 
+      // Pega a assinatura em tempo real da tela (ou banco se carregado na tela)
       const canvas = document.getElementById("assinatura");
       const assinaturaData = canvas.toDataURL("image/png");
       if (assinaturaData.length > 3000) { 
