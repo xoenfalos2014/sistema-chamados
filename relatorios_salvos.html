@@ -15,11 +15,17 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
     
+    <!-- Novo script para gerar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
     <style>
         body { font-family: 'Poppins', sans-serif; }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-200 min-h-screen pb-10">
+
+    <!-- Logo escondida para usar no PDF -->
+    <img id="logoPrint" src="img/logo-wg.png" style="display:none;" crossorigin="anonymous">
 
     <header class="bg-slate-800 shadow-md">
         <div class="max-w-5xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-2">
@@ -198,15 +204,20 @@
                         </div>
 
                         <div class="mt-2 flex flex-col sm:flex-row gap-2 items-center bg-slate-800 p-3 rounded-lg border border-slate-600">
-                            <span class="text-sm font-semibold text-slate-300 whitespace-nowrap">Enviar para Cliente:</span>
-                            <input type="text" id="zapInput-${r.id}" value="${r.numeroTecnico || ''}" placeholder="WhatsApp (ex: 21999999999)" class="w-full sm:w-48 p-2 rounded bg-slate-700 text-white border border-slate-500 text-sm focus:outline-none focus:border-teal-400">
+                            <span class="text-sm font-semibold text-slate-300 whitespace-nowrap">Ações:</span>
+                            <input type="text" id="zapInput-${r.id}" value="${r.numeroTecnico || ''}" placeholder="WhatsApp (DDD+Número)" class="w-full sm:w-48 p-2 rounded bg-slate-700 text-white border border-slate-500 text-sm focus:outline-none focus:border-teal-400">
+                            
                             <button onclick="enviarZap('${r.id}')" class="w-full sm:w-auto bg-[#25D366] text-white font-bold py-2 px-4 rounded hover:bg-[#1ebe5d] transition shadow-md flex items-center justify-center gap-2">
-                                <!-- Correção do ícone SVG do WhatsApp -->
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-whatsapp" viewBox="0 0 16 16">
                                   <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.538a6.373 6.373 0 0 1-3.243-.88l-.232-.138-2.41.632.645-2.35-.152-.242a6.37 6.37 0 0 1-.97-3.46c0-3.526 2.868-6.394 6.394-6.394 3.527 0 6.394 2.868 6.394 6.394 0 3.527-2.868 6.394-6.394 6.394zM11.83 9.77c-.21-.105-1.242-.614-1.434-.684-.192-.07-.332-.105-.473.105-.14.21-.546.684-.67.824-.122.14-.244.157-.453.052-.21-.105-.888-.328-1.692-.953-.628-.488-1.05-1.092-1.174-1.302-.122-.21-.013-.323.093-.428.094-.094.21-.245.316-.368.105-.123.14-.21.21-.35.07-.14.035-.262-.018-.368-.052-.105-.473-1.14-.648-1.56-.17-.41-.343-.355-.473-.362-.122-.007-.263-.007-.404-.007a.846.846 0 0 0-.615.286c-.21.228-.804.787-.804 1.92s.823 2.227.937 2.38c.114.152 1.623 2.476 3.927 3.473.548.237.975.38 1.308.486.324.103.62.088.854.053.264-.038.804-.328.917-.645.114-.317.114-.588.08-.645-.034-.057-.123-.092-.333-.197z"/>
                                 </svg>
                                 WhatsApp
                             </button>
+
+                            <button onclick="gerarPDF('${r.id}')" class="w-full sm:w-auto bg-indigo-600 text-white font-bold py-2 px-4 rounded hover:bg-indigo-700 transition shadow-md flex items-center justify-center gap-2">
+                                📄 Gerar PDF
+                            </button>
+
                             <span id="msgErro-${r.id}" class="text-red-400 text-xs hidden font-bold ml-2">Digite apenas números com DDD!</span>
                         </div>
                     `;
@@ -240,6 +251,165 @@
 
             const url = `https://wa.me/55${numeroLimpo}?text=${encodeURIComponent(mensagem)}`;
             window.open(url, "_blank");
+        }
+
+        function gerarPDF(idRelatorio) {
+            const r = relatoriosEmMemoria[idRelatorio];
+            if (!r) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const corAzulWG = [59, 130, 246]; 
+            const corCinzaEscuro = [51, 65, 85];
+            const corCinzaClaro = [241, 245, 249];
+
+            // Cabeçalho Azul
+            doc.setFillColor(...corAzulWG);
+            doc.rect(0, 0, 210, 45, 'F');
+
+            try {
+                const logo = document.getElementById('logoPrint');
+                doc.addImage(logo, "PNG", 15, 7, 30, 30);
+            } catch (e) {
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(22);
+                doc.setFont("helvetica", "bold");
+                doc.text("WG", 20, 25);
+            }
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("WG INFORMÁTICA", 55, 17);
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text("Suporte e Manutenção de Computadores LTDA", 55, 23);
+            doc.text("CNPJ: 18.227.202/0001-36", 55, 29);
+            doc.text("Rua Dr. Feliciano Sodré, Nº 182, Sala 301 - São Gonçalo", 55, 35);
+
+            // Título
+            doc.setTextColor(...corAzulWG);
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text("RELATÓRIO DE SERVIÇO - FINALIZADO", 105, 60, null, null, "center");
+            
+            // Tratamento de Data
+            let dataBr = "S/D";
+            if (r.data && typeof r.data === 'string') {
+                dataBr = r.data.split('-').reverse().join('/');
+            } else if (r.data && r.data.toDate) {
+                dataBr = r.data.toDate().toLocaleDateString("pt-BR");
+            }
+            const dataCheckout = r.checkoutTime ? new Date(r.checkoutTime).toLocaleString("pt-BR") : "Não registrado";
+
+            doc.setFontSize(10);
+            doc.setTextColor(...corCinzaEscuro);
+            doc.text(`Finalizado via Sistema em: ${dataCheckout}`, 105, 66, null, null, "center");
+
+            // Caixa de Informações
+            doc.setFillColor(...corCinzaClaro);
+            doc.setDrawColor(203, 213, 225); 
+            doc.roundedRect(15, 75, 180, 40, 3, 3, 'FD'); 
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("INFORMAÇÕES DO ATENDIMENTO", 20, 83);
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Cliente / Empresa:`, 20, 93);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${r.cliente || ''}`, 55, 93);
+
+            doc.setFont("helvetica", "normal");
+            doc.text(`Data Agendada:`, 20, 100);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${dataBr} às ${r.hora || ''}`, 55, 100);
+
+            doc.setFont("helvetica", "normal");
+            doc.text(`Técnico Resp:`, 110, 100);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${r.tecnico || ''}`, 140, 100);
+            
+            doc.setFont("helvetica", "normal");
+            doc.text(`Duração:`, 20, 107);
+            doc.setFont("helvetica", "bold");
+            doc.text(`${r.duracao || 'Não cronometrado'}`, 55, 107);
+
+            // Caixa de Descrição e Relatório
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(15, 120, 180, 80, 3, 3, 'S'); 
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "bold");
+            doc.text("DESCRIÇÃO E RELATÓRIO TÉCNICO", 20, 128);
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            
+            const servicoLines = doc.splitTextToSize(`Serviço Solicitado: ${r.servico || 'Não informado'}`, 170);
+            doc.text(servicoLines, 20, 138);
+
+            const problemaLines = doc.splitTextToSize(`Problema Relatado: ${r.problema || 'Não informado'}`, 170);
+            doc.text(problemaLines, 20, 153);
+            
+            doc.setDrawColor(203, 213, 225); 
+            doc.line(20, 168, 190, 168); 
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Serviço Realizado (Executado):", 20, 175);
+            doc.setFont("helvetica", "normal");
+            
+            const textoRelatorio = r.servicoRealizado || 'Nenhum relatório preenchido pelo técnico.';
+            const relatorioLines = doc.splitTextToSize(textoRelatorio, 170);
+            doc.text(relatorioLines, 20, 182);
+
+            // ASSINATURA
+            let yFinal = 240;
+            doc.setDrawColor(148, 163, 184); 
+            doc.line(55, yFinal, 155, yFinal);
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text("Assinatura do Cliente", 105, yFinal + 6, null, null, "center");
+            doc.setFont("helvetica", "normal");
+            doc.text(r.cliente || '', 105, yFinal + 12, null, null, "center");
+
+            if (r.assinaturaBase64 && r.assinaturaBase64.length > 3000) { 
+                doc.addImage(r.assinaturaBase64, "PNG", 55, yFinal - 35, 100, 35);
+            }
+
+            // PAGINA 2 - FOTOS ANEXADAS
+            if (r.fotos && r.fotos.length > 0) {
+                doc.addPage();
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "bold");
+                doc.text("Anexos Fotográficos", 105, 20, null, null, "center");
+                
+                let yFoto = 30;
+                r.fotos.forEach((fotoBase64, index) => {
+                    doc.addImage(fotoBase64, 'JPEG', 35, yFoto, 140, 100);
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "bold");
+                    doc.text(`Foto ${index + 1}`, 105, yFoto + 106, null, null, "center");
+                    yFoto += 120; // Espaço para a próxima foto
+                });
+            }
+
+            // Rodapé Global (todas as páginas)
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(148, 163, 184);
+            const totalPages = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= totalPages; i++) {
+                doc.setPage(i);
+                doc.text(`Documento gerado pelo Painel WG - Página ${i} de ${totalPages}`, 105, 285, null, null, "center");
+            }
+
+            const nomeArquivo = `Relatorio_${r.cliente || 'Sem_Nome'}_${dataBr.replace(/\//g, '-')}.pdf`;
+            doc.save(nomeArquivo);
         }
     </script>
 </body>
