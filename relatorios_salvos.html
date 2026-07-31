@@ -4,119 +4,201 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatórios Salvos - WG Informática</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-        }
-    </style>
+    
+    <!-- Scripts do Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    <script src="js/firebase-config.js"></script>
+    
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-200 min-h-screen">
+<body class="bg-slate-900 text-slate-200 min-h-screen pb-10">
 
     <header class="bg-slate-800 shadow-md">
-        <div class="max-w-5xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-white">📂 Relatórios Salvos</h1>
-            <a href="tecnico.html" class="text-sm text-teal-400 hover:text-teal-300">← Voltar ao Painel</a>
+        <div class="max-w-5xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+                <span>📂</span> Relatórios de Serviços Concluídos
+            </h1>
+            <a href="index.html" class="text-sm font-semibold text-teal-400 hover:text-teal-300 bg-slate-700 px-4 py-2 rounded-lg shadow transition">← Voltar à Agenda</a>
         </div>
     </header>
 
-    <main class="max-w-5xl mx-auto py-6 sm:px-6 lg:px-8">
+    <main class="max-w-5xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div class="bg-slate-800 rounded-2xl shadow-2xl p-6 border border-slate-700">
-            <!-- Filtros -->
-            <div class="flex flex-col sm:flex-row gap-4 mb-6 items-center">
-                <input id="filtroCliente" type="text" placeholder="Filtrar por cliente..." class="flex-grow w-full p-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500">
-                <input id="filtroDataInicio" type="date" class="p-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500">
-                <input id="filtroDataFim" type="date" class="p-2 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500">
-                <button onclick="carregarRelatorios()" class="w-full sm:w-auto bg-teal-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-teal-500 transition-colors">🔍 Buscar</button>
+            
+            <h2 class="text-lg font-semibold text-slate-300 mb-4 border-b border-slate-700 pb-2">Pesquisa e Filtros</h2>
+            
+            <div class="flex flex-col md:flex-row gap-4 mb-8 items-end">
+                <div class="w-full md:w-2/5">
+                    <label class="block text-xs text-slate-400 mb-1">Cliente, Serviço ou Técnico</label>
+                    <input id="filtroTexto" type="text" placeholder="Digite para filtrar..." class="w-full p-2.5 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                </div>
+                <div class="w-full md:w-1/5">
+                    <label class="block text-xs text-slate-400 mb-1">Data Início</label>
+                    <input id="filtroDataInicio" type="date" class="w-full p-2.5 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                </div>
+                <div class="w-full md:w-1/5">
+                    <label class="block text-xs text-slate-400 mb-1">Data Fim</label>
+                    <input id="filtroDataFim" type="date" class="w-full p-2.5 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                </div>
+                <div class="w-full md:w-1/5">
+                    <button onclick="carregarRelatorios()" class="w-full bg-teal-600 text-white font-semibold p-2.5 rounded-lg hover:bg-teal-500 transition-colors shadow-lg">
+                        🔍 Buscar
+                    </button>
+                </div>
             </div>
 
-            <!-- Lista de Relatórios -->
-            <div id="listaRelatorios" class="space-y-4"></div>
+            <div id="listaRelatorios" class="space-y-6">
+                <!-- Conteúdo carregado via JS -->
+            </div>
         </div>
     </main>
 
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
+            authDomain: "sistema-chamados-99e49.firebaseapp.com",
+            projectId: "sistema-chamados-99e49",
+            storageBucket: "sistema-chamados-99e49.appspot.com",
+            messagingSenderId: "680351942005",
+            appId: "1:680351942005:web:896b35a40f094d42297f3c"
+        };
+
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
+        
+        let relatoriosEmMemoria = {};
 
         auth.onAuthStateChanged(user => {
-            if (!user) return location.href = "login-tecnico.html";
+            if (!user) {
+                document.body.innerHTML = `
+                    <div class="min-h-screen flex items-center justify-center bg-slate-900 w-full fixed inset-0 z-50 px-4">
+                        <div class="bg-slate-800 p-8 rounded-xl shadow-lg max-w-md w-full text-center border-t-4 border-red-500">
+                            <div class="text-5xl mb-4">🔒</div>
+                            <h2 class="text-2xl font-bold text-white mb-2">Acesso Restrito</h2>
+                            <p class="text-slate-400 mb-6">Você precisa fazer login para acessar os relatórios.</p>
+                            <a href="login-tecnico.html" class="inline-block w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 rounded-lg transition">Ir para Login</a>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
             carregarRelatorios();
         });
 
         async function carregarRelatorios() {
             const lista = document.getElementById("listaRelatorios");
-            lista.innerHTML = "<p class='text-center text-slate-400'>Carregando relatórios...</p>";
+            lista.innerHTML = "<p class='text-center text-teal-400 font-semibold animate-pulse'>Buscando relatórios no banco de dados...</p>";
 
-            const clienteFiltro = document.getElementById("filtroCliente").value.toLowerCase();
+            const textoFiltro = document.getElementById("filtroTexto").value.toLowerCase();
             const dataInicio = document.getElementById("filtroDataInicio").value;
             const dataFim = document.getElementById("filtroDataFim").value;
 
-            let query = db.collection("relatorios_tecnicos").orderBy("criadoEm", "desc");
-
-            if (dataInicio) {
-                query = query.where("criadoEm", ">=", new Date(dataInicio + 'T00:00:00'));
-            }
-            if (dataFim) {
-                const fim = new Date(dataFim + 'T23:59:59');
-                query = query.where("criadoEm", "<=", fim);
-            }
-
             try {
-                const snapshot = await query.get();
-                const relatoriosFiltrados = [];
-
-                if (snapshot.empty) {
-                    lista.innerHTML = "<div class='text-center p-8 bg-slate-700/50 rounded-lg'><p class='text-slate-400'>Nenhum relatório encontrado para os filtros aplicados.</p></div>";
-                    return;
-                }
+                // Busca apenas OS finalizadas
+                const snapshot = await db.collection("agendamentos").where("status", "==", "Finalizado").get();
+                let relatoriosFiltrados = [];
+                relatoriosEmMemoria = {}; // Limpa memória
 
                 snapshot.forEach(doc => {
                     const r = doc.data();
-                    if (clienteFiltro && !r.cliente.toLowerCase().includes(clienteFiltro)) {
-                        return;
+                    r.id = doc.id;
+                    
+                    // Lógica de Filtro Local
+                    const clienteStr = r.cliente ? r.cliente.toLowerCase() : "";
+                    const tecnicoStr = r.tecnico ? r.tecnico.toLowerCase() : "";
+                    const servicoStr = r.servico ? r.servico.toLowerCase() : "";
+                    const relatorioStr = r.servicoRealizado ? r.servicoRealizado.toLowerCase() : "";
+                    
+                    const atendeTexto = textoFiltro === "" || 
+                                        clienteStr.includes(textoFiltro) || 
+                                        tecnicoStr.includes(textoFiltro) || 
+                                        servicoStr.includes(textoFiltro) ||
+                                        relatorioStr.includes(textoFiltro);
+
+                    const atendeData = (!dataInicio || r.data >= dataInicio) && 
+                                       (!dataFim || r.data <= dataFim);
+
+                    if (atendeTexto && atendeData) {
+                        relatoriosFiltrados.push(r);
+                        relatoriosEmMemoria[r.id] = r; // Salva para uso no botão do zap
                     }
-                    relatoriosFiltrados.push(r);
+                });
+
+                // Ordena do mais recente para o mais antigo com base na data do agendamento
+                relatoriosFiltrados.sort((a, b) => {
+                    return new Date(b.data || 0) - new Date(a.data || 0);
                 });
 
                 if (relatoriosFiltrados.length === 0) {
-                     lista.innerHTML = "<div class='text-center p-8 bg-slate-700/50 rounded-lg'><p class='text-slate-400'>Nenhum relatório encontrado para o cliente informado.</p></div>";
+                     lista.innerHTML = "<div class='text-center p-8 bg-slate-700/50 rounded-xl border border-slate-600'><p class='text-slate-400'>Nenhum relatório finalizado encontrado para os filtros aplicados.</p></div>";
                     return;
                 }
 
-                lista.innerHTML = ""; // Limpa o "Carregando"
+                lista.innerHTML = ""; 
+                
                 relatoriosFiltrados.forEach(r => {
-                    const dataFormatada = r.criadoEm?.toDate().toLocaleString("pt-BR") || "Data indisponível";
-                    const dataInput = r.data || '';
+                    const dataBr = r.data ? r.data.split('-').reverse().join('/') : "S/D";
+                    const dataCheckout = r.checkoutTime ? new Date(r.checkoutTime).toLocaleString("pt-BR") : "Não registrado";
+                    
+                    // Bloco da Assinatura
+                    let assinaturaHTML = "";
+                    if (r.assinaturaBase64 && r.assinaturaBase64.length > 3000) {
+                        assinaturaHTML = `
+                            <div class="mt-3 p-3 bg-slate-800 rounded-lg border border-slate-600 inline-block">
+                                <p class="text-xs text-slate-400 mb-1">Assinatura do Cliente:</p>
+                                <img src="${r.assinaturaBase64}" alt="Assinatura" class="h-16 bg-white rounded border border-slate-300">
+                            </div>
+                        `;
+                    }
 
                     const item = document.createElement("div");
-                    item.className = "bg-slate-700 p-4 rounded-lg shadow-md border border-slate-600";
+                    item.className = "bg-slate-700 p-5 rounded-xl shadow-lg border-l-4 border-teal-500 flex flex-col gap-3";
 
                     item.innerHTML = `
-                        <div class="flex justify-between items-start">
-                            <p class="font-bold text-lg text-white">${r.cliente}</p>
-                            <span class="text-xs text-slate-400">${dataFormatada}</span>
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-600 pb-2">
+                            <h3 class="font-bold text-xl text-white flex items-center gap-2">
+                                👤 ${r.cliente}
+                            </h3>
+                            <span class="text-xs bg-slate-800 text-slate-300 px-2 py-1 rounded mt-2 sm:mt-0 shadow">Finalizado em: ${dataCheckout}</span>
                         </div>
-                        <div class="mt-3 space-y-2">
-                            <p><strong class="text-teal-400">Data do Serviço:</strong> <span class="text-slate-300">${new Date(dataInput + 'T00:00:00').toLocaleDateString('pt-BR')}</span></p>
-                            <p><strong class="text-teal-400">Serviço:</strong> <span class="text-slate-300">${r.servico}</span></p>
-                            ${r.observacoes ? `<p><strong class="text-teal-400">Observações:</strong> <span class="text-slate-300">${r.observacoes}</span></p>` : ''}
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-2">
+                            <div>
+                                <p><strong class="text-teal-400">📅 Agendado para:</strong> <span class="text-slate-200">${dataBr} às ${r.hora || ''}</span></p>
+                                <p><strong class="text-teal-400">👨‍🔧 Técnico:</strong> <span class="text-slate-200">${r.tecnico || 'N/A'}</span></p>
+                                <p><strong class="text-teal-400">⏱️ Duração:</strong> <span class="text-slate-200">${r.duracao || 'N/A'}</span></p>
+                            </div>
+                            <div class="bg-slate-800 p-3 rounded text-slate-300 border border-slate-600">
+                                <p class="text-xs text-slate-500 mb-1 uppercase font-bold">Serviço Solicitado Inicialmente</p>
+                                <p>${r.servico || 'Não informado'}</p>
+                            </div>
                         </div>
-                        <div class="mt-4">
-                            <button onclick='enviarWhatsapp(${JSON.stringify({
-                                cliente: r.cliente,
-                                data: new Date(dataInput + 'T00:00:00').toLocaleDateString('pt-BR'),
-                                servico: r.servico,
-                                observacoes: r.observacoes || "",
-                                tecnico: r.tecnico || ""
-                            })})' class='bg-green-600 text-white font-semibold text-sm py-1 px-3 rounded-md hover:bg-green-500 transition-colors'>📤 Enviar por WhatsApp</button>
+
+                        <div class="mt-2 bg-slate-900/50 p-4 rounded-lg border border-slate-600">
+                            <p class="text-xs text-teal-500 mb-1 uppercase font-bold">📝 Relatório Técnico (Executado)</p>
+                            <p class="text-slate-200 whitespace-pre-wrap">${r.servicoRealizado || '<em class="text-slate-500">Nenhum relatório preenchido.</em>'}</p>
+                            ${assinaturaHTML}
+                        </div>
+
+                        <div class="mt-2 flex flex-col sm:flex-row gap-2 items-center bg-slate-800 p-3 rounded-lg border border-slate-600">
+                            <span class="text-sm font-semibold text-slate-300 whitespace-nowrap">Enviar para Cliente:</span>
+                            <input type="text" id="zapInput-${r.id}" value="${r.numeroTecnico || ''}" placeholder="WhatsApp (ex: 21999999999)" class="w-full sm:w-48 p-2 rounded bg-slate-700 text-white border border-slate-500 text-sm focus:outline-none focus:border-teal-400">
+                            <button onclick="enviarZap('${r.id}')" class="w-full sm:w-auto bg-[#25D366] text-white font-bold py-2 px-4 rounded hover:bg-[#1ebe5d] transition shadow-md flex items-center justify-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-whatsapp" viewBox="0 0 16 16">
+                                  <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.538a6.373 6.373 0 0 1-3.243-.88l-.232-.138-2.41.632.645-2.35-.152-.242a6.37 6.37 0 0 1-.97-3.46 faintlyc0-3.526 2.868-6.394 6.394-6.394 3.527 0 6.394 2.868 6.394 6.394 0 3.527-2.868 6.394-6.394 6.394zM11.83 9.77c-.21-.105-1.242-.614-1.434-.684-.192-.07-.332-.105-.473.105-.14.21-.546.684-.67.824-.122.14-.244.157-.453.052-.21-.105-.888-.328-1.692-.953-.628-.488-1.05-1.092-1.174-1.302-.122-.21-.013-.323.093-.428.094-.094.21-.245.316-.368.105-.123.14-.21.21-.35.07-.14.035-.262-.018-.368-.052-.105-.473-1.14-.648-1.56-.17-.41-.343-.355-.473-.362-.122-.007-.263-.007-.404-.007a.846.846 0 0 0-.615.286c-.21.228-.804.787-.804 1.92s.823 2.227.937 2.38c.114.152 1.623 2.476 3.927 3.473.548.237.975.38 1.308.486.324.103.62.088.854.053.264-.038.804-.328.917-.645.114-.317.114-.588.08-.645-.034-.057-.123-.092-.333-.197z"/>
+                                </svg>
+                                WhatsApp
+                            </button>
+                            <span id="msgErro-${r.id}" class="text-red-400 text-xs hidden font-bold ml-2">Digite apenas números com DDD!</span>
                         </div>
                     `;
 
@@ -125,26 +207,31 @@
 
             } catch(error) {
                 console.error("Erro ao carregar relatórios:", error);
-                lista.innerHTML = "<div class='text-center p-8 bg-red-900/50 rounded-lg'><p class='text-red-300'>Ocorreu um erro ao buscar os relatórios. Verifique o console para mais detalhes.</p></div>";
+                lista.innerHTML = "<div class='text-center p-8 bg-red-900/30 border border-red-700 rounded-xl'><p class='text-red-400 font-bold'>Ocorreu um erro ao buscar os relatórios. Verifique sua conexão e console.</p></div>";
             }
         }
 
-        function enviarWhatsapp(relatorio) {
-            const mensagem = `*RELATÓRIO TÉCNICO*\n\n*Cliente:* ${relatorio.cliente}\n*Data:* ${relatorio.data}\n*Técnico:* ${relatorio.tecnico}\n\n*Serviço Executado:*\n${relatorio.servico}\n\n*Observações:*\n${relatorio.observacoes}`.trim();
+        function enviarZap(idRelatorio) {
+            const r = relatoriosEmMemoria[idRelatorio];
+            const inputField = document.getElementById(`zapInput-${idRelatorio}`);
+            const errorSpan = document.getElementById(`msgErro-${idRelatorio}`);
+            
+            const numeroBruto = inputField.value.trim();
+            const numeroLimpo = numeroBruto.replace(/\D/g, ''); // Remove tudo que não é número
 
-            const numero = prompt("Digite o número do WhatsApp do cliente com DDD (ex: 21999999999):");
-            if (numero && numero.match(/^\d{10,11}$/)) {
-                 const url = `https://wa.me/55${numero}?text=${encodeURIComponent(mensagem)}`;
-                window.open(url, "_blank");
-            } else if (numero) {
-                alert("Número de telefone inválido. Por favor, insira apenas os números, incluindo o DDD.");
+            if (numeroLimpo.length < 10 || numeroLimpo.length > 11) {
+                errorSpan.classList.remove('hidden');
+                setTimeout(() => errorSpan.classList.add('hidden'), 3000);
+                return;
             }
+
+            const dataBr = r.data ? r.data.split('-').reverse().join('/') : "S/D";
+            
+            const mensagem = `*RELATÓRIO TÉCNICO - WG INFORMÁTICA*\n\n*Cliente:* ${r.cliente}\n*Data do Serviço:* ${dataBr}\n*Técnico Responsável:* ${r.tecnico || 'N/A'}\n\n*Serviço Solicitado:*\n${r.servico || 'Não informado'}\n\n*Serviço Executado (Relatório):*\n${r.servicoRealizado || 'Sem descrição'}\n\n_Agradecemos a preferência!_`.trim();
+
+            const url = `https://wa.me/55${numeroLimpo}?text=${encodeURIComponent(mensagem)}`;
+            window.open(url, "_blank");
         }
-
-        // Tornar a função globalmente acessível para o onclick
-        window.enviarWhatsapp = enviarWhatsapp;
-        window.carregarRelatorios = carregarRelatorios;
-
     </script>
 </body>
 </html>
