@@ -54,7 +54,8 @@
     <!-- Seção de Ações Rápidas (Atalhos) -->
     <section class="mb-10">
       <h3 class="text-lg font-semibold text-slate-700 mb-4 border-b pb-2">Ações Rápidas</h3>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <!-- A LINHA ABAIXO FOI ALTERADA PARA lg:grid-cols-6 -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         
         <button onclick="toggle('form-cadastro')" class="card-hover bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 text-blue-600 hover:text-blue-700 btn-transition">
           <div class="bg-blue-100 p-3 rounded-full"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg></div>
@@ -76,12 +77,20 @@
           <span class="font-semibold">Criar Usuário (Página)</span>
         </a>
 
-        <!-- NOVO BOTÃO FINANCEIRO -->
+        <!-- BOTÃO FINANCEIRO -->
         <a href="financeiro.html" class="card-hover bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 text-emerald-600 hover:text-emerald-700 btn-transition text-center">
           <div class="bg-emerald-100 p-3 rounded-full">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           </div>
           <span class="font-semibold">Financeiro</span>
+        </a>
+
+        <!-- NOVO BOTÃO GESTÃO E PDV -->
+        <a href="pdv.html" class="card-hover bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 text-sky-600 hover:text-sky-700 btn-transition text-center">
+          <div class="bg-sky-100 p-3 rounded-full">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          </div>
+          <span class="font-semibold">Gestão e PDV</span>
         </a>
 
       </div>
