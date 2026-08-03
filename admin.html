@@ -16,7 +16,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   
-  <!-- Arquivo de configuração externo (mantido do seu original) -->
+  <!-- Arquivo de configuração externo -->
   <script src="/js/firebase-config.js"></script>
 
   <style>
@@ -136,6 +136,8 @@
               <th class="p-4 font-semibold">Email</th>
               <th class="p-4 font-semibold">Nível / Tipo</th>
               <th class="p-4 font-semibold w-40">Alterar Nível</th>
+              <!-- NOVA COLUNA PARA CONTROLE DE STATUS -->
+              <th class="p-4 font-semibold w-48">Status / Ações</th>
             </tr>
           </thead>
           <tbody id="lista-usuarios" class="divide-y divide-slate-200 text-slate-700">
@@ -174,7 +176,6 @@
     // Configuração de fallback caso o firebase-config.js externo falhe ou não inicie
     if (!firebase.apps.length) {
        console.warn("O arquivo de configuração externo não inicializou o app. Verifique /js/firebase-config.js.");
-       // As credenciais podem ser colocadas aqui como plano B caso precise.
     }
 
     const db = firebase.firestore();
@@ -227,7 +228,8 @@
       if(!nome || !email || !senha) return alert("Preencha todos os campos!");
 
       auth.createUserWithEmailAndPassword(email, senha)
-        .then(cred => db.collection("usuarios").doc(cred.user.uid).set({ nome, email, tipo }))
+        // MODIFICAÇÃO AQUI: Adicionado 'status: "ativo"' no momento do cadastro
+        .then(cred => db.collection("usuarios").doc(cred.user.uid).set({ nome, email, tipo, status: "ativo" }))
         .then(() => {
           alert("Usuário cadastrado com sucesso!");
           document.getElementById("nome").value = "";
@@ -239,21 +241,31 @@
         .catch(e => alert("Erro ao cadastrar: " + e.message));
     }
 
-    // Listagem de Usuários
+    // Listagem de Usuários Atualizada com Gestão de Status
     function carregarUsuarios() {
       db.collection("usuarios").onSnapshot(snapshot => {
         const lista = document.getElementById("lista-usuarios");
         let html = "";
         snapshot.forEach(doc => {
           const u = doc.data();
+          
           // Define a cor da badge baseada no tipo
           let badgeColor = u.tipo === 'admin' ? 'bg-purple-100 text-purple-800' : 
                            u.tipo === 'tecnico' ? 'bg-blue-100 text-blue-800' : 
                            'bg-slate-100 text-slate-800';
 
+          // Define a cor da badge baseada no status
+          let statusAtual = u.status || 'ativo';
+          let statusColor = statusAtual === 'ativo' ? 'bg-green-100 text-green-800' : 
+                            statusAtual === 'pausado' ? 'bg-yellow-100 text-yellow-800' : 
+                            'bg-red-100 text-red-800';
+
           html += `
             <tr class="hover:bg-slate-50 transition">
-              <td class="p-4 border-b border-slate-100 font-medium">${u.nome || '-'}</td>
+              <td class="p-4 border-b border-slate-100 font-medium">
+                ${u.nome || '-'} <br>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${statusColor} uppercase">${statusAtual}</span>
+              </td>
               <td class="p-4 border-b border-slate-100">${u.email}</td>
               <td class="p-4 border-b border-slate-100">
                 <span class="px-3 py-1 rounded-full text-xs font-semibold ${badgeColor} capitalize">${u.tipo || 'cliente'}</span>
@@ -265,6 +277,12 @@
                   <option value="admin" ${u.tipo === 'admin' ? 'selected' : ''}>Admin</option>
                 </select>
               </td>
+              <!-- NOVOS BOTÕES DE CONTROLE DE STATUS -->
+              <td class="p-4 border-b border-slate-100 flex gap-1 flex-wrap">
+                <button onclick="alterarStatus('${doc.id}', 'ativo')" class="bg-green-50 text-green-600 hover:bg-green-100 px-2 py-1 rounded text-xs font-semibold border border-green-200 transition" title="Ativar Conta">Ativar</button>
+                <button onclick="alterarStatus('${doc.id}', 'pausado')" class="bg-yellow-50 text-yellow-600 hover:bg-yellow-100 px-2 py-1 rounded text-xs font-semibold border border-yellow-200 transition" title="Pausar Conta">Pausar</button>
+                <button onclick="alterarStatus('${doc.id}', 'excluido')" class="bg-red-50 text-red-600 hover:bg-red-100 px-2 py-1 rounded text-xs font-semibold border border-red-200 transition" title="Excluir Lógicamente">Excluir</button>
+              </td>
             </tr>
           `;
         });
@@ -274,6 +292,21 @@
 
     function alterarTipo(uid, novoTipo) {
       db.collection("usuarios").doc(uid).update({ tipo: novoTipo });
+    }
+
+    // NOVA FUNÇÃO: Alterar Status do Usuário
+    function alterarStatus(uid, novoStatus) {
+      if (novoStatus === 'excluido') {
+        if (!confirm("Tem certeza que deseja excluir logicamente este usuário? Ele não conseguirá mais acessar o sistema.")) return;
+      }
+      
+      db.collection("usuarios").doc(uid).update({ 
+        status: novoStatus 
+      }).then(() => {
+        console.log("Status atualizado para: " + novoStatus);
+      }).catch(error => {
+        alert("Erro ao alterar status: " + error.message);
+      });
     }
 
     // Listagem e Filtro de Chamados (Cards Modernos)
@@ -364,7 +397,7 @@
       }
     }
 
-    // Mantido o seu padrão de geração de PDF original, muito bom!
+    // Geração de PDF original
     function gerarPDF(id, nome, email, empresa, setor, mensagem, observacao) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
