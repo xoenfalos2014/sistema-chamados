@@ -83,9 +83,27 @@
             const userEmail = user.email;
             document.getElementById("email").value = userEmail;
 
-            db.collection("usuarios").doc(user.uid).get().then(doc => {
+            // ==========================================
+            // MODIFICAÇÃO: Trava de Segurança em Tempo Real
+            // ==========================================
+            db.collection("usuarios").doc(user.uid).onSnapshot(doc => {
                 if (doc.exists) {
-                    document.getElementById("nome").value = doc.data().nome || '';
+                    const data = doc.data();
+                    const status = data.status || 'ativo';
+                    
+                    // Se o admin pausar ou excluir o cliente enquanto ele usa a tela, ele é deslogado na hora
+                    if (status === 'pausado' || status === 'excluido') {
+                        auth.signOut().then(() => {
+                            alert("Sua sessão foi encerrada. Sua conta encontra-se " + status + ".");
+                            window.location.href = "login-cliente.html";
+                        });
+                        return;
+                    }
+                    
+                    document.getElementById("nome").value = data.nome || '';
+                } else {
+                    // Prevenção extra caso o documento do usuário seja apagado direto no Firebase
+                    auth.signOut();
                 }
             });
 
@@ -139,7 +157,7 @@
                 mensagem,
                 status: "Aberto",
                 usuarioId: currentUserUid,
-                                ultimaMensagemEm: firebase.firestore.FieldValue.serverTimestamp(),
+                ultimaMensagemEm: firebase.firestore.FieldValue.serverTimestamp(),
                 ultimaMensagemPor: "cliente",
                 naoLidasStaff: 1,
                 criadoEm: firebase.firestore.FieldValue.serverTimestamp()
