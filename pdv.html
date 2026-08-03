@@ -584,14 +584,7 @@
     const auth = firebase.auth();
     let emailAdminLogado = "Desconhecido";
 
-    // --- CONFIGURAÇÃO DE CAMINHOS SEGURA DO FIRESTORE ---
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    const basePath = `artifacts/${appId}/public/data`;
-    function getCol(name) { 
-      return db.collection(`${basePath}/${name}`); 
-    }
-
-    // Variáveis Globais para manter os dados em memória (para o PDV rodar rápido)
+    // Arrays Globais para Vendas
     let globalPecas = [];
     let globalServicos = [];
     let globalClientes = [];
@@ -630,8 +623,7 @@
         const colunas = linhas[i].getElementsByTagName('td');
         for (let j = 0; j < colunas.length; j++) {
           if (colunas[j] && colunas[j].innerText.toLowerCase().includes(termo)) {
-            visivel = true;
-            break;
+            visivel = true; break;
           }
         }
         linhas[i].style.display = visivel ? '' : 'none';
@@ -675,10 +667,10 @@
       if(id) {
           inputEstoqueIni.disabled = true;
           inputEstoqueIni.classList.add('bg-slate-100');
-          inputEstoqueIni.title = "Use Entradas e Saídas para alterar estoque de peças existentes.";
+          inputEstoqueIni.title = "Use Entradas e Saídas para alterar estoque.";
           
           try {
-            const doc = await getCol("pecas").doc(id).get();
+            const doc = await db.collection("pecas").doc(id).get();
             if(doc.exists) {
                const p = doc.data();
                document.getElementById('peca-codigo').value = p.codigo || '';
@@ -746,17 +738,17 @@
       };
 
       if (id) {
-        await getCol("pecas").doc(id).update(data);
+        await db.collection("pecas").doc(id).update(data);
       } else {
         data.estoque = parseInt(document.getElementById('peca-estoque').value) || 0;
         data.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
-        await getCol("pecas").add(data);
+        await db.collection("pecas").add(data);
       }
       fecharModais();
     });
 
     function carregarPecas() {
-      getCol("pecas").orderBy("nome").onSnapshot(snap => {
+      db.collection("pecas").orderBy("nome").onSnapshot(snap => {
         const tbody = document.getElementById("lista-pecas");
         const dlProdutos = document.getElementById("dl-produtos");
         tbody.innerHTML = '';
@@ -768,12 +760,10 @@
           p.id = doc.id;
           globalPecas.push(p);
 
-          // Datalist PDV
           const opt = document.createElement('option');
           opt.value = `[P-${doc.id.substring(0,4)}] ${p.nome}`;
           dlProdutos.appendChild(opt);
 
-          // Tabela Estoque
           const tr = document.createElement('tr');
           const estMin = p.estoqueMinimo || 1;
           let badgeEstoque = 'bg-emerald-100 text-emerald-700';
@@ -838,15 +828,15 @@
 
       try {
         const batch = db.batch();
-        batch.update(getCol("pecas").doc(id), { estoque: firebase.firestore.FieldValue.increment(valorIncremento) });
-        batch.set(getCol("historico_estoque").doc(), { pecaId: id, pecaNome: nomePeca, tipo: tipo, quantidade: qtdInput, motivo: motivo, responsavel: emailAdminLogado, data: firebase.firestore.FieldValue.serverTimestamp() });
+        batch.update(db.collection("pecas").doc(id), { estoque: firebase.firestore.FieldValue.increment(valorIncremento) });
+        batch.set(db.collection("historico_estoque").doc(), { pecaId: id, pecaNome: nomePeca, tipo: tipo, quantidade: qtdInput, motivo: motivo, responsavel: emailAdminLogado, data: firebase.firestore.FieldValue.serverTimestamp() });
         await batch.commit();
         fecharModais();
       } catch (err) { alert("Erro ao movimentar: " + err.message); }
     }
 
     function carregarHistorico() {
-      getCol("historico_estoque").orderBy("data", "desc").limit(50).onSnapshot(snap => {
+      db.collection("historico_estoque").orderBy("data", "desc").limit(50).onSnapshot(snap => {
         const tbody = document.getElementById("lista-historico");
         tbody.innerHTML = '';
         snap.forEach(doc => {
@@ -869,13 +859,13 @@
       e.preventDefault();
       const id = document.getElementById('servico-id').value;
       const data = { nome: document.getElementById('servico-nome').value, valor: parseFloat(document.getElementById('servico-valor').value), descricao: document.getElementById('servico-desc').value };
-      if (id) await getCol("servicos").doc(id).update(data);
-      else await getCol("servicos").add(data);
+      if (id) await db.collection("servicos").doc(id).update(data);
+      else await db.collection("servicos").add(data);
       fecharModais();
     });
 
     function carregarServicos() {
-      getCol("servicos").orderBy("nome").onSnapshot(snap => {
+      db.collection("servicos").orderBy("nome").onSnapshot(snap => {
         const tbody = document.getElementById("lista-servicos");
         const dlProdutos = document.getElementById("dl-produtos"); // Reaproveita datalist no PDV
         tbody.innerHTML = '';
@@ -905,13 +895,13 @@
       e.preventDefault();
       const id = document.getElementById('cliente-id').value;
       const data = { nome: document.getElementById('cliente-nome').value, telefone: document.getElementById('cliente-telefone').value, email: document.getElementById('cliente-email').value, endereco: document.getElementById('cliente-endereco').value, documento: document.getElementById('cliente-doc').value };
-      if (id) await getCol("clientes_crm").doc(id).update(data);
-      else await getCol("clientes_crm").add(data);
+      if (id) await db.collection("clientes_crm").doc(id).update(data);
+      else await db.collection("clientes_crm").add(data);
       fecharModais();
     });
 
     function carregarClientes() {
-      getCol("clientes_crm").orderBy("nome").onSnapshot(snap => {
+      db.collection("clientes_crm").orderBy("nome").onSnapshot(snap => {
         const tbody = document.getElementById("lista-clientes");
         const dlClientes = document.getElementById("dl-clientes");
         tbody.innerHTML = '';
@@ -942,7 +932,6 @@
       
       if(!inputProd) return alert("Selecione um produto ou serviço.");
 
-      // Tenta extrair o ID curto do Datalist "[P-xxxx] Nome" ou "[S-xxxx] Nome"
       let isPeca = inputProd.startsWith('[P-');
       let isServico = inputProd.startsWith('[S-');
       let idCurto = inputProd.substring(3, 7);
@@ -967,13 +956,11 @@
         precoUnitario = tipo === 'peca' ? itemEncontrado.venda : itemEncontrado.valor;
         dbId = itemEncontrado.id;
         
-        // Verifica estoque se for peça
         if(tipo === 'peca' && itemEncontrado.estoque < inputQtd) {
            const confirma = confirm(`Atenção: O estoque atual desta peça é ${itemEncontrado.estoque}. Deseja vender ${inputQtd} mesmo assim? (Ficará negativo)`);
            if(!confirma) return;
         }
       } else {
-        // Se digitou manualmente um produto avulso
         precoUnitario = parseFloat(prompt(`Produto '${inputProd}' não encontrado no cadastro.\nInforme o valor unitário (R$):`));
         if(isNaN(precoUnitario)) return;
       }
@@ -1067,10 +1054,10 @@
 
       try {
         const batch = db.batch();
-        const vendaId = getCol("vendas").doc().id;
+        const vendaId = db.collection("vendas").doc().id;
 
         // 1. Salvar Documento da Venda
-        batch.set(getCol("vendas").doc(vendaId), {
+        batch.set(db.collection("vendas").doc(vendaId), {
           clienteId: clienteId,
           clienteNome: clienteNome,
           itens: carrinhoPDV,
@@ -1085,11 +1072,11 @@
         // 2. Dar baixa no estoque das peças
         carrinhoPDV.forEach(item => {
           if(item.tipo === 'peca' && item.id) {
-             const pecaRef = getCol("pecas").doc(item.id);
+             const pecaRef = db.collection("pecas").doc(item.id);
              batch.update(pecaRef, { estoque: firebase.firestore.FieldValue.increment(-item.qtd) });
              
              // Historico
-             const histRef = getCol("historico_estoque").doc();
+             const histRef = db.collection("historico_estoque").doc();
              batch.set(histRef, { pecaId: item.id, pecaNome: item.nome, tipo: 'saida', quantidade: item.qtd, motivo: `Venda PDV #${vendaId.substring(0,6)}`, responsavel: emailAdminLogado, data: firebase.firestore.FieldValue.serverTimestamp() });
           }
         });
@@ -1110,7 +1097,7 @@
     // 6. RELATÓRIOS E IMPRESSÃO
     // ==========================================
     function carregarVendas() {
-      getCol("vendas").orderBy("data", "desc").limit(100).onSnapshot(snap => {
+      db.collection("vendas").orderBy("data", "desc").limit(100).onSnapshot(snap => {
         const tbody = document.getElementById("lista-vendas-tabela");
         tbody.innerHTML = '';
         snap.forEach(doc => {
@@ -1138,7 +1125,7 @@
     }
 
     async function reimprimirVenda(id) {
-      const doc = await getCol("vendas").doc(id).get();
+      const doc = await db.collection("vendas").doc(id).get();
       if(doc.exists) {
         const v = doc.data();
         gerarReciboPDV(id, v.clienteNome, v.itens, v.total, v.desconto, v.formaPagamento, v.data.toDate());
@@ -1176,7 +1163,6 @@
         <p>Pgto: ${pag}</p>
       `;
 
-      // Aciona o modo de impressão do navegador
       window.print();
     }
   </script>
