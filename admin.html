@@ -190,6 +190,13 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
 
+    // --- CONFIGURAÇÃO DE CAMINHOS SEGURA DO FIRESTORE ---
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const basePath = `artifacts/${appId}/public/data`;
+    function getCol(name) { 
+      return db.collection(`${basePath}/${name}`); 
+    }
+
     // Verifica Autenticação
     auth.onAuthStateChanged(user => {
       if (!user) location.href = "login-admin.html";
@@ -238,7 +245,7 @@
 
       auth.createUserWithEmailAndPassword(email, senha)
         // MODIFICAÇÃO AQUI: Adicionado 'status: "ativo"' no momento do cadastro
-        .then(cred => db.collection("usuarios").doc(cred.user.uid).set({ nome, email, tipo, status: "ativo" }))
+        .then(cred => getCol("usuarios").doc(cred.user.uid).set({ nome, email, tipo, status: "ativo" }))
         .then(() => {
           alert("Usuário cadastrado com sucesso!");
           document.getElementById("nome").value = "";
@@ -252,7 +259,7 @@
 
     // Listagem de Usuários Atualizada com Gestão de Status
     function carregarUsuarios() {
-      db.collection("usuarios").onSnapshot(snapshot => {
+      getCol("usuarios").onSnapshot(snapshot => {
         const lista = document.getElementById("lista-usuarios");
         let html = "";
         snapshot.forEach(doc => {
@@ -300,7 +307,7 @@
     }
 
     function alterarTipo(uid, novoTipo) {
-      db.collection("usuarios").doc(uid).update({ tipo: novoTipo });
+      getCol("usuarios").doc(uid).update({ tipo: novoTipo });
     }
 
     // NOVA FUNÇÃO: Alterar Status do Usuário
@@ -309,7 +316,7 @@
         if (!confirm("Tem certeza que deseja excluir logicamente este usuário? Ele não conseguirá mais acessar o sistema.")) return;
       }
       
-      db.collection("usuarios").doc(uid).update({ 
+      getCol("usuarios").doc(uid).update({ 
         status: novoStatus 
       }).then(() => {
         console.log("Status atualizado para: " + novoStatus);
@@ -320,7 +327,7 @@
 
     // Listagem e Filtro de Chamados (Cards Modernos)
     function filtrarChamados(status) {
-      db.collection("chamados").where("status", "==", status).onSnapshot(snapshot => {
+      getCol("chamados").where("status", "==", status).onSnapshot(snapshot => {
         const lista = document.getElementById("lista-chamados");
         let html = "";
         
@@ -397,12 +404,12 @@
     }
 
     function mudarStatus(id, novoStatus) {
-      db.collection("chamados").doc(id).update({ status: novoStatus });
+      getCol("chamados").doc(id).update({ status: novoStatus });
     }
 
     function removerChamado(id) {
       if (confirm("ATENÇÃO: Deseja realmente excluir este chamado permanentemente?")) {
-        db.collection("chamados").doc(id).delete();
+        getCol("chamados").doc(id).delete();
       }
     }
 
