@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestão, Estoque e PDV - WG Informática</title>
+  <title>Gestão e Estoque - WG Informática</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -23,13 +23,13 @@
     .tab-inactive { color: #64748b; font-weight: 500; border-bottom: 2px solid transparent; }
     .tab-inactive:hover { color: #334155; border-bottom: 2px solid #cbd5e1; }
     
-    /* Scrollbar personalizada */
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    /* Scrollbar personalizada para o modal ERP */
+    ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-    /* Estilos para o Cupom de Impressão */
+    /* Estilos de Impressão */
     @media print {
       body * { visibility: hidden; }
       #cupom-impressao, #cupom-impressao * { visibility: visible; }
@@ -38,7 +38,7 @@
         left: 0;
         top: 0;
         width: 100%;
-        max-width: 300px; /* Largura padrão de impressora térmica 80mm */
+        max-width: 300px;
         padding: 0;
         margin: 0;
         color: #000;
@@ -46,6 +46,7 @@
         font-size: 12px;
       }
       .print-divider { border-top: 1px dashed #000; margin: 8px 0; }
+      .print-logo { max-width: 150px; height: auto; margin: 0 auto 10px; display: block; }
     }
   </style>
 </head>
@@ -55,13 +56,13 @@
   <nav class="bg-slate-900 text-white shadow-md sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="bg-sky-600 p-2 rounded-lg">
-          <i data-lucide="shopping-cart" class="w-5 h-5 text-white"></i>
+        <div class="bg-sky-600 p-1.5 rounded-lg flex items-center justify-center">
+          <img src="img/logo-wg.png" alt="WG Logo" class="w-6 h-6 object-contain">
         </div>
         <h1 class="text-xl font-bold tracking-wide">Gestão & PDV</h1>
       </div>
       <a href="admin.html" class="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white transition">
-        <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Admin
       </a>
     </div>
   </nav>
@@ -69,26 +70,24 @@
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
     <!-- Header e Tabs -->
-    <div class="flex overflow-x-auto border-b border-slate-200 mb-6 gap-1" id="tabs">
-      <button onclick="mudarAba('pdv')" id="tab-pdv" class="tab-active px-5 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="monitor" class="w-4 h-4"></i> Vendas (PDV)</button>
-      <button onclick="mudarAba('vendas')" id="tab-vendas" class="tab-inactive px-5 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> Relatório de Vendas</button>
+    <div class="flex overflow-x-auto border-b border-slate-200 mb-6" id="tabs">
+      <button onclick="mudarAba('pdv')" id="tab-pdv" class="tab-active px-6 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="monitor" class="w-4 h-4"></i> Vendas (PDV)</button>
+      <button onclick="mudarAba('vendas')" id="tab-vendas" class="tab-inactive px-6 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> Relatório de Vendas</button>
       <div class="w-px h-6 bg-slate-300 mx-2 self-center"></div>
-      <button onclick="mudarAba('pecas')" id="tab-pecas" class="tab-inactive px-5 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="box" class="w-4 h-4"></i> Peças e Estoque</button>
-      <button onclick="mudarAba('servicos')" id="tab-servicos" class="tab-inactive px-5 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="wrench" class="w-4 h-4"></i> Serviços</button>
-      <button onclick="mudarAba('clientes')" id="tab-clientes" class="tab-inactive px-5 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="users" class="w-4 h-4"></i> Clientes</button>
-      <button onclick="mudarAba('historico')" id="tab-historico" class="tab-inactive px-5 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Histórico Mov.</button>
+      <button onclick="mudarAba('pecas')" id="tab-pecas" class="tab-inactive px-6 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="cpu" class="w-4 h-4"></i> Peças e Estoque</button>
+      <button onclick="mudarAba('servicos')" id="tab-servicos" class="tab-inactive px-6 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="wrench" class="w-4 h-4"></i> Serviços</button>
+      <button onclick="mudarAba('clientes')" id="tab-clientes" class="tab-inactive px-6 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="users" class="w-4 h-4"></i> Clientes</button>
+      <button onclick="mudarAba('historico')" id="tab-historico" class="tab-inactive px-6 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Histórico Mov.</button>
     </div>
 
     <!-- SEÇÃO: PDV (FRENTE DE CAIXA) -->
     <section id="sec-pdv" class="block">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        <!-- Painel de Inserção -->
         <div class="lg:col-span-2 space-y-4">
           <!-- Seleção de Cliente -->
           <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
             <h3 class="text-sm font-bold text-slate-700 uppercase mb-3 flex items-center gap-2"><i data-lucide="user" class="w-4 h-4"></i> Dados do Cliente</h3>
-            <input type="text" id="pdv-cliente" list="dl-clientes" placeholder="Busque pelo nome ou deixe em branco para 'Consumidor Final'" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
+            <input type="text" id="pdv-cliente" list="dl-clientes" placeholder="Busque pelo nome ou deixe em branco para 'Consumidor Final'" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none transition-colors">
             <datalist id="dl-clientes"></datalist>
           </div>
 
@@ -97,7 +96,7 @@
             <h3 class="text-sm font-bold text-slate-700 uppercase mb-3 flex items-center gap-2"><i data-lucide="shopping-bag" class="w-4 h-4"></i> Adicionar Item</h3>
             <div class="flex flex-wrap md:flex-nowrap gap-3">
               <div class="flex-1">
-                <input type="text" id="pdv-produto" list="dl-produtos" placeholder="Busque produto ou serviço (Nome ou Cód)" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none font-medium">
+                <input type="text" id="pdv-produto" list="dl-produtos" placeholder="Busque produto ou serviço (Nome ou Cód)" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none font-medium transition-colors">
                 <datalist id="dl-produtos"></datalist>
               </div>
               <div class="w-24">
@@ -113,7 +112,7 @@
           <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[300px] flex flex-col">
             <div class="overflow-y-auto flex-1">
               <table class="w-full text-left border-collapse">
-                <thead class="bg-slate-50 text-slate-600 text-xs uppercase sticky top-0">
+                <thead class="bg-slate-50 text-slate-600 text-xs uppercase sticky top-0 shadow-sm">
                   <tr>
                     <th class="p-3 font-semibold w-12 text-center">Tipo</th>
                     <th class="p-3 font-semibold">Descrição</th>
@@ -145,7 +144,7 @@
             
             <div>
               <label class="text-slate-400 font-medium text-sm block mb-1">Desconto (R$)</label>
-              <input type="number" id="pdv-desconto" value="0.00" step="0.01" min="0" oninput="atualizarTotaisPDV()" class="w-full p-2 bg-slate-700 border border-slate-600 rounded-lg text-right focus:ring-2 focus:ring-sky-500 outline-none text-white font-bold">
+              <input type="number" id="pdv-desconto" value="0.00" step="0.01" min="0" oninput="atualizarTotaisPDV()" class="w-full p-2 bg-slate-700 border border-slate-600 rounded-lg text-right focus:ring-2 focus:ring-sky-500 outline-none text-white font-bold transition-colors">
             </div>
 
             <div class="pt-4 border-t border-slate-700 flex justify-between items-end">
@@ -155,7 +154,7 @@
 
             <div>
               <label class="text-slate-400 font-medium text-sm block mb-2 mt-4">Forma de Pagamento</label>
-              <select id="pdv-pagamento" class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-white font-medium">
+              <select id="pdv-pagamento" class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-white font-medium transition-colors">
                 <option value="PIX">PIX</option>
                 <option value="Cartão de Crédito">Cartão de Crédito</option>
                 <option value="Cartão de Débito">Cartão de Débito</option>
@@ -166,7 +165,7 @@
           </div>
 
           <div class="p-5 bg-slate-900 border-t border-slate-700">
-            <button type="button" onclick="finalizarVenda()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-black text-lg shadow-lg transition flex justify-center items-center gap-2">
+            <button type="button" onclick="finalizarVenda()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-black text-lg shadow-lg transition flex justify-center items-center gap-2 active:scale-95">
               <i data-lucide="check-circle" class="w-6 h-6"></i> FINALIZAR VENDA
             </button>
             <button type="button" onclick="limparPDV()" class="w-full mt-3 text-slate-400 hover:text-white py-2 font-medium transition text-sm">
@@ -174,7 +173,6 @@
             </button>
           </div>
         </div>
-
       </div>
     </section>
 
@@ -186,7 +184,7 @@
           <p class="text-sm text-slate-500">Histórico de PDV e emissão de recibos.</p>
         </div>
         <div class="flex gap-2 w-full md:w-auto">
-          <input type="text" id="busca-vendas" onkeyup="filtrarTabela('lista-vendas-tabela', this.value)" placeholder="Buscar cliente ou data..." class="p-2 border border-slate-300 rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-sky-500 outline-none">
+          <input type="text" id="busca-vendas" onkeyup="filtrarTabela('lista-vendas-tabela', this.value)" placeholder="Buscar cliente ou data..." class="p-2 border border-slate-300 rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-sky-500 outline-none transition-colors">
         </div>
       </div>
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -211,29 +209,31 @@
     <!-- SEÇÃO: PEÇAS / ESTOQUE -->
     <section id="sec-pecas" class="hidden">
       <div class="flex flex-wrap gap-4 justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-slate-800">Catálogo e Estoque</h3>
+        <h3 class="text-lg font-bold text-slate-800">Controle de Peças</h3>
         <div class="flex gap-2 w-full md:w-auto items-center">
-          <input type="text" id="busca-pecas" onkeyup="filtrarTabela('lista-pecas', this.value)" placeholder="🔍 Buscar peça ou código..." class="p-2 border border-slate-300 rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-sky-500 outline-none">
+          <input type="text" id="busca-pecas" onkeyup="filtrarTabela('lista-pecas', this.value)" placeholder="🔍 Buscar peça ou código..." class="p-2 border border-slate-300 rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-sky-500 outline-none transition-colors">
           <button onclick="abrirModalPeca()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2 whitespace-nowrap">
             <i data-lucide="plus" class="w-4 h-4"></i> Nova Peça
           </button>
         </div>
       </div>
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
-              <th class="p-4 font-semibold">Código / Nome</th>
-              <th class="p-4 font-semibold">Custo (R$)</th>
-              <th class="p-4 font-semibold">Venda (R$)</th>
-              <th class="p-4 font-semibold text-center">Estoque Atual</th>
-              <th class="p-4 font-semibold text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody id="lista-pecas" class="divide-y divide-slate-100 text-sm text-slate-700">
-            <!-- Renderizado via JS -->
-          </tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse min-w-[800px]">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+                <th class="p-4 font-semibold">Código / Nome</th>
+                <th class="p-4 font-semibold">Custo (R$)</th>
+                <th class="p-4 font-semibold">Venda (R$)</th>
+                <th class="p-4 font-semibold text-center">Estoque Atual</th>
+                <th class="p-4 font-semibold text-right">Movimentar / Ações</th>
+              </tr>
+            </thead>
+            <tbody id="lista-pecas" class="divide-y divide-slate-100 text-sm text-slate-700">
+              <!-- Renderizado via JS -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -242,26 +242,28 @@
       <div class="flex flex-wrap gap-4 justify-between items-center mb-4">
         <h3 class="text-lg font-bold text-slate-800">Catálogo de Serviços</h3>
         <div class="flex gap-2 w-full md:w-auto items-center">
-          <input type="text" onkeyup="filtrarTabela('lista-servicos', this.value)" placeholder="🔍 Buscar serviço..." class="p-2 border border-slate-300 rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-sky-500 outline-none">
+          <input type="text" onkeyup="filtrarTabela('lista-servicos', this.value)" placeholder="🔍 Buscar serviço..." class="p-2 border border-slate-300 rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-sky-500 outline-none transition-colors">
           <button onclick="abrirModalServico()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2 whitespace-nowrap">
             <i data-lucide="plus" class="w-4 h-4"></i> Novo Serviço
           </button>
         </div>
       </div>
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
-              <th class="p-4 font-semibold">Nome do Serviço</th>
-              <th class="p-4 font-semibold">Descrição</th>
-              <th class="p-4 font-semibold">Valor Base (R$)</th>
-              <th class="p-4 font-semibold text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody id="lista-servicos" class="divide-y divide-slate-100 text-sm text-slate-700">
-            <!-- Renderizado via JS -->
-          </tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse min-w-[600px]">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+                <th class="p-4 font-semibold">Nome do Serviço</th>
+                <th class="p-4 font-semibold">Descrição</th>
+                <th class="p-4 font-semibold">Valor Base (R$)</th>
+                <th class="p-4 font-semibold text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="lista-servicos" class="divide-y divide-slate-100 text-sm text-slate-700">
+              <!-- Renderizado via JS -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -270,26 +272,28 @@
       <div class="flex flex-wrap gap-4 justify-between items-center mb-4">
         <h3 class="text-lg font-bold text-slate-800">Diretório de Clientes</h3>
         <div class="flex gap-2 w-full md:w-auto items-center">
-          <input type="text" id="busca-clientes" onkeyup="filtrarTabela('lista-clientes', this.value)" placeholder="🔍 Buscar nome ou telefone..." class="p-2 border border-slate-300 rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-sky-500 outline-none">
+          <input type="text" id="busca-clientes" onkeyup="filtrarTabela('lista-clientes', this.value)" placeholder="🔍 Buscar nome ou telefone..." class="p-2 border border-slate-300 rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-sky-500 outline-none transition-colors">
           <button onclick="abrirModalCliente()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2 whitespace-nowrap">
             <i data-lucide="plus" class="w-4 h-4"></i> Novo Cliente
           </button>
         </div>
       </div>
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
-              <th class="p-4 font-semibold">Cliente / Empresa</th>
-              <th class="p-4 font-semibold">Contato</th>
-              <th class="p-4 font-semibold">Endereço</th>
-              <th class="p-4 font-semibold text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody id="lista-clientes" class="divide-y divide-slate-100 text-sm text-slate-700">
-            <!-- Renderizado via JS -->
-          </tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse min-w-[800px]">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+                <th class="p-4 font-semibold">Cliente / Empresa</th>
+                <th class="p-4 font-semibold">Contato</th>
+                <th class="p-4 font-semibold">Endereço</th>
+                <th class="p-4 font-semibold text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="lista-clientes" class="divide-y divide-slate-100 text-sm text-slate-700">
+              <!-- Renderizado via JS -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -300,26 +304,28 @@
         <p class="text-xs text-slate-500">Últimas entradas e saídas de peças registradas no sistema.</p>
       </div>
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
-              <th class="p-4 font-semibold">Data/Hora</th>
-              <th class="p-4 font-semibold">Tipo</th>
-              <th class="p-4 font-semibold">Peça</th>
-              <th class="p-4 font-semibold">Qtd</th>
-              <th class="p-4 font-semibold">Responsável / Motivo</th>
-            </tr>
-          </thead>
-          <tbody id="lista-historico" class="divide-y divide-slate-100 text-sm text-slate-700">
-            <!-- Renderizado via JS -->
-          </tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse min-w-[800px]">
+            <thead>
+              <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+                <th class="p-4 font-semibold">Data/Hora</th>
+                <th class="p-4 font-semibold">Tipo</th>
+                <th class="p-4 font-semibold">Peça</th>
+                <th class="p-4 font-semibold">Qtd</th>
+                <th class="p-4 font-semibold">Responsável / Motivo</th>
+              </tr>
+            </thead>
+            <tbody id="lista-historico" class="divide-y divide-slate-100 text-sm text-slate-700">
+              <!-- Renderizado via JS -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
   </main>
 
-  <!-- MODAL: PEÇA (NOVO LAYOUT ESTILO ERP) -->
+  <!-- MODAL: PEÇA (LAYOUT ESTILO ERP) -->
   <div id="modal-peca" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh]">
       <div class="bg-slate-800 p-3 flex justify-between items-center text-white shrink-0">
@@ -420,7 +426,7 @@
                 <input type="number" id="peca-estoque-atual" value="0" disabled class="w-full p-1.5 text-sm border border-slate-300 rounded text-center bg-slate-100 font-bold text-slate-500">
               </div>
               <div class="md:col-span-2">
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Localização (Gaveta)</label>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Localização (Gaveta/Prateleira)</label>
                 <input type="text" id="peca-localizacao" class="w-full p-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 outline-none uppercase">
               </div>
               <div>
@@ -541,8 +547,8 @@
           <input type="text" id="cliente-endereco" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none">
         </div>
         <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1">CPF / CNPJ</label>
-          <input type="text" id="cliente-doc" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none">
+          <label class="block text-sm font-semibold text-slate-700 mb-1">CPF / CNPJ <span class="text-xs text-sky-600 font-normal ml-2">(Busca auto p/ CNPJ)</span></label>
+          <input type="text" id="cliente-doc" maxlength="18" oninput="mascaraCpfCnpj(this)" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none transition-colors">
         </div>
         <div class="pt-4 flex justify-end gap-2">
           <button type="button" onclick="fecharModais()" class="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold">Cancelar</button>
@@ -554,6 +560,9 @@
 
   <!-- ÁREA DE IMPRESSÃO (RECIBO) -->
   <div id="cupom-impressao">
+    <div style="text-align: center; margin-bottom: 10px;">
+      <img src="img/logo-wg.png" alt="WG Logo" class="print-logo" onerror="this.style.display='none'">
+    </div>
     <div style="text-align: center; font-weight: bold; font-size: 14px;">WG INFORMÁTICA</div>
     <div style="text-align: center;">CNPJ: 18.227.202/0001-36</div>
     <div style="text-align: center;">Rua Dr. Feliciano Sodre, 182 - SG</div>
@@ -580,28 +589,40 @@
 
   <script>
     lucide.createIcons();
-    const db = firebase.firestore();
-    const auth = firebase.auth();
+    
+    // Tratamento de Erros de Inicialização
+    let db, auth;
+    try {
+      db = firebase.firestore();
+      auth = firebase.auth();
+    } catch(e) {
+      console.warn("Ambiente de pré-visualização. Algumas funções requerem o servidor completo.");
+    }
+    
     let emailAdminLogado = "Desconhecido";
 
-    // Arrays Globais para Vendas
+    // Arrays Globais para o PDV rodar super rápido no cache
     let globalPecas = [];
     let globalServicos = [];
     let globalClientes = [];
     let carrinhoPDV = [];
 
-    auth.onAuthStateChanged(user => {
-      if (!user) {
-        window.location.href = "login-admin.html";
-      } else {
-        emailAdminLogado = user.email;
-        carregarPecas();
-        carregarServicos();
-        carregarClientes();
-        carregarHistorico();
-        carregarVendas();
-      }
-    });
+    if(auth) {
+        auth.onAuthStateChanged(user => {
+          if (!user) {
+            window.location.href = "login-admin.html";
+          } else {
+            emailAdminLogado = user.email;
+            try {
+                carregarPecas();
+                carregarServicos();
+                carregarClientes();
+                carregarHistorico();
+                carregarVendas();
+            } catch(e) { console.error("Erro ao carregar dados:", e); }
+          }
+        });
+    }
 
     // SISTEMA DE ABAS E FILTROS DOM
     function mudarAba(abaId) {
@@ -648,7 +669,6 @@
       document.getElementById('peca-estoque').classList.remove('bg-slate-100');
     }
 
-    // Atalhos Modais
     document.getElementById('modal-peca').addEventListener('keydown', function(e) {
         if (e.key === 'F5') { e.preventDefault(); document.getElementById('form-peca').requestSubmit(); } 
         else if (e.key === 'Escape') fecharModais();
@@ -667,7 +687,7 @@
       if(id) {
           inputEstoqueIni.disabled = true;
           inputEstoqueIni.classList.add('bg-slate-100');
-          inputEstoqueIni.title = "Use Entradas e Saídas para alterar estoque.";
+          inputEstoqueIni.title = "Use Entradas e Saídas para alterar estoque de peças existentes.";
           
           try {
             const doc = await db.collection("pecas").doc(id).get();
@@ -737,14 +757,18 @@
         atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
       };
 
-      if (id) {
-        await db.collection("pecas").doc(id).update(data);
-      } else {
-        data.estoque = parseInt(document.getElementById('peca-estoque').value) || 0;
-        data.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
-        await db.collection("pecas").add(data);
+      try {
+          if (id) {
+            await db.collection("pecas").doc(id).update(data);
+          } else {
+            data.estoque = parseInt(document.getElementById('peca-estoque').value) || 0;
+            data.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
+            await db.collection("pecas").add(data);
+          }
+          fecharModais();
+      } catch (err) {
+          alert("Erro ao salvar no banco: " + err.message);
       }
-      fecharModais();
     });
 
     function carregarPecas() {
@@ -789,11 +813,11 @@
           tbody.appendChild(tr);
         });
         lucide.createIcons();
-      });
+      }, err => console.error("Erro leitura peças:", err));
     }
 
     // ==========================================
-    // 2. MOVIMENTAÇÃO / SERVIÇOS / CLIENTES
+    // 2. MOVIMENTAÇÃO / SERVIÇOS 
     // ==========================================
     function abrirMovimentacao(id, nome, tipo) {
       document.getElementById('mov-peca-id').value = id;
@@ -844,7 +868,7 @@
           const badgeTipo = h.tipo === 'entrada' ? '<span class="text-emerald-600 font-bold bg-emerald-100 px-2 py-1 rounded text-xs">Entrada</span>' : '<span class="text-amber-600 font-bold bg-amber-100 px-2 py-1 rounded text-xs">Saída</span>';
           tbody.innerHTML += `<tr><td class="p-4 text-xs">${h.data?.toDate().toLocaleString('pt-BR') || 'Agora'}</td><td class="p-4">${badgeTipo}</td><td class="p-4 font-semibold">${h.pecaNome}</td><td class="p-4 font-bold">${h.quantidade} un.</td><td class="p-4 text-xs"><div>${h.motivo}</div><div class="text-slate-400">${h.responsavel}</div></td></tr>`;
         });
-      });
+      }, err => console.error("Erro histórico:", err));
     }
 
     function abrirModalServico(id = '', nome = '', valor = '', desc = '') {
@@ -859,15 +883,17 @@
       e.preventDefault();
       const id = document.getElementById('servico-id').value;
       const data = { nome: document.getElementById('servico-nome').value, valor: parseFloat(document.getElementById('servico-valor').value), descricao: document.getElementById('servico-desc').value };
-      if (id) await db.collection("servicos").doc(id).update(data);
-      else await db.collection("servicos").add(data);
-      fecharModais();
+      try {
+          if (id) await db.collection("servicos").doc(id).update(data);
+          else await db.collection("servicos").add(data);
+          fecharModais();
+      } catch(err) { alert("Erro ao salvar serviço: " + err.message); }
     });
 
     function carregarServicos() {
       db.collection("servicos").orderBy("nome").onSnapshot(snap => {
         const tbody = document.getElementById("lista-servicos");
-        const dlProdutos = document.getElementById("dl-produtos"); // Reaproveita datalist no PDV
+        const dlProdutos = document.getElementById("dl-produtos"); 
         tbody.innerHTML = '';
         globalServicos = [];
         
@@ -883,21 +909,91 @@
           tbody.innerHTML += `<tr><td class="p-4 font-bold text-slate-800">${s.nome}</td><td class="p-4 text-slate-500 text-xs">${s.descricao || '-'}</td><td class="p-4 font-semibold text-slate-900">R$ ${s.valor.toFixed(2)}</td><td class="p-4 text-right"><button onclick="abrirModalServico('${doc.id}', '${s.nome.replace(/'/g, "\\'")}', ${s.valor}, '${(s.descricao||'').replace(/'/g, "\\'")}')" class="p-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded"><i data-lucide="edit" class="w-4 h-4"></i></button></td></tr>`;
         });
         lucide.createIcons();
-      });
+      }, err => console.error("Erro leitura servicos:", err));
+    }
+
+    // ==========================================
+    // 4. GESTÃO DE CLIENTES (CRM) E BUSCA CNPJ
+    // ==========================================
+    function mascaraCpfCnpj(i) {
+      let v = i.value.replace(/\D/g, '');
+      if (v.length <= 11) { 
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+      } else { 
+        v = v.replace(/^(\d{2})(\d)/, '$1.$2');
+        v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+        v = v.replace(/\.(\d{3})(\d)/, '.$1/$2');
+        v = v.replace(/(\d{4})(\d)/, '$1-$2');
+      }
+      i.value = v;
+
+      // Chama a busca automaticamente se fechar 14 dígitos (CNPJ)
+      let apenasNumeros = i.value.replace(/\D/g, '');
+      if (apenasNumeros.length === 14) {
+        buscarCNPJ(apenasNumeros);
+      }
+    }
+
+    async function buscarCNPJ(cnpj) {
+      const inputDoc = document.getElementById('cliente-doc');
+      const label = inputDoc.previousElementSibling;
+      const originalText = 'CPF / CNPJ <span class="text-xs text-sky-600 font-normal ml-2">(Busca auto p/ CNPJ)</span>';
+      
+      label.innerHTML = 'CPF / CNPJ <span class="text-xs text-amber-500 font-bold ml-2">⏳ Buscando dados...</span>';
+      inputDoc.style.backgroundColor = '#fef08a';
+      
+      try {
+        const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+        if (!res.ok) throw new Error('CNPJ não encontrado');
+        const data = await res.json();
+
+        document.getElementById('cliente-nome').value = data.nome_fantasia || data.razao_social || '';
+        document.getElementById('cliente-email').value = data.email || '';
+        document.getElementById('cliente-telefone').value = data.ddd_telefone_1 || '';
+        
+        if (data.logradouro) {
+           const endereco = `${data.logradouro}, ${data.numero || 'S/N'} - ${data.bairro}, ${data.municipio} - ${data.uf}`;
+           document.getElementById('cliente-endereco').value = endereco;
+        }
+
+        inputDoc.style.backgroundColor = '#bbf7d0';
+        label.innerHTML = 'CPF / CNPJ <span class="text-xs text-emerald-600 font-bold ml-2">✅ Encontrado!</span>';
+        setTimeout(() => { label.innerHTML = originalText; inputDoc.style.backgroundColor = ''; }, 3000);
+      } catch (err) {
+        inputDoc.style.backgroundColor = '#fecaca';
+        label.innerHTML = 'CPF / CNPJ <span class="text-xs text-red-500 font-bold ml-2">❌ Não encontrado na Receita</span>';
+        setTimeout(() => { label.innerHTML = originalText; inputDoc.style.backgroundColor = ''; }, 3000);
+      }
     }
 
     function abrirModalCliente(id = '', nome = '', telefone = '', email = '', endereco = '', docRef = '') {
-      document.getElementById('cliente-id').value = id; document.getElementById('cliente-nome').value = nome; document.getElementById('cliente-telefone').value = telefone; document.getElementById('cliente-email').value = email; document.getElementById('cliente-endereco').value = endereco; document.getElementById('cliente-doc').value = docRef;
+      document.getElementById('cliente-id').value = id; 
+      document.getElementById('cliente-nome').value = nome; 
+      document.getElementById('cliente-telefone').value = telefone; 
+      document.getElementById('cliente-email').value = email; 
+      document.getElementById('cliente-endereco').value = endereco; 
+      document.getElementById('cliente-doc').value = docRef;
       document.getElementById('modal-cliente').classList.remove('hidden');
     }
 
     document.getElementById('form-cliente').addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('cliente-id').value;
-      const data = { nome: document.getElementById('cliente-nome').value, telefone: document.getElementById('cliente-telefone').value, email: document.getElementById('cliente-email').value, endereco: document.getElementById('cliente-endereco').value, documento: document.getElementById('cliente-doc').value };
-      if (id) await db.collection("clientes_crm").doc(id).update(data);
-      else await db.collection("clientes_crm").add(data);
-      fecharModais();
+      const data = { 
+        nome: document.getElementById('cliente-nome').value, 
+        telefone: document.getElementById('cliente-telefone').value, 
+        email: document.getElementById('cliente-email').value, 
+        endereco: document.getElementById('cliente-endereco').value, 
+        documento: document.getElementById('cliente-doc').value 
+      };
+      
+      try {
+          if (id) await db.collection("clientes_crm").doc(id).update(data);
+          else await db.collection("clientes_crm").add(data);
+          fecharModais();
+      } catch(err) { alert("Erro ao salvar cliente: " + err.message); }
     });
 
     function carregarClientes() {
@@ -920,7 +1016,7 @@
           tbody.innerHTML += `<tr><td class="p-4"><div class="font-bold">${c.nome}</div><div class="text-xs text-slate-400">Doc: ${c.documento || 'S/N'}</div></td><td class="p-4 text-xs"><div>${c.telefone || '-'}</div><div class="text-slate-500">${c.email || '-'}</div></td><td class="p-4 text-slate-600 text-xs">${c.endereco || '-'}</td><td class="p-4 text-right"><button onclick="abrirModalCliente('${doc.id}', '${(c.nome||'').replace(/'/g, "\\'")}', '${c.telefone||''}', '${c.email||''}', '${(c.endereco||'').replace(/'/g, "\\'")}', '${c.documento||''}')" class="p-2 bg-slate-100 rounded"><i data-lucide="edit" class="w-4 h-4"></i></button></td></tr>`;
         });
         lucide.createIcons();
-      });
+      }, err => console.error("Erro leitura clientes:", err));
     }
 
     // ==========================================
@@ -957,7 +1053,7 @@
         dbId = itemEncontrado.id;
         
         if(tipo === 'peca' && itemEncontrado.estoque < inputQtd) {
-           const confirma = confirm(`Atenção: O estoque atual desta peça é ${itemEncontrado.estoque}. Deseja vender ${inputQtd} mesmo assim? (Ficará negativo)`);
+           const confirma = confirm(`Atenção: O estoque desta peça é ${itemEncontrado.estoque}. Deseja vender ${inputQtd} mesmo assim?`);
            if(!confirma) return;
         }
       } else {
@@ -1056,7 +1152,6 @@
         const batch = db.batch();
         const vendaId = db.collection("vendas").doc().id;
 
-        // 1. Salvar Documento da Venda
         batch.set(db.collection("vendas").doc(vendaId), {
           clienteId: clienteId,
           clienteNome: clienteNome,
@@ -1069,13 +1164,11 @@
           data: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // 2. Dar baixa no estoque das peças
         carrinhoPDV.forEach(item => {
           if(item.tipo === 'peca' && item.id) {
              const pecaRef = db.collection("pecas").doc(item.id);
              batch.update(pecaRef, { estoque: firebase.firestore.FieldValue.increment(-item.qtd) });
              
-             // Historico
              const histRef = db.collection("historico_estoque").doc();
              batch.set(histRef, { pecaId: item.id, pecaNome: item.nome, tipo: 'saida', quantidade: item.qtd, motivo: `Venda PDV #${vendaId.substring(0,6)}`, responsavel: emailAdminLogado, data: firebase.firestore.FieldValue.serverTimestamp() });
           }
@@ -1121,14 +1214,18 @@
           `;
         });
         lucide.createIcons();
-      });
+      }, err => console.error("Erro leitura vendas:", err));
     }
 
     async function reimprimirVenda(id) {
-      const doc = await db.collection("vendas").doc(id).get();
-      if(doc.exists) {
-        const v = doc.data();
-        gerarReciboPDV(id, v.clienteNome, v.itens, v.total, v.desconto, v.formaPagamento, v.data.toDate());
+      try {
+          const doc = await db.collection("vendas").doc(id).get();
+          if(doc.exists) {
+            const v = doc.data();
+            gerarReciboPDV(id, v.clienteNome, v.itens, v.total, v.desconto, v.formaPagamento, v.data.toDate());
+          }
+      } catch (err) {
+          alert("Erro ao buscar recibo: " + err.message);
       }
     }
 
@@ -1163,7 +1260,7 @@
         <p>Pgto: ${pag}</p>
       `;
 
-      window.print();
+      setTimeout(() => window.print(), 500); // pequeno delay para garantir a renderização antes de imprimir
     }
   </script>
 </body>
