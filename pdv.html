@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão e Estoque - WG Informática</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Ícones Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  
+  <script src="js/firebase-config.js"></script>
+
+  <style>
+    .tab-active { border-bottom: 2px solid #0ea5e9; color: #0ea5e9; font-weight: 600; }
+    .tab-inactive { color: #64748b; font-weight: 500; border-bottom: 2px solid transparent; }
+    .tab-inactive:hover { color: #334155; border-bottom: 2px solid #cbd5e1; }
+    
+    /* Scrollbar personalizada para o modal ERP */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans">
+
+  <!-- Navbar -->
+  <nav class="bg-slate-900 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="bg-sky-600 p-2 rounded-lg">
+          <i data-lucide="package" class="w-5 h-5 text-white"></i>
+        </div>
+        <h1 class="text-xl font-bold tracking-wide">Gestão & Estoque</h1>
+      </div>
+      <a href="admin.html" class="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white transition">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Admin
+      </a>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Header e Tabs -->
+    <div class="mb-6">
+      <h2 class="text-2xl font-bold text-slate-900">Cadastros Principais</h2>
+      <p class="text-slate-500 text-sm mt-1">Gerencie seu catálogo de serviços, peças, clientes (CRM) e fluxo de estoque.</p>
+    </div>
+
+    <div class="flex overflow-x-auto border-b border-slate-200 mb-6" id="tabs">
+      <button onclick="mudarAba('pecas')" id="tab-pecas" class="tab-active px-6 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="cpu" class="w-4 h-4"></i> Peças e Estoque</button>
+      <button onclick="mudarAba('servicos')" id="tab-servicos" class="tab-inactive px-6 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="wrench" class="w-4 h-4"></i> Serviços</button>
+      <button onclick="mudarAba('clientes')" id="tab-clientes" class="tab-inactive px-6 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="users" class="w-4 h-4"></i> Clientes (CRM)</button>
+      <button onclick="mudarAba('historico')" id="tab-historico" class="tab-inactive px-6 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Histórico de Estoque</button>
+    </div>
+
+    <!-- SEÇÃO: PEÇAS / ESTOQUE -->
+    <section id="sec-pecas" class="block">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Controle de Peças</h3>
+        <button onclick="abrirModalPeca()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i> Nova Peça
+        </button>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+              <th class="p-4 font-semibold">Código / Nome</th>
+              <th class="p-4 font-semibold">Custo (R$)</th>
+              <th class="p-4 font-semibold">Venda (R$)</th>
+              <th class="p-4 font-semibold text-center">Estoque Atual</th>
+              <th class="p-4 font-semibold text-right">Movimentar</th>
+            </tr>
+          </thead>
+          <tbody id="lista-pecas" class="divide-y divide-slate-100 text-sm text-slate-700">
+            <!-- Renderizado via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SEÇÃO: SERVIÇOS -->
+    <section id="sec-servicos" class="hidden">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Catálogo de Serviços</h3>
+        <button onclick="abrirModalServico()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i> Novo Serviço
+        </button>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+              <th class="p-4 font-semibold">Nome do Serviço</th>
+              <th class="p-4 font-semibold">Descrição</th>
+              <th class="p-4 font-semibold">Valor Base (R$)</th>
+              <th class="p-4 font-semibold text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="lista-servicos" class="divide-y divide-slate-100 text-sm text-slate-700">
+            <!-- Renderizado via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SEÇÃO: CLIENTES -->
+    <section id="sec-clientes" class="hidden">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Diretório de Clientes (CRM)</h3>
+        <button onclick="abrirModalCliente()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i> Novo Cliente
+        </button>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+              <th class="p-4 font-semibold">Cliente / Empresa</th>
+              <th class="p-4 font-semibold">Contato</th>
+              <th class="p-4 font-semibold">Endereço</th>
+              <th class="p-4 font-semibold text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="lista-clientes" class="divide-y divide-slate-100 text-sm text-slate-700">
+            <!-- Renderizado via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SEÇÃO: HISTÓRICO DE MOVIMENTAÇÕES -->
+    <section id="sec-historico" class="hidden">
+      <div class="mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Histórico de Movimentações (Estoque)</h3>
+        <p class="text-xs text-slate-500">Últimas entradas e saídas de peças registradas no sistema.</p>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+              <th class="p-4 font-semibold">Data/Hora</th>
+              <th class="p-4 font-semibold">Tipo</th>
+              <th class="p-4 font-semibold">Peça</th>
+              <th class="p-4 font-semibold">Qtd</th>
+              <th class="p-4 font-semibold">Responsável / Motivo</th>
+            </tr>
+          </thead>
+          <tbody id="lista-historico" class="divide-y divide-slate-100 text-sm text-slate-700">
+            <!-- Renderizado via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: PEÇA (NOVO LAYOUT ESTILO ERP) -->
+  <div id="modal-peca" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[95vh]">
+      <div class="bg-slate-800 p-3 flex justify-between items-center text-white shrink-0">
+        <h3 class="font-bold text-lg flex items-center gap-2"><i data-lucide="box" class="w-5 h-5"></i> Cadastro de Produto / Peça</h3>
+        <button type="button" onclick="fecharModais()" class="text-slate-300 hover:text-white"><i data-lucide="x"></i></button>
+      </div>
+      
+      <form id="form-peca" class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50">
+        <input type="hidden" id="peca-id">
+        
+        <div class="space-y-4">
+          <!-- SEÇÃO 1: DADOS BÁSICOS -->
+          <fieldset class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+            <legend class="text-xs font-bold text-sky-700 uppercase px-2 bg-white ml-2 tracking-wider">Dados Básicos</legend>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+              <div class="md:col-span-2">
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Código</label>
+                <input type="text" id="peca-codigo" class="w-full p-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-sky-500 outline-none">
+              </div>
+              <div class="md:col-span-6">
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Descrição do Produto</label>
+                <input type="text" id="peca-nome" required class="w-full p-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-sky-500 outline-none uppercase">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Cód. Barras</label>
+                <input type="text" id="peca-codbarras" class="w-full p-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-sky-500 outline-none">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Referência</label>
+                <input type="text" id="peca-referencia" class="w-full p-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-sky-500 outline-none">
+              </div>
+
+              <div class="md:col-span-3">
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Tipo de Produto</label>
+                <select id="peca-tipo" class="w-full p-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-sky-500 outline-none bg-white">
+                  <option value="00-MERCADORIA PARA REVENDA">00-MERCADORIA PARA REVENDA</option>
+                  <option value="01-MATÉRIA-PRIMA">01-MATÉRIA-PRIMA</option>
+                  <option value="07-MATERIAL DE USO E CONSUMO">07-MATERIAL DE USO E CONSUMO</option>
+                  <option value="09-SERVIÇOS">09-SERVIÇOS</option>
+                </select>
+              </div>
+              <div class="md:col-span-3">
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Marca</label>
+                <input type="text" id="peca-marca" class="w-full p-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-sky-500 outline-none uppercase">
+              </div>
+              <div class="md:col-span-3">
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Grupo</label>
+                <input type="text" id="peca-grupo" class="w-full p-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-sky-500 outline-none uppercase">
+              </div>
+              <div class="md:col-span-3">
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Unidade (Ex: UN, CX, KG)</label>
+                <input type="text" id="peca-unidade" value="UN" class="w-full p-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-sky-500 outline-none uppercase">
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- SEÇÃO 2: PRECIFICAÇÃO -->
+          <fieldset class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+            <legend class="text-xs font-bold text-emerald-700 uppercase px-2 bg-white ml-2 tracking-wider">Precificação</legend>
+            <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Preço Compra</label>
+                <input type="number" id="peca-preco-compra" step="0.01" value="0.00" class="w-full p-1.5 text-sm border border-slate-300 rounded text-right focus:ring-1 focus:ring-emerald-500 outline-none font-medium">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">% Custos</label>
+                <input type="number" id="peca-custos-perc" step="0.01" value="0.00" class="w-full p-1.5 text-sm border border-slate-300 rounded text-right focus:ring-1 focus:ring-emerald-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Preço Custo (R$)</label>
+                <input type="number" id="peca-custo" step="0.01" value="0.00" required class="w-full p-1.5 text-sm border border-slate-300 rounded text-right focus:ring-1 focus:ring-emerald-500 outline-none font-bold text-slate-700 bg-slate-50">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">% Lucro</label>
+                <input type="number" id="peca-lucro-perc" step="0.01" value="0.00" class="w-full p-1.5 text-sm border border-slate-300 rounded text-right focus:ring-1 focus:ring-emerald-500 outline-none">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-[11px] font-bold text-slate-800 mb-1">Preço Venda (R$)</label>
+                <input type="number" id="peca-venda" step="0.01" value="0.00" required class="w-full p-1.5 text-base border-2 border-emerald-500 rounded text-right focus:ring-2 focus:ring-emerald-600 outline-none font-bold text-emerald-700 bg-emerald-50">
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- SEÇÃO 3: ESTOQUE E FISCAL -->
+          <fieldset class="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+            <legend class="text-xs font-bold text-amber-700 uppercase px-2 bg-white ml-2 tracking-wider">Estoque & Fiscal</legend>
+            <div class="grid grid-cols-2 md:grid-cols-7 gap-3">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Est. Mínimo</label>
+                <input type="number" id="peca-estoque-minimo" value="1" class="w-full p-1.5 text-sm border border-slate-300 rounded text-center focus:ring-1 focus:ring-amber-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Est. Inicial</label>
+                <input type="number" id="peca-estoque" value="0" class="w-full p-1.5 text-sm border border-slate-300 rounded text-center focus:ring-1 focus:ring-amber-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Estoque Atual</label>
+                <input type="number" id="peca-estoque-atual" value="0" disabled class="w-full p-1.5 text-sm border border-slate-300 rounded text-center bg-slate-100 font-bold text-slate-500">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Localização (Gaveta/Prateleira)</label>
+                <input type="text" id="peca-localizacao" class="w-full p-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 outline-none uppercase">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">NCM</label>
+                <input type="text" id="peca-ncm" class="w-full p-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 outline-none">
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">CEST</label>
+                <input type="text" id="peca-cest" class="w-full p-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 outline-none">
+              </div>
+            </div>
+          </fieldset>
+          
+          <!-- SEÇÃO 4: PARÂMETROS -->
+          <fieldset class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm">
+             <div class="flex flex-wrap gap-6 text-sm font-medium text-slate-700">
+               <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="param-ativo" checked class="w-4 h-4 text-sky-600 rounded"> Produto Ativo</label>
+               <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="param-fiscal" class="w-4 h-4 text-sky-600 rounded"> É Fiscal</label>
+               <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="param-servico" class="w-4 h-4 text-sky-600 rounded"> Serviço / Mão de Obra</label>
+             </div>
+          </fieldset>
+
+        </div>
+      </form>
+
+      <!-- RODAPÉ DO MODAL -->
+      <div class="bg-slate-100 p-4 border-t border-slate-200 flex justify-end gap-3 shrink-0">
+        <button type="button" onclick="fecharModais()" class="px-5 py-2 text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg font-bold transition flex items-center gap-2"><i data-lucide="x-circle" class="w-4 h-4"></i> ESC | Sair</button>
+        <button type="button" onclick="document.getElementById('form-peca').requestSubmit()" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow transition flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i> F5 | Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MOVIMENTAÇÃO DE ESTOQUE (ENTRADA/SAÍDA) -->
+  <div id="modal-movimentacao" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border-t-4 border-amber-500">
+      <div class="p-6">
+        <h3 class="font-bold text-lg text-slate-800 mb-1" id="mov-titulo">Movimentar Estoque</h3>
+        <p class="text-sm text-slate-500 mb-4" id="mov-peca-nome">Peça selecionada</p>
+        
+        <input type="hidden" id="mov-peca-id">
+        <input type="hidden" id="mov-tipo">
+        <input type="hidden" id="mov-nome-peca">
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1">Quantidade</label>
+            <input type="number" id="mov-qtd" required min="1" value="1" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-amber-500 outline-none text-lg font-bold text-center">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1">Motivo / OS Vinculada</label>
+            <input type="text" id="mov-motivo" placeholder="Ex: Compra NF 123, ou OS-005" required class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-amber-500 outline-none">
+          </div>
+        </div>
+        
+        <div class="pt-6 flex justify-end gap-2">
+          <button type="button" onclick="fecharModais()" class="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold w-full">Cancelar</button>
+          <button type="button" id="btn-confirmar-mov" onclick="salvarMovimentacao()" class="px-4 py-2 text-white rounded-lg font-bold shadow w-full">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SERVIÇO -->
+  <div id="modal-servico" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+      <div class="bg-slate-800 p-4 flex justify-between items-center text-white">
+        <h3 class="font-bold text-lg">Cadastro de Serviço</h3>
+        <button onclick="fecharModais()" class="text-slate-300 hover:text-white"><i data-lucide="x"></i></button>
+      </div>
+      <form id="form-servico" class="p-6 space-y-4">
+        <input type="hidden" id="servico-id">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Nome do Serviço</label>
+          <input type="text" id="servico-nome" required class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-emerald-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Valor Base (R$)</label>
+          <input type="number" id="servico-valor" step="0.01" required class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-emerald-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Descrição</label>
+          <textarea id="servico-desc" rows="3" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
+        </div>
+        <div class="pt-4 flex justify-end gap-2">
+          <button type="button" onclick="fecharModais()" class="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold shadow">Salvar Serviço</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CLIENTE -->
+  <div id="modal-cliente" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+      <div class="bg-slate-800 p-4 flex justify-between items-center text-white">
+        <h3 class="font-bold text-lg">Cadastro de Cliente</h3>
+        <button onclick="fecharModais()" class="text-slate-300 hover:text-white"><i data-lucide="x"></i></button>
+      </div>
+      <form id="form-cliente" class="p-6 space-y-4">
+        <input type="hidden" id="cliente-id">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Nome / Empresa</label>
+          <input type="text" id="cliente-nome" required class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1">WhatsApp / Telefone</label>
+            <input type="text" id="cliente-telefone" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1">Email</label>
+            <input type="email" id="cliente-email" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Endereço Completo</label>
+          <input type="text" id="cliente-endereco" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">CPF / CNPJ</label>
+          <input type="text" id="cliente-doc" class="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+        <div class="pt-4 flex justify-end gap-2">
+          <button type="button" onclick="fecharModais()" class="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold shadow">Salvar Cliente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    let emailAdminLogado = "Desconhecido";
+
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = "login-admin.html";
+      } else {
+        emailAdminLogado = user.email;
+        carregarPecas();
+        carregarServicos();
+        carregarClientes();
+        carregarHistorico();
+      }
+    });
+
+    function mudarAba(abaId) {
+      ['pecas', 'servicos', 'clientes', 'historico'].forEach(id => {
+        document.getElementById(`sec-${id}`).classList.add('hidden');
+        document.getElementById(`tab-${id}`).classList.remove('tab-active');
+        document.getElementById(`tab-${id}`).classList.add('tab-inactive');
+      });
+      document.getElementById(`sec-${abaId}`).classList.remove('hidden');
+      document.getElementById(`tab-${abaId}`).classList.remove('tab-inactive');
+      document.getElementById(`tab-${abaId}`).classList.add('tab-active');
+    }
+
+    function fecharModais() {
+      document.getElementById('modal-peca').classList.add('hidden');
+      document.getElementById('modal-servico').classList.add('hidden');
+      document.getElementById('modal-cliente').classList.add('hidden');
+      document.getElementById('modal-movimentacao').classList.add('hidden');
+      
+      document.getElementById('form-peca').reset();
+      document.getElementById('form-servico').reset();
+      document.getElementById('form-cliente').reset();
+      document.getElementById('peca-id').value = '';
+      document.getElementById('servico-id').value = '';
+      document.getElementById('cliente-id').value = '';
+      
+      document.getElementById('peca-estoque').disabled = false;
+      document.getElementById('peca-estoque').classList.remove('bg-slate-100');
+    }
+
+    // ==========================================
+    // 1. GESTÃO DE PEÇAS E ESTOQUE
+    // ==========================================
+    async function abrirModalPeca(id = null) {
+      fecharModais(); 
+      document.getElementById('peca-id').value = id || '';
+      const modal = document.getElementById('modal-peca');
+      const inputEstoqueIni = document.getElementById('peca-estoque');
+      const inputEstoqueAtual = document.getElementById('peca-estoque-atual');
+      
+      if(id) {
+          // MODO EDIÇÃO: Busca os dados completos no Firebase
+          inputEstoqueIni.disabled = true;
+          inputEstoqueIni.classList.add('bg-slate-100');
+          inputEstoqueIni.title = "Use Entradas e Saídas para alterar estoque de peças existentes.";
+          
+          try {
+            const doc = await db.collection("pecas").doc(id).get();
+            if(doc.exists) {
+               const p = doc.data();
+               document.getElementById('peca-codigo').value = p.codigo || '';
+               document.getElementById('peca-nome').value = p.nome || '';
+               document.getElementById('peca-codbarras').value = p.codbarras || '';
+               document.getElementById('peca-referencia').value = p.referencia || '';
+               document.getElementById('peca-tipo').value = p.tipo || '00-MERCADORIA PARA REVENDA';
+               document.getElementById('peca-marca').value = p.marca || '';
+               document.getElementById('peca-grupo').value = p.grupo || '';
+               document.getElementById('peca-unidade').value = p.unidade || 'UN';
+               
+               document.getElementById('peca-preco-compra').value = (p.precoCompra || 0).toFixed(2);
+               document.getElementById('peca-custos-perc').value = (p.custosPerc || 0).toFixed(2);
+               document.getElementById('peca-custo').value = (p.custo || 0).toFixed(2);
+               document.getElementById('peca-lucro-perc').value = (p.lucroPerc || 0).toFixed(2);
+               document.getElementById('peca-venda').value = (p.venda || 0).toFixed(2);
+               
+               document.getElementById('peca-estoque-minimo').value = p.estoqueMinimo || 1;
+               inputEstoqueAtual.value = p.estoque || 0;
+               document.getElementById('peca-localizacao').value = p.localizacao || '';
+               document.getElementById('peca-ncm').value = p.ncm || '';
+               document.getElementById('peca-cest').value = p.cest || '';
+               
+               document.getElementById('param-ativo').checked = p.ativo !== false;
+               document.getElementById('param-fiscal').checked = p.isFiscal === true;
+               document.getElementById('param-servico').checked = p.isServico === true;
+            }
+          } catch(e) {
+            alert("Erro ao buscar dados da peça: " + e.message);
+          }
+      } else {
+          // MODO CRIAÇÃO: Reseta tudo
+          document.getElementById('form-peca').reset();
+          inputEstoqueIni.disabled = false;
+          inputEstoqueIni.classList.remove('bg-slate-100');
+          inputEstoqueAtual.value = '0';
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    document.getElementById('form-peca').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('peca-id').value;
+      
+      const data = {
+        codigo: document.getElementById('peca-codigo').value.toUpperCase(),
+        nome: document.getElementById('peca-nome').value.toUpperCase(),
+        codbarras: document.getElementById('peca-codbarras').value,
+        referencia: document.getElementById('peca-referencia').value,
+        tipo: document.getElementById('peca-tipo').value,
+        marca: document.getElementById('peca-marca').value.toUpperCase(),
+        grupo: document.getElementById('peca-grupo').value.toUpperCase(),
+        unidade: document.getElementById('peca-unidade').value.toUpperCase(),
+        
+        precoCompra: parseFloat(document.getElementById('peca-preco-compra').value) || 0,
+        custosPerc: parseFloat(document.getElementById('peca-custos-perc').value) || 0,
+        custo: parseFloat(document.getElementById('peca-custo').value) || 0,
+        lucroPerc: parseFloat(document.getElementById('peca-lucro-perc').value) || 0,
+        venda: parseFloat(document.getElementById('peca-venda').value) || 0,
+        
+        estoqueMinimo: parseInt(document.getElementById('peca-estoque-minimo').value) || 1,
+        localizacao: document.getElementById('peca-localizacao').value.toUpperCase(),
+        ncm: document.getElementById('peca-ncm').value,
+        cest: document.getElementById('peca-cest').value,
+        
+        ativo: document.getElementById('param-ativo').checked,
+        isFiscal: document.getElementById('param-fiscal').checked,
+        isServico: document.getElementById('param-servico').checked,
+        
+        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      try {
+        if (id) {
+          await db.collection("pecas").doc(id).update(data);
+        } else {
+          data.estoque = parseInt(document.getElementById('peca-estoque').value) || 0;
+          data.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
+          await db.collection("pecas").add(data);
+        }
+        fecharModais();
+      } catch(err) {
+        alert("Erro ao salvar peça: " + err.message);
+      }
+    });
+
+    // Atalhos de teclado no modal de peças (F5 para salvar, ESC para sair)
+    document.getElementById('modal-peca').addEventListener('keydown', function(e) {
+        if (e.key === 'F5') {
+            e.preventDefault();
+            document.getElementById('form-peca').requestSubmit();
+        } else if (e.key === 'Escape') {
+            fecharModais();
+        }
+    });
+
+    function carregarPecas() {
+      db.collection("pecas").orderBy("nome").onSnapshot(snap => {
+        const tbody = document.getElementById("lista-pecas");
+        tbody.innerHTML = '';
+        snap.forEach(doc => {
+          const p = doc.data();
+          const tr = document.createElement('tr');
+          const estMin = p.estoqueMinimo || 1;
+          let badgeEstoque = 'bg-emerald-100 text-emerald-700';
+          
+          if(p.estoque <= 0) badgeEstoque = 'bg-red-100 text-red-700';
+          else if(p.estoque <= estMin) badgeEstoque = 'bg-amber-100 text-amber-700';
+          
+          tr.innerHTML = `
+            <td class="p-4">
+              <div class="font-bold text-slate-800">${p.nome} ${p.ativo===false ? '<span class="text-xs text-red-500 font-normal">(Inativo)</span>' : ''}</div>
+              <div class="text-xs text-slate-400">Cod: ${p.codigo || 'S/N'} ${p.marca ? '| Marca: '+p.marca : ''}</div>
+            </td>
+            <td class="p-4 text-slate-600">R$ ${(p.custo || 0).toFixed(2)}</td>
+            <td class="p-4 font-bold text-emerald-700">R$ ${(p.venda || 0).toFixed(2)}</td>
+            <td class="p-4 text-center">
+              <span class="px-3 py-1 rounded-full text-xs font-bold ${badgeEstoque}">${p.estoque} ${p.unidade || 'UN'}</span>
+            </td>
+            <td class="p-4 text-right">
+              <div class="flex justify-end gap-1">
+                <button onclick="abrirMovimentacao('${doc.id}', '${p.nome.replace(/'/g, "\\'")}', 'entrada')" class="p-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded" title="Dar Entrada">
+                  <i data-lucide="arrow-down-to-line" class="w-4 h-4"></i>
+                </button>
+                <button onclick="abrirMovimentacao('${doc.id}', '${p.nome.replace(/'/g, "\\'")}', 'saida')" class="p-2 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded" title="Dar Saída">
+                  <i data-lucide="arrow-up-from-line" class="w-4 h-4"></i>
+                </button>
+                <div class="w-px h-6 bg-slate-200 mx-1 mt-1"></div>
+                <button onclick="abrirModalPeca('${doc.id}')" class="p-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded" title="Editar Informações">
+                  <i data-lucide="edit" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+        lucide.createIcons();
+      });
+    }
+
+    // ==========================================
+    // 2. MOVIMENTAÇÃO DE ESTOQUE (ENTRADA/SAÍDA)
+    // ==========================================
+    function abrirMovimentacao(id, nome, tipo) {
+      document.getElementById('mov-peca-id').value = id;
+      document.getElementById('mov-nome-peca').value = nome;
+      document.getElementById('mov-tipo').value = tipo;
+      
+      document.getElementById('mov-peca-nome').innerText = nome;
+      document.getElementById('mov-qtd').value = 1;
+      document.getElementById('mov-motivo').value = '';
+
+      const btn = document.getElementById('btn-confirmar-mov');
+      const titulo = document.getElementById('mov-titulo');
+
+      if(tipo === 'entrada') {
+        titulo.innerText = "➕ Entrada de Estoque";
+        btn.className = "px-4 py-2 text-white rounded-lg font-bold shadow w-full bg-emerald-600 hover:bg-emerald-700";
+        btn.innerText = "Confirmar Entrada";
+      } else {
+        titulo.innerText = "➖ Saída de Estoque";
+        btn.className = "px-4 py-2 text-white rounded-lg font-bold shadow w-full bg-amber-600 hover:bg-amber-700";
+        btn.innerText = "Confirmar Saída";
+      }
+
+      document.getElementById('modal-movimentacao').classList.remove('hidden');
+    }
+
+    async function salvarMovimentacao() {
+      const id = document.getElementById('mov-peca-id').value;
+      const nomePeca = document.getElementById('mov-nome-peca').value;
+      const tipo = document.getElementById('mov-tipo').value;
+      const qtdInput = parseInt(document.getElementById('mov-qtd').value);
+      const motivo = document.getElementById('mov-motivo').value;
+
+      if(!qtdInput || qtdInput <= 0 || !motivo) {
+        alert("Preencha a quantidade válida e o motivo.");
+        return;
+      }
+
+      const valorIncremento = tipo === 'entrada' ? qtdInput : -qtdInput;
+
+      try {
+        const batch = db.batch();
+
+        const pecaRef = db.collection("pecas").doc(id);
+        batch.update(pecaRef, {
+            estoque: firebase.firestore.FieldValue.increment(valorIncremento),
+            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        const histRef = db.collection("historico_estoque").doc();
+        batch.set(histRef, {
+            pecaId: id,
+            pecaNome: nomePeca,
+            tipo: tipo,
+            quantidade: qtdInput,
+            motivo: motivo,
+            responsavel: emailAdminLogado,
+            data: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        await batch.commit();
+        fecharModais();
+      } catch (err) {
+        alert("Erro ao movimentar estoque: " + err.message);
+      }
+    }
+
+    function carregarHistorico() {
+      db.collection("historico_estoque").orderBy("data", "desc").limit(50).onSnapshot(snap => {
+        const tbody = document.getElementById("lista-historico");
+        tbody.innerHTML = '';
+        snap.forEach(doc => {
+          const h = doc.data();
+          const tr = document.createElement('tr');
+          
+          let dtStr = "Agora";
+          if(h.data && h.data.toDate) dtStr = h.data.toDate().toLocaleString('pt-BR');
+
+          const badgeTipo = h.tipo === 'entrada' ? 
+            '<span class="text-emerald-600 font-bold bg-emerald-100 px-2 py-1 rounded text-xs flex items-center w-max gap-1"><i data-lucide="arrow-down" class="w-3 h-3"></i> Entrada</span>' : 
+            '<span class="text-amber-600 font-bold bg-amber-100 px-2 py-1 rounded text-xs flex items-center w-max gap-1"><i data-lucide="arrow-up" class="w-3 h-3"></i> Saída</span>';
+
+          tr.innerHTML = `
+            <td class="p-4 text-xs text-slate-500">${dtStr}</td>
+            <td class="p-4">${badgeTipo}</td>
+            <td class="p-4 font-semibold text-slate-800">${h.pecaNome}</td>
+            <td class="p-4 font-bold text-slate-900">${h.quantidade} un.</td>
+            <td class="p-4 text-xs text-slate-600">
+              <div class="font-medium text-slate-800">${h.motivo}</div>
+              <div>${h.responsavel}</div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+        lucide.createIcons();
+      });
+    }
+
+    // ==========================================
+    // 3. GESTÃO DE SERVIÇOS
+    // ==========================================
+    function abrirModalServico(id = null, nome = '', valor = '', desc = '') {
+      document.getElementById('servico-id').value = id || '';
+      document.getElementById('servico-nome').value = nome;
+      document.getElementById('servico-valor').value = valor;
+      document.getElementById('servico-desc').value = desc;
+      document.getElementById('modal-servico').classList.remove('hidden');
+    }
+
+    document.getElementById('form-servico').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('servico-id').value;
+      const data = {
+        nome: document.getElementById('servico-nome').value,
+        valor: parseFloat(document.getElementById('servico-valor').value),
+        descricao: document.getElementById('servico-desc').value
+      };
+
+      if (id) await db.collection("servicos").doc(id).update(data);
+      else await db.collection("servicos").add(data);
+      
+      fecharModais();
+    });
+
+    function carregarServicos() {
+      db.collection("servicos").orderBy("nome").onSnapshot(snap => {
+        const tbody = document.getElementById("lista-servicos");
+        tbody.innerHTML = '';
+        snap.forEach(doc => {
+          const s = doc.data();
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="p-4 font-bold text-slate-800">${s.nome}</td>
+            <td class="p-4 text-slate-500 text-xs">${s.descricao || '-'}</td>
+            <td class="p-4 font-semibold text-slate-900">R$ ${s.valor.toFixed(2)}</td>
+            <td class="p-4 text-right">
+              <button onclick="abrirModalServico('${doc.id}', '${s.nome.replace(/'/g, "\\'")}', ${s.valor}, '${(s.descricao||'').replace(/'/g, "\\'")}')" class="p-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded">
+                <i data-lucide="edit" class="w-4 h-4"></i>
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+        lucide.createIcons();
+      });
+    }
+
+    // ==========================================
+    // 4. GESTÃO DE CLIENTES (CRM)
+    // ==========================================
+    function abrirModalCliente(id = null, nome = '', telefone = '', email = '', endereco = '', docRef = '') {
+      document.getElementById('cliente-id').value = id || '';
+      document.getElementById('cliente-nome').value = nome;
+      document.getElementById('cliente-telefone').value = telefone;
+      document.getElementById('cliente-email').value = email;
+      document.getElementById('cliente-endereco').value = endereco;
+      document.getElementById('cliente-doc').value = docRef;
+      document.getElementById('modal-cliente').classList.remove('hidden');
+    }
+
+    document.getElementById('form-cliente').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('cliente-id').value;
+      const data = {
+        nome: document.getElementById('cliente-nome').value,
+        telefone: document.getElementById('cliente-telefone').value,
+        email: document.getElementById('cliente-email').value,
+        endereco: document.getElementById('cliente-endereco').value,
+        documento: document.getElementById('cliente-doc').value,
+        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      try {
+        if (id) {
+          await db.collection("clientes_crm").doc(id).update(data);
+        } else {
+          data.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
+          await db.collection("clientes_crm").add(data);
+        }
+        fecharModais();
+      } catch(err) {
+        alert("Erro ao salvar cliente: " + err.message);
+      }
+    });
+
+    function carregarClientes() {
+      db.collection("clientes_crm").orderBy("nome").onSnapshot(snap => {
+        const tbody = document.getElementById("lista-clientes");
+        tbody.innerHTML = '';
+        snap.forEach(doc => {
+          const c = doc.data();
+          
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="p-4">
+              <div class="font-bold text-slate-800">${c.nome || 'Sem Nome'}</div>
+              <div class="text-xs text-slate-400">Doc: ${c.documento || 'S/N'}</div>
+            </td>
+            <td class="p-4 text-xs">
+              <div class="text-slate-700">${c.telefone || '-'}</div>
+              <div class="text-slate-500">${c.email || '-'}</div>
+            </td>
+            <td class="p-4 text-slate-600 text-xs">${c.endereco || '-'}</td>
+            <td class="p-4 text-right">
+              <button onclick="abrirModalCliente('${doc.id}', '${(c.nome||'').replace(/'/g, "\\'")}', '${c.telefone||''}', '${c.email||''}', '${(c.endereco||'').replace(/'/g, "\\'")}', '${c.documento||''}')" class="p-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded">
+                <i data-lucide="edit" class="w-4 h-4"></i>
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+        lucide.createIcons();
+      });
+    }
+  </script>
+</body>
+</html>
