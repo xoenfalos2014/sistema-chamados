@@ -55,12 +55,29 @@
                 const userCredential = await signInWithEmailAndPassword(auth, email, senha);
                 const user = userCredential.user;
                 const snap = await getDoc(doc(db, "usuarios", user.uid));
-                const tipo = snap.exists() ? snap.data().tipo : null;
+                
+                if (snap.exists()) {
+                    const dadosUsuario = snap.data();
+                    const tipo = dadosUsuario.tipo;
+                    const status = dadosUsuario.status || 'ativo';
 
-                if (tipo === "tecnico" || tipo === "admin") { // Permite que administradores também acessem
-                    window.location.href = "tecnico.html";
+                    // VERIFICAÇÃO DE BLOQUEIO DE STATUS
+                    if (status === 'pausado' || status === 'excluido') {
+                        await auth.signOut();
+                        alert("Acesso negado. Sua conta encontra-se " + status + " no sistema.");
+                        return;
+                    }
+
+                    // Verifica o Nível de Acesso (Técnicos e Admins)
+                    if (tipo === "tecnico" || tipo === "admin") { 
+                        window.location.href = "tecnico.html";
+                    } else {
+                        await auth.signOut();
+                        alert("Usuário sem permissão para acessar esta área.");
+                    }
                 } else {
-                    alert("Usuário sem permissão para acessar esta área.");
+                    await auth.signOut();
+                    alert("Cadastro não encontrado no banco de dados.");
                 }
             } catch (err) {
                 alert("Erro ao fazer login. Verifique e-mail e senha.");
@@ -70,4 +87,3 @@
     </script>
 </body>
 </html>
-
