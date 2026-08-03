@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestão e Estoque - WG Informática</title>
+  <title>Gestão, Estoque e PDV - WG Informática</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -23,11 +23,30 @@
     .tab-inactive { color: #64748b; font-weight: 500; border-bottom: 2px solid transparent; }
     .tab-inactive:hover { color: #334155; border-bottom: 2px solid #cbd5e1; }
     
-    /* Scrollbar personalizada para o modal ERP */
-    ::-webkit-scrollbar { width: 8px; }
+    /* Scrollbar personalizada */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Estilos para o Cupom de Impressão */
+    @media print {
+      body * { visibility: hidden; }
+      #cupom-impressao, #cupom-impressao * { visibility: visible; }
+      #cupom-impressao {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        max-width: 300px; /* Largura padrão de impressora térmica 80mm */
+        padding: 0;
+        margin: 0;
+        color: #000;
+        font-family: monospace;
+        font-size: 12px;
+      }
+      .print-divider { border-top: 1px dashed #000; margin: 8px 0; }
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen font-sans">
@@ -37,12 +56,12 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="bg-sky-600 p-2 rounded-lg">
-          <i data-lucide="package" class="w-5 h-5 text-white"></i>
+          <i data-lucide="shopping-cart" class="w-5 h-5 text-white"></i>
         </div>
-        <h1 class="text-xl font-bold tracking-wide">Gestão & Estoque</h1>
+        <h1 class="text-xl font-bold tracking-wide">Gestão & PDV</h1>
       </div>
       <a href="admin.html" class="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white transition">
-        <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Admin
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar
       </a>
     </div>
   </nav>
@@ -50,25 +69,155 @@
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
     <!-- Header e Tabs -->
-    <div class="mb-6">
-      <h2 class="text-2xl font-bold text-slate-900">Cadastros Principais</h2>
-      <p class="text-slate-500 text-sm mt-1">Gerencie seu catálogo de serviços, peças, clientes (CRM) e fluxo de estoque.</p>
+    <div class="flex overflow-x-auto border-b border-slate-200 mb-6 gap-1" id="tabs">
+      <button onclick="mudarAba('pdv')" id="tab-pdv" class="tab-active px-5 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="monitor" class="w-4 h-4"></i> Vendas (PDV)</button>
+      <button onclick="mudarAba('vendas')" id="tab-vendas" class="tab-inactive px-5 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-4 h-4"></i> Relatório de Vendas</button>
+      <div class="w-px h-6 bg-slate-300 mx-2 self-center"></div>
+      <button onclick="mudarAba('pecas')" id="tab-pecas" class="tab-inactive px-5 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="box" class="w-4 h-4"></i> Peças e Estoque</button>
+      <button onclick="mudarAba('servicos')" id="tab-servicos" class="tab-inactive px-5 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="wrench" class="w-4 h-4"></i> Serviços</button>
+      <button onclick="mudarAba('clientes')" id="tab-clientes" class="tab-inactive px-5 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="users" class="w-4 h-4"></i> Clientes</button>
+      <button onclick="mudarAba('historico')" id="tab-historico" class="tab-inactive px-5 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Histórico Mov.</button>
     </div>
 
-    <div class="flex overflow-x-auto border-b border-slate-200 mb-6" id="tabs">
-      <button onclick="mudarAba('pecas')" id="tab-pecas" class="tab-active px-6 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="cpu" class="w-4 h-4"></i> Peças e Estoque</button>
-      <button onclick="mudarAba('servicos')" id="tab-servicos" class="tab-inactive px-6 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="wrench" class="w-4 h-4"></i> Serviços</button>
-      <button onclick="mudarAba('clientes')" id="tab-clientes" class="tab-inactive px-6 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="users" class="w-4 h-4"></i> Clientes (CRM)</button>
-      <button onclick="mudarAba('historico')" id="tab-historico" class="tab-inactive px-6 py-3 whitespace-nowrap transition flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Histórico de Estoque</button>
-    </div>
+    <!-- SEÇÃO: PDV (FRENTE DE CAIXA) -->
+    <section id="sec-pdv" class="block">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Painel de Inserção -->
+        <div class="lg:col-span-2 space-y-4">
+          <!-- Seleção de Cliente -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-sm font-bold text-slate-700 uppercase mb-3 flex items-center gap-2"><i data-lucide="user" class="w-4 h-4"></i> Dados do Cliente</h3>
+            <input type="text" id="pdv-cliente" list="dl-clientes" placeholder="Busque pelo nome ou deixe em branco para 'Consumidor Final'" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
+            <datalist id="dl-clientes"></datalist>
+          </div>
+
+          <!-- Seleção de Produtos/Serviços -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <h3 class="text-sm font-bold text-slate-700 uppercase mb-3 flex items-center gap-2"><i data-lucide="shopping-bag" class="w-4 h-4"></i> Adicionar Item</h3>
+            <div class="flex flex-wrap md:flex-nowrap gap-3">
+              <div class="flex-1">
+                <input type="text" id="pdv-produto" list="dl-produtos" placeholder="Busque produto ou serviço (Nome ou Cód)" class="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none font-medium">
+                <datalist id="dl-produtos"></datalist>
+              </div>
+              <div class="w-24">
+                <input type="number" id="pdv-qtd" value="1" min="1" step="0.01" class="w-full p-2.5 border border-slate-300 rounded-lg text-center focus:ring-2 focus:ring-sky-500 outline-none font-bold" title="Quantidade">
+              </div>
+              <button type="button" onclick="adicionarAoCarrinho()" class="bg-sky-600 hover:bg-sky-700 text-white px-6 py-2.5 rounded-lg font-bold shadow transition flex items-center justify-center gap-2">
+                <i data-lucide="plus-circle" class="w-5 h-5"></i> Inserir
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabela do Carrinho -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[300px] flex flex-col">
+            <div class="overflow-y-auto flex-1">
+              <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-50 text-slate-600 text-xs uppercase sticky top-0">
+                  <tr>
+                    <th class="p-3 font-semibold w-12 text-center">Tipo</th>
+                    <th class="p-3 font-semibold">Descrição</th>
+                    <th class="p-3 font-semibold text-center">Qtd</th>
+                    <th class="p-3 font-semibold text-right">Preço Un.</th>
+                    <th class="p-3 font-semibold text-right">Subtotal</th>
+                    <th class="p-3 font-semibold text-center w-12"></th>
+                  </tr>
+                </thead>
+                <tbody id="lista-carrinho" class="divide-y divide-slate-100 text-sm text-slate-700">
+                  <tr><td colspan="6" class="p-8 text-center text-slate-400 italic">Carrinho vazio. Adicione itens acima.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Painel de Fechamento (Resumo) -->
+        <div class="bg-slate-800 text-white rounded-xl shadow-xl flex flex-col h-full overflow-hidden">
+          <div class="p-5 border-b border-slate-700 bg-slate-900">
+            <h3 class="text-lg font-bold flex items-center gap-2"><i data-lucide="calculator" class="w-5 h-5 text-sky-400"></i> Resumo da Venda</h3>
+          </div>
+          
+          <div class="p-5 flex-1 space-y-6">
+            <div class="flex justify-between items-end">
+              <span class="text-slate-400 font-medium">Subtotal</span>
+              <span class="text-xl font-bold" id="pdv-subtotal">R$ 0,00</span>
+            </div>
+            
+            <div>
+              <label class="text-slate-400 font-medium text-sm block mb-1">Desconto (R$)</label>
+              <input type="number" id="pdv-desconto" value="0.00" step="0.01" min="0" oninput="atualizarTotaisPDV()" class="w-full p-2 bg-slate-700 border border-slate-600 rounded-lg text-right focus:ring-2 focus:ring-sky-500 outline-none text-white font-bold">
+            </div>
+
+            <div class="pt-4 border-t border-slate-700 flex justify-between items-end">
+              <span class="text-slate-300 font-bold text-lg">Total</span>
+              <span class="text-4xl font-black text-emerald-400" id="pdv-total">R$ 0,00</span>
+            </div>
+
+            <div>
+              <label class="text-slate-400 font-medium text-sm block mb-2 mt-4">Forma de Pagamento</label>
+              <select id="pdv-pagamento" class="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-white font-medium">
+                <option value="PIX">PIX</option>
+                <option value="Cartão de Crédito">Cartão de Crédito</option>
+                <option value="Cartão de Débito">Cartão de Débito</option>
+                <option value="Dinheiro">Dinheiro</option>
+                <option value="Boleto / Prazo">Boleto / A Prazo</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="p-5 bg-slate-900 border-t border-slate-700">
+            <button type="button" onclick="finalizarVenda()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-black text-lg shadow-lg transition flex justify-center items-center gap-2">
+              <i data-lucide="check-circle" class="w-6 h-6"></i> FINALIZAR VENDA
+            </button>
+            <button type="button" onclick="limparPDV()" class="w-full mt-3 text-slate-400 hover:text-white py-2 font-medium transition text-sm">
+              Cancelar Venda
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SEÇÃO: RELATÓRIO DE VENDAS -->
+    <section id="sec-vendas" class="hidden">
+      <div class="flex flex-wrap gap-4 justify-between items-end mb-4">
+        <div>
+          <h3 class="text-lg font-bold text-slate-800">Relatório de Vendas Fechadas</h3>
+          <p class="text-sm text-slate-500">Histórico de PDV e emissão de recibos.</p>
+        </div>
+        <div class="flex gap-2 w-full md:w-auto">
+          <input type="text" id="busca-vendas" onkeyup="filtrarTabela('lista-vendas-tabela', this.value)" placeholder="Buscar cliente ou data..." class="p-2 border border-slate-300 rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-sky-500 outline-none">
+        </div>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+              <th class="p-4 font-semibold">Data / Hora</th>
+              <th class="p-4 font-semibold">Cliente</th>
+              <th class="p-4 font-semibold text-center">Itens</th>
+              <th class="p-4 font-semibold text-right">Total (R$)</th>
+              <th class="p-4 font-semibold text-center">Pagamento</th>
+              <th class="p-4 font-semibold text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="lista-vendas-tabela" class="divide-y divide-slate-100 text-sm text-slate-700">
+            <!-- Renderizado via JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
 
     <!-- SEÇÃO: PEÇAS / ESTOQUE -->
-    <section id="sec-pecas" class="block">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-slate-800">Controle de Peças</h3>
-        <button onclick="abrirModalPeca()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2">
-          <i data-lucide="plus" class="w-4 h-4"></i> Nova Peça
-        </button>
+    <section id="sec-pecas" class="hidden">
+      <div class="flex flex-wrap gap-4 justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Catálogo e Estoque</h3>
+        <div class="flex gap-2 w-full md:w-auto items-center">
+          <input type="text" id="busca-pecas" onkeyup="filtrarTabela('lista-pecas', this.value)" placeholder="🔍 Buscar peça ou código..." class="p-2 border border-slate-300 rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-sky-500 outline-none">
+          <button onclick="abrirModalPeca()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2 whitespace-nowrap">
+            <i data-lucide="plus" class="w-4 h-4"></i> Nova Peça
+          </button>
+        </div>
       </div>
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <table class="w-full text-left border-collapse">
@@ -78,7 +227,7 @@
               <th class="p-4 font-semibold">Custo (R$)</th>
               <th class="p-4 font-semibold">Venda (R$)</th>
               <th class="p-4 font-semibold text-center">Estoque Atual</th>
-              <th class="p-4 font-semibold text-right">Movimentar</th>
+              <th class="p-4 font-semibold text-right">Ações</th>
             </tr>
           </thead>
           <tbody id="lista-pecas" class="divide-y divide-slate-100 text-sm text-slate-700">
@@ -90,11 +239,14 @@
 
     <!-- SEÇÃO: SERVIÇOS -->
     <section id="sec-servicos" class="hidden">
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex flex-wrap gap-4 justify-between items-center mb-4">
         <h3 class="text-lg font-bold text-slate-800">Catálogo de Serviços</h3>
-        <button onclick="abrirModalServico()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2">
-          <i data-lucide="plus" class="w-4 h-4"></i> Novo Serviço
-        </button>
+        <div class="flex gap-2 w-full md:w-auto items-center">
+          <input type="text" onkeyup="filtrarTabela('lista-servicos', this.value)" placeholder="🔍 Buscar serviço..." class="p-2 border border-slate-300 rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-sky-500 outline-none">
+          <button onclick="abrirModalServico()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2 whitespace-nowrap">
+            <i data-lucide="plus" class="w-4 h-4"></i> Novo Serviço
+          </button>
+        </div>
       </div>
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <table class="w-full text-left border-collapse">
@@ -115,11 +267,14 @@
 
     <!-- SEÇÃO: CLIENTES -->
     <section id="sec-clientes" class="hidden">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-slate-800">Diretório de Clientes (CRM)</h3>
-        <button onclick="abrirModalCliente()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2">
-          <i data-lucide="plus" class="w-4 h-4"></i> Novo Cliente
-        </button>
+      <div class="flex flex-wrap gap-4 justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-slate-800">Diretório de Clientes</h3>
+        <div class="flex gap-2 w-full md:w-auto items-center">
+          <input type="text" id="busca-clientes" onkeyup="filtrarTabela('lista-clientes', this.value)" placeholder="🔍 Buscar nome ou telefone..." class="p-2 border border-slate-300 rounded-lg text-sm w-full md:w-64 focus:ring-2 focus:ring-sky-500 outline-none">
+          <button onclick="abrirModalCliente()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2 whitespace-nowrap">
+            <i data-lucide="plus" class="w-4 h-4"></i> Novo Cliente
+          </button>
+        </div>
       </div>
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <table class="w-full text-left border-collapse">
@@ -265,7 +420,7 @@
                 <input type="number" id="peca-estoque-atual" value="0" disabled class="w-full p-1.5 text-sm border border-slate-300 rounded text-center bg-slate-100 font-bold text-slate-500">
               </div>
               <div class="md:col-span-2">
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Localização (Gaveta/Prateleira)</label>
+                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Localização (Gaveta)</label>
                 <input type="text" id="peca-localizacao" class="w-full p-1.5 text-sm border border-slate-300 rounded focus:ring-1 focus:ring-amber-500 outline-none uppercase">
               </div>
               <div>
@@ -299,7 +454,7 @@
     </div>
   </div>
 
-  <!-- MODAL: MOVIMENTAÇÃO DE ESTOQUE (ENTRADA/SAÍDA) -->
+  <!-- MODAL: MOVIMENTAÇÃO DE ESTOQUE -->
   <div id="modal-movimentacao" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border-t-4 border-amber-500">
       <div class="p-6">
@@ -397,11 +552,50 @@
     </div>
   </div>
 
+  <!-- ÁREA DE IMPRESSÃO (RECIBO) -->
+  <div id="cupom-impressao">
+    <div style="text-align: center; font-weight: bold; font-size: 14px;">WG INFORMÁTICA</div>
+    <div style="text-align: center;">CNPJ: 18.227.202/0001-36</div>
+    <div style="text-align: center;">Rua Dr. Feliciano Sodre, 182 - SG</div>
+    <div class="print-divider"></div>
+    <div style="text-align: center; font-weight: bold;">CUPOM NÃO FISCAL / RECIBO</div>
+    <div class="print-divider"></div>
+    <div id="cupom-dados"></div>
+    <div class="print-divider"></div>
+    <table style="width: 100%; text-align: left; font-size: 11px;">
+      <thead>
+        <tr>
+          <th>Qtd</th>
+          <th>Desc.</th>
+          <th style="text-align: right;">Total</th>
+        </tr>
+      </thead>
+      <tbody id="cupom-itens"></tbody>
+    </table>
+    <div class="print-divider"></div>
+    <div style="text-align: right;" id="cupom-totais"></div>
+    <div class="print-divider"></div>
+    <div style="text-align: center;">Obrigado pela preferência!</div>
+  </div>
+
   <script>
     lucide.createIcons();
     const db = firebase.firestore();
     const auth = firebase.auth();
     let emailAdminLogado = "Desconhecido";
+
+    // --- CONFIGURAÇÃO DE CAMINHOS SEGURA DO FIRESTORE ---
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const basePath = `artifacts/${appId}/public/data`;
+    function getCol(name) { 
+      return db.collection(`${basePath}/${name}`); 
+    }
+
+    // Variáveis Globais para manter os dados em memória (para o PDV rodar rápido)
+    let globalPecas = [];
+    let globalServicos = [];
+    let globalClientes = [];
+    let carrinhoPDV = [];
 
     auth.onAuthStateChanged(user => {
       if (!user) {
@@ -412,11 +606,13 @@
         carregarServicos();
         carregarClientes();
         carregarHistorico();
+        carregarVendas();
       }
     });
 
+    // SISTEMA DE ABAS E FILTROS DOM
     function mudarAba(abaId) {
-      ['pecas', 'servicos', 'clientes', 'historico'].forEach(id => {
+      ['pdv', 'vendas', 'pecas', 'servicos', 'clientes', 'historico'].forEach(id => {
         document.getElementById(`sec-${id}`).classList.add('hidden');
         document.getElementById(`tab-${id}`).classList.remove('tab-active');
         document.getElementById(`tab-${id}`).classList.add('tab-inactive');
@@ -424,6 +620,22 @@
       document.getElementById(`sec-${abaId}`).classList.remove('hidden');
       document.getElementById(`tab-${abaId}`).classList.remove('tab-inactive');
       document.getElementById(`tab-${abaId}`).classList.add('tab-active');
+    }
+
+    function filtrarTabela(tabelaId, texto) {
+      const termo = texto.toLowerCase();
+      const linhas = document.getElementById(tabelaId).getElementsByTagName('tr');
+      for (let i = 0; i < linhas.length; i++) {
+        let visivel = false;
+        const colunas = linhas[i].getElementsByTagName('td');
+        for (let j = 0; j < colunas.length; j++) {
+          if (colunas[j] && colunas[j].innerText.toLowerCase().includes(termo)) {
+            visivel = true;
+            break;
+          }
+        }
+        linhas[i].style.display = visivel ? '' : 'none';
+      }
     }
 
     function fecharModais() {
@@ -435,6 +647,7 @@
       document.getElementById('form-peca').reset();
       document.getElementById('form-servico').reset();
       document.getElementById('form-cliente').reset();
+      
       document.getElementById('peca-id').value = '';
       document.getElementById('servico-id').value = '';
       document.getElementById('cliente-id').value = '';
@@ -443,8 +656,14 @@
       document.getElementById('peca-estoque').classList.remove('bg-slate-100');
     }
 
+    // Atalhos Modais
+    document.getElementById('modal-peca').addEventListener('keydown', function(e) {
+        if (e.key === 'F5') { e.preventDefault(); document.getElementById('form-peca').requestSubmit(); } 
+        else if (e.key === 'Escape') fecharModais();
+    });
+
     // ==========================================
-    // 1. GESTÃO DE PEÇAS E ESTOQUE
+    // 1. GESTÃO DE PEÇAS
     // ==========================================
     async function abrirModalPeca(id = null) {
       fecharModais(); 
@@ -454,13 +673,12 @@
       const inputEstoqueAtual = document.getElementById('peca-estoque-atual');
       
       if(id) {
-          // MODO EDIÇÃO: Busca os dados completos no Firebase
           inputEstoqueIni.disabled = true;
           inputEstoqueIni.classList.add('bg-slate-100');
           inputEstoqueIni.title = "Use Entradas e Saídas para alterar estoque de peças existentes.";
           
           try {
-            const doc = await db.collection("pecas").doc(id).get();
+            const doc = await getCol("pecas").doc(id).get();
             if(doc.exists) {
                const p = doc.data();
                document.getElementById('peca-codigo').value = p.codigo || '';
@@ -489,23 +707,20 @@
                document.getElementById('param-servico').checked = p.isServico === true;
             }
           } catch(e) {
-            alert("Erro ao buscar dados da peça: " + e.message);
+            alert("Erro ao buscar dados: " + e.message);
           }
       } else {
-          // MODO CRIAÇÃO: Reseta tudo
           document.getElementById('form-peca').reset();
           inputEstoqueIni.disabled = false;
           inputEstoqueIni.classList.remove('bg-slate-100');
           inputEstoqueAtual.value = '0';
       }
-
       modal.classList.remove('hidden');
     }
 
     document.getElementById('form-peca').addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('peca-id').value;
-      
       const data = {
         codigo: document.getElementById('peca-codigo').value.toUpperCase(),
         nome: document.getElementById('peca-nome').value.toUpperCase(),
@@ -515,84 +730,69 @@
         marca: document.getElementById('peca-marca').value.toUpperCase(),
         grupo: document.getElementById('peca-grupo').value.toUpperCase(),
         unidade: document.getElementById('peca-unidade').value.toUpperCase(),
-        
         precoCompra: parseFloat(document.getElementById('peca-preco-compra').value) || 0,
         custosPerc: parseFloat(document.getElementById('peca-custos-perc').value) || 0,
         custo: parseFloat(document.getElementById('peca-custo').value) || 0,
         lucroPerc: parseFloat(document.getElementById('peca-lucro-perc').value) || 0,
         venda: parseFloat(document.getElementById('peca-venda').value) || 0,
-        
         estoqueMinimo: parseInt(document.getElementById('peca-estoque-minimo').value) || 1,
         localizacao: document.getElementById('peca-localizacao').value.toUpperCase(),
         ncm: document.getElementById('peca-ncm').value,
         cest: document.getElementById('peca-cest').value,
-        
         ativo: document.getElementById('param-ativo').checked,
         isFiscal: document.getElementById('param-fiscal').checked,
         isServico: document.getElementById('param-servico').checked,
-        
         atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
       };
 
-      try {
-        if (id) {
-          await db.collection("pecas").doc(id).update(data);
-        } else {
-          data.estoque = parseInt(document.getElementById('peca-estoque').value) || 0;
-          data.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
-          await db.collection("pecas").add(data);
-        }
-        fecharModais();
-      } catch(err) {
-        alert("Erro ao salvar peça: " + err.message);
+      if (id) {
+        await getCol("pecas").doc(id).update(data);
+      } else {
+        data.estoque = parseInt(document.getElementById('peca-estoque').value) || 0;
+        data.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
+        await getCol("pecas").add(data);
       }
-    });
-
-    // Atalhos de teclado no modal de peças (F5 para salvar, ESC para sair)
-    document.getElementById('modal-peca').addEventListener('keydown', function(e) {
-        if (e.key === 'F5') {
-            e.preventDefault();
-            document.getElementById('form-peca').requestSubmit();
-        } else if (e.key === 'Escape') {
-            fecharModais();
-        }
+      fecharModais();
     });
 
     function carregarPecas() {
-      db.collection("pecas").orderBy("nome").onSnapshot(snap => {
+      getCol("pecas").orderBy("nome").onSnapshot(snap => {
         const tbody = document.getElementById("lista-pecas");
+        const dlProdutos = document.getElementById("dl-produtos");
         tbody.innerHTML = '';
+        dlProdutos.innerHTML = '';
+        globalPecas = [];
+
         snap.forEach(doc => {
           const p = doc.data();
+          p.id = doc.id;
+          globalPecas.push(p);
+
+          // Datalist PDV
+          const opt = document.createElement('option');
+          opt.value = `[P-${doc.id.substring(0,4)}] ${p.nome}`;
+          dlProdutos.appendChild(opt);
+
+          // Tabela Estoque
           const tr = document.createElement('tr');
           const estMin = p.estoqueMinimo || 1;
           let badgeEstoque = 'bg-emerald-100 text-emerald-700';
-          
           if(p.estoque <= 0) badgeEstoque = 'bg-red-100 text-red-700';
           else if(p.estoque <= estMin) badgeEstoque = 'bg-amber-100 text-amber-700';
           
           tr.innerHTML = `
             <td class="p-4">
               <div class="font-bold text-slate-800">${p.nome} ${p.ativo===false ? '<span class="text-xs text-red-500 font-normal">(Inativo)</span>' : ''}</div>
-              <div class="text-xs text-slate-400">Cod: ${p.codigo || 'S/N'} ${p.marca ? '| Marca: '+p.marca : ''}</div>
+              <div class="text-xs text-slate-400">Cod: ${p.codigo || 'S/N'}</div>
             </td>
             <td class="p-4 text-slate-600">R$ ${(p.custo || 0).toFixed(2)}</td>
             <td class="p-4 font-bold text-emerald-700">R$ ${(p.venda || 0).toFixed(2)}</td>
-            <td class="p-4 text-center">
-              <span class="px-3 py-1 rounded-full text-xs font-bold ${badgeEstoque}">${p.estoque} ${p.unidade || 'UN'}</span>
-            </td>
+            <td class="p-4 text-center"><span class="px-3 py-1 rounded-full text-xs font-bold ${badgeEstoque}">${p.estoque} ${p.unidade || 'UN'}</span></td>
             <td class="p-4 text-right">
               <div class="flex justify-end gap-1">
-                <button onclick="abrirMovimentacao('${doc.id}', '${p.nome.replace(/'/g, "\\'")}', 'entrada')" class="p-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded" title="Dar Entrada">
-                  <i data-lucide="arrow-down-to-line" class="w-4 h-4"></i>
-                </button>
-                <button onclick="abrirMovimentacao('${doc.id}', '${p.nome.replace(/'/g, "\\'")}', 'saida')" class="p-2 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded" title="Dar Saída">
-                  <i data-lucide="arrow-up-from-line" class="w-4 h-4"></i>
-                </button>
-                <div class="w-px h-6 bg-slate-200 mx-1 mt-1"></div>
-                <button onclick="abrirModalPeca('${doc.id}')" class="p-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded" title="Editar Informações">
-                  <i data-lucide="edit" class="w-4 h-4"></i>
-                </button>
+                <button onclick="abrirMovimentacao('${doc.id}', '${p.nome.replace(/'/g, "\\'")}', 'entrada')" class="p-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded" title="Dar Entrada"><i data-lucide="arrow-down-to-line" class="w-4 h-4"></i></button>
+                <button onclick="abrirMovimentacao('${doc.id}', '${p.nome.replace(/'/g, "\\'")}', 'saida')" class="p-2 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded" title="Dar Saída"><i data-lucide="arrow-up-from-line" class="w-4 h-4"></i></button>
+                <button onclick="abrirModalPeca('${doc.id}')" class="p-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded"><i data-lucide="edit" class="w-4 h-4"></i></button>
               </div>
             </td>
           `;
@@ -603,20 +803,17 @@
     }
 
     // ==========================================
-    // 2. MOVIMENTAÇÃO DE ESTOQUE (ENTRADA/SAÍDA)
+    // 2. MOVIMENTAÇÃO / SERVIÇOS / CLIENTES
     // ==========================================
     function abrirMovimentacao(id, nome, tipo) {
       document.getElementById('mov-peca-id').value = id;
       document.getElementById('mov-nome-peca').value = nome;
       document.getElementById('mov-tipo').value = tipo;
-      
       document.getElementById('mov-peca-nome').innerText = nome;
       document.getElementById('mov-qtd').value = 1;
       document.getElementById('mov-motivo').value = '';
-
       const btn = document.getElementById('btn-confirmar-mov');
       const titulo = document.getElementById('mov-titulo');
-
       if(tipo === 'entrada') {
         titulo.innerText = "➕ Entrada de Estoque";
         btn.className = "px-4 py-2 text-white rounded-lg font-bold shadow w-full bg-emerald-600 hover:bg-emerald-700";
@@ -626,7 +823,6 @@
         btn.className = "px-4 py-2 text-white rounded-lg font-bold shadow w-full bg-amber-600 hover:bg-amber-700";
         btn.innerText = "Confirmar Saída";
       }
-
       document.getElementById('modal-movimentacao').classList.remove('hidden');
     }
 
@@ -637,76 +833,32 @@
       const qtdInput = parseInt(document.getElementById('mov-qtd').value);
       const motivo = document.getElementById('mov-motivo').value;
 
-      if(!qtdInput || qtdInput <= 0 || !motivo) {
-        alert("Preencha a quantidade válida e o motivo.");
-        return;
-      }
-
+      if(!qtdInput || qtdInput <= 0 || !motivo) return alert("Preencha a quantidade e o motivo.");
       const valorIncremento = tipo === 'entrada' ? qtdInput : -qtdInput;
 
       try {
         const batch = db.batch();
-
-        const pecaRef = db.collection("pecas").doc(id);
-        batch.update(pecaRef, {
-            estoque: firebase.firestore.FieldValue.increment(valorIncremento),
-            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        const histRef = db.collection("historico_estoque").doc();
-        batch.set(histRef, {
-            pecaId: id,
-            pecaNome: nomePeca,
-            tipo: tipo,
-            quantidade: qtdInput,
-            motivo: motivo,
-            responsavel: emailAdminLogado,
-            data: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
+        batch.update(getCol("pecas").doc(id), { estoque: firebase.firestore.FieldValue.increment(valorIncremento) });
+        batch.set(getCol("historico_estoque").doc(), { pecaId: id, pecaNome: nomePeca, tipo: tipo, quantidade: qtdInput, motivo: motivo, responsavel: emailAdminLogado, data: firebase.firestore.FieldValue.serverTimestamp() });
         await batch.commit();
         fecharModais();
-      } catch (err) {
-        alert("Erro ao movimentar estoque: " + err.message);
-      }
+      } catch (err) { alert("Erro ao movimentar: " + err.message); }
     }
 
     function carregarHistorico() {
-      db.collection("historico_estoque").orderBy("data", "desc").limit(50).onSnapshot(snap => {
+      getCol("historico_estoque").orderBy("data", "desc").limit(50).onSnapshot(snap => {
         const tbody = document.getElementById("lista-historico");
         tbody.innerHTML = '';
         snap.forEach(doc => {
           const h = doc.data();
-          const tr = document.createElement('tr');
-          
-          let dtStr = "Agora";
-          if(h.data && h.data.toDate) dtStr = h.data.toDate().toLocaleString('pt-BR');
-
-          const badgeTipo = h.tipo === 'entrada' ? 
-            '<span class="text-emerald-600 font-bold bg-emerald-100 px-2 py-1 rounded text-xs flex items-center w-max gap-1"><i data-lucide="arrow-down" class="w-3 h-3"></i> Entrada</span>' : 
-            '<span class="text-amber-600 font-bold bg-amber-100 px-2 py-1 rounded text-xs flex items-center w-max gap-1"><i data-lucide="arrow-up" class="w-3 h-3"></i> Saída</span>';
-
-          tr.innerHTML = `
-            <td class="p-4 text-xs text-slate-500">${dtStr}</td>
-            <td class="p-4">${badgeTipo}</td>
-            <td class="p-4 font-semibold text-slate-800">${h.pecaNome}</td>
-            <td class="p-4 font-bold text-slate-900">${h.quantidade} un.</td>
-            <td class="p-4 text-xs text-slate-600">
-              <div class="font-medium text-slate-800">${h.motivo}</div>
-              <div>${h.responsavel}</div>
-            </td>
-          `;
-          tbody.appendChild(tr);
+          const badgeTipo = h.tipo === 'entrada' ? '<span class="text-emerald-600 font-bold bg-emerald-100 px-2 py-1 rounded text-xs">Entrada</span>' : '<span class="text-amber-600 font-bold bg-amber-100 px-2 py-1 rounded text-xs">Saída</span>';
+          tbody.innerHTML += `<tr><td class="p-4 text-xs">${h.data?.toDate().toLocaleString('pt-BR') || 'Agora'}</td><td class="p-4">${badgeTipo}</td><td class="p-4 font-semibold">${h.pecaNome}</td><td class="p-4 font-bold">${h.quantidade} un.</td><td class="p-4 text-xs"><div>${h.motivo}</div><div class="text-slate-400">${h.responsavel}</div></td></tr>`;
         });
-        lucide.createIcons();
       });
     }
 
-    // ==========================================
-    // 3. GESTÃO DE SERVIÇOS
-    // ==========================================
-    function abrirModalServico(id = null, nome = '', valor = '', desc = '') {
-      document.getElementById('servico-id').value = id || '';
+    function abrirModalServico(id = '', nome = '', valor = '', desc = '') {
+      document.getElementById('servico-id').value = id;
       document.getElementById('servico-nome').value = nome;
       document.getElementById('servico-valor').value = valor;
       document.getElementById('servico-desc').value = desc;
@@ -716,107 +868,316 @@
     document.getElementById('form-servico').addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('servico-id').value;
-      const data = {
-        nome: document.getElementById('servico-nome').value,
-        valor: parseFloat(document.getElementById('servico-valor').value),
-        descricao: document.getElementById('servico-desc').value
-      };
-
-      if (id) await db.collection("servicos").doc(id).update(data);
-      else await db.collection("servicos").add(data);
-      
+      const data = { nome: document.getElementById('servico-nome').value, valor: parseFloat(document.getElementById('servico-valor').value), descricao: document.getElementById('servico-desc').value };
+      if (id) await getCol("servicos").doc(id).update(data);
+      else await getCol("servicos").add(data);
       fecharModais();
     });
 
     function carregarServicos() {
-      db.collection("servicos").orderBy("nome").onSnapshot(snap => {
+      getCol("servicos").orderBy("nome").onSnapshot(snap => {
         const tbody = document.getElementById("lista-servicos");
+        const dlProdutos = document.getElementById("dl-produtos"); // Reaproveita datalist no PDV
         tbody.innerHTML = '';
+        globalServicos = [];
+        
         snap.forEach(doc => {
           const s = doc.data();
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td class="p-4 font-bold text-slate-800">${s.nome}</td>
-            <td class="p-4 text-slate-500 text-xs">${s.descricao || '-'}</td>
-            <td class="p-4 font-semibold text-slate-900">R$ ${s.valor.toFixed(2)}</td>
-            <td class="p-4 text-right">
-              <button onclick="abrirModalServico('${doc.id}', '${s.nome.replace(/'/g, "\\'")}', ${s.valor}, '${(s.descricao||'').replace(/'/g, "\\'")}')" class="p-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded">
-                <i data-lucide="edit" class="w-4 h-4"></i>
-              </button>
-            </td>
-          `;
-          tbody.appendChild(tr);
+          s.id = doc.id;
+          globalServicos.push(s);
+          
+          const opt = document.createElement('option');
+          opt.value = `[S-${doc.id.substring(0,4)}] ${s.nome}`;
+          dlProdutos.appendChild(opt);
+
+          tbody.innerHTML += `<tr><td class="p-4 font-bold text-slate-800">${s.nome}</td><td class="p-4 text-slate-500 text-xs">${s.descricao || '-'}</td><td class="p-4 font-semibold text-slate-900">R$ ${s.valor.toFixed(2)}</td><td class="p-4 text-right"><button onclick="abrirModalServico('${doc.id}', '${s.nome.replace(/'/g, "\\'")}', ${s.valor}, '${(s.descricao||'').replace(/'/g, "\\'")}')" class="p-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded"><i data-lucide="edit" class="w-4 h-4"></i></button></td></tr>`;
         });
         lucide.createIcons();
       });
     }
 
-    // ==========================================
-    // 4. GESTÃO DE CLIENTES (CRM)
-    // ==========================================
-    function abrirModalCliente(id = null, nome = '', telefone = '', email = '', endereco = '', docRef = '') {
-      document.getElementById('cliente-id').value = id || '';
-      document.getElementById('cliente-nome').value = nome;
-      document.getElementById('cliente-telefone').value = telefone;
-      document.getElementById('cliente-email').value = email;
-      document.getElementById('cliente-endereco').value = endereco;
-      document.getElementById('cliente-doc').value = docRef;
+    function abrirModalCliente(id = '', nome = '', telefone = '', email = '', endereco = '', docRef = '') {
+      document.getElementById('cliente-id').value = id; document.getElementById('cliente-nome').value = nome; document.getElementById('cliente-telefone').value = telefone; document.getElementById('cliente-email').value = email; document.getElementById('cliente-endereco').value = endereco; document.getElementById('cliente-doc').value = docRef;
       document.getElementById('modal-cliente').classList.remove('hidden');
     }
 
     document.getElementById('form-cliente').addEventListener('submit', async (e) => {
       e.preventDefault();
       const id = document.getElementById('cliente-id').value;
-      const data = {
-        nome: document.getElementById('cliente-nome').value,
-        telefone: document.getElementById('cliente-telefone').value,
-        email: document.getElementById('cliente-email').value,
-        endereco: document.getElementById('cliente-endereco').value,
-        documento: document.getElementById('cliente-doc').value,
-        atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
-      };
-
-      try {
-        if (id) {
-          await db.collection("clientes_crm").doc(id).update(data);
-        } else {
-          data.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
-          await db.collection("clientes_crm").add(data);
-        }
-        fecharModais();
-      } catch(err) {
-        alert("Erro ao salvar cliente: " + err.message);
-      }
+      const data = { nome: document.getElementById('cliente-nome').value, telefone: document.getElementById('cliente-telefone').value, email: document.getElementById('cliente-email').value, endereco: document.getElementById('cliente-endereco').value, documento: document.getElementById('cliente-doc').value };
+      if (id) await getCol("clientes_crm").doc(id).update(data);
+      else await getCol("clientes_crm").add(data);
+      fecharModais();
     });
 
     function carregarClientes() {
-      db.collection("clientes_crm").orderBy("nome").onSnapshot(snap => {
+      getCol("clientes_crm").orderBy("nome").onSnapshot(snap => {
         const tbody = document.getElementById("lista-clientes");
+        const dlClientes = document.getElementById("dl-clientes");
         tbody.innerHTML = '';
+        dlClientes.innerHTML = '';
+        globalClientes = [];
+
         snap.forEach(doc => {
           const c = doc.data();
+          c.id = doc.id;
+          globalClientes.push(c);
           
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td class="p-4">
-              <div class="font-bold text-slate-800">${c.nome || 'Sem Nome'}</div>
-              <div class="text-xs text-slate-400">Doc: ${c.documento || 'S/N'}</div>
-            </td>
-            <td class="p-4 text-xs">
-              <div class="text-slate-700">${c.telefone || '-'}</div>
-              <div class="text-slate-500">${c.email || '-'}</div>
-            </td>
-            <td class="p-4 text-slate-600 text-xs">${c.endereco || '-'}</td>
-            <td class="p-4 text-right">
-              <button onclick="abrirModalCliente('${doc.id}', '${(c.nome||'').replace(/'/g, "\\'")}', '${c.telefone||''}', '${c.email||''}', '${(c.endereco||'').replace(/'/g, "\\'")}', '${c.documento||''}')" class="p-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded">
-                <i data-lucide="edit" class="w-4 h-4"></i>
-              </button>
-            </td>
-          `;
-          tbody.appendChild(tr);
+          const opt = document.createElement('option');
+          opt.value = `[C-${doc.id.substring(0,4)}] ${c.nome}`;
+          dlClientes.appendChild(opt);
+
+          tbody.innerHTML += `<tr><td class="p-4"><div class="font-bold">${c.nome}</div><div class="text-xs text-slate-400">Doc: ${c.documento || 'S/N'}</div></td><td class="p-4 text-xs"><div>${c.telefone || '-'}</div><div class="text-slate-500">${c.email || '-'}</div></td><td class="p-4 text-slate-600 text-xs">${c.endereco || '-'}</td><td class="p-4 text-right"><button onclick="abrirModalCliente('${doc.id}', '${(c.nome||'').replace(/'/g, "\\'")}', '${c.telefone||''}', '${c.email||''}', '${(c.endereco||'').replace(/'/g, "\\'")}', '${c.documento||''}')" class="p-2 bg-slate-100 rounded"><i data-lucide="edit" class="w-4 h-4"></i></button></td></tr>`;
         });
         lucide.createIcons();
       });
+    }
+
+    // ==========================================
+    // 5. PDV E VENDAS
+    // ==========================================
+    function adicionarAoCarrinho() {
+      const inputProd = document.getElementById('pdv-produto').value;
+      const inputQtd = parseFloat(document.getElementById('pdv-qtd').value) || 1;
+      
+      if(!inputProd) return alert("Selecione um produto ou serviço.");
+
+      // Tenta extrair o ID curto do Datalist "[P-xxxx] Nome" ou "[S-xxxx] Nome"
+      let isPeca = inputProd.startsWith('[P-');
+      let isServico = inputProd.startsWith('[S-');
+      let idCurto = inputProd.substring(3, 7);
+      
+      let itemEncontrado = null;
+      let tipo = 'avulso';
+
+      if (isPeca) {
+        itemEncontrado = globalPecas.find(p => p.id.startsWith(idCurto));
+        tipo = 'peca';
+      } else if (isServico) {
+        itemEncontrado = globalServicos.find(s => s.id.startsWith(idCurto));
+        tipo = 'servico';
+      }
+
+      let nomeItem = inputProd;
+      let precoUnitario = 0;
+      let dbId = null;
+
+      if(itemEncontrado) {
+        nomeItem = itemEncontrado.nome;
+        precoUnitario = tipo === 'peca' ? itemEncontrado.venda : itemEncontrado.valor;
+        dbId = itemEncontrado.id;
+        
+        // Verifica estoque se for peça
+        if(tipo === 'peca' && itemEncontrado.estoque < inputQtd) {
+           const confirma = confirm(`Atenção: O estoque atual desta peça é ${itemEncontrado.estoque}. Deseja vender ${inputQtd} mesmo assim? (Ficará negativo)`);
+           if(!confirma) return;
+        }
+      } else {
+        // Se digitou manualmente um produto avulso
+        precoUnitario = parseFloat(prompt(`Produto '${inputProd}' não encontrado no cadastro.\nInforme o valor unitário (R$):`));
+        if(isNaN(precoUnitario)) return;
+      }
+
+      carrinhoPDV.push({
+        id: dbId,
+        tipo: tipo,
+        nome: nomeItem,
+        qtd: inputQtd,
+        preco: precoUnitario,
+        subtotal: precoUnitario * inputQtd
+      });
+
+      document.getElementById('pdv-produto').value = '';
+      document.getElementById('pdv-qtd').value = 1;
+      document.getElementById('pdv-produto').focus();
+      atualizarTotaisPDV();
+    }
+
+    function removerDoCarrinho(index) {
+      carrinhoPDV.splice(index, 1);
+      atualizarTotaisPDV();
+    }
+
+    function atualizarTotaisPDV() {
+      const tbody = document.getElementById('lista-carrinho');
+      tbody.innerHTML = '';
+      
+      let subtotalGeral = 0;
+
+      if(carrinhoPDV.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-400 italic">Carrinho vazio.</td></tr>';
+      } else {
+        carrinhoPDV.forEach((item, index) => {
+          subtotalGeral += item.subtotal;
+          const badge = item.tipo === 'peca' ? '<span class="px-2 py-1 bg-sky-100 text-sky-700 text-xs rounded font-bold">PROD</span>' : 
+                        (item.tipo === 'servico' ? '<span class="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded font-bold">SERV</span>' : 
+                        '<span class="px-2 py-1 bg-slate-200 text-slate-600 text-xs rounded font-bold">AVULSO</span>');
+          
+          tbody.innerHTML += `
+            <tr>
+              <td class="p-3 text-center">${badge}</td>
+              <td class="p-3 font-semibold text-slate-800">${item.nome}</td>
+              <td class="p-3 text-center">${item.qtd}</td>
+              <td class="p-3 text-right text-slate-500">R$ ${item.preco.toFixed(2)}</td>
+              <td class="p-3 text-right font-bold text-slate-900">R$ ${item.subtotal.toFixed(2)}</td>
+              <td class="p-3 text-center">
+                <button onclick="removerDoCarrinho(${index})" class="text-red-500 hover:bg-red-50 p-1 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+              </td>
+            </tr>
+          `;
+        });
+      }
+      lucide.createIcons();
+
+      const desc = parseFloat(document.getElementById('pdv-desconto').value) || 0;
+      const totalF = subtotalGeral - desc;
+
+      document.getElementById('pdv-subtotal').innerText = `R$ ${subtotalGeral.toFixed(2)}`;
+      document.getElementById('pdv-total').innerText = `R$ ${totalF.toFixed(2)}`;
+    }
+
+    function limparPDV() {
+      carrinhoPDV = [];
+      document.getElementById('pdv-cliente').value = '';
+      document.getElementById('pdv-desconto').value = '0.00';
+      document.getElementById('pdv-pagamento').value = 'PIX';
+      atualizarTotaisPDV();
+    }
+
+    async function finalizarVenda() {
+      if(carrinhoPDV.length === 0) return alert("O carrinho está vazio!");
+
+      const inputCli = document.getElementById('pdv-cliente').value;
+      let clienteNome = inputCli || "Consumidor Final";
+      let clienteId = null;
+
+      if (inputCli.startsWith('[C-')) {
+        const idCurto = inputCli.substring(3, 7);
+        const cliData = globalClientes.find(c => c.id.startsWith(idCurto));
+        if(cliData) {
+          clienteNome = cliData.nome;
+          clienteId = cliData.id;
+        }
+      }
+
+      const subtotalGeral = carrinhoPDV.reduce((acc, item) => acc + item.subtotal, 0);
+      const desconto = parseFloat(document.getElementById('pdv-desconto').value) || 0;
+      const totalFechado = subtotalGeral - desconto;
+      const formaPag = document.getElementById('pdv-pagamento').value;
+
+      try {
+        const batch = db.batch();
+        const vendaId = getCol("vendas").doc().id;
+
+        // 1. Salvar Documento da Venda
+        batch.set(getCol("vendas").doc(vendaId), {
+          clienteId: clienteId,
+          clienteNome: clienteNome,
+          itens: carrinhoPDV,
+          subtotal: subtotalGeral,
+          desconto: desconto,
+          total: totalFechado,
+          formaPagamento: formaPag,
+          responsavel: emailAdminLogado,
+          data: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // 2. Dar baixa no estoque das peças
+        carrinhoPDV.forEach(item => {
+          if(item.tipo === 'peca' && item.id) {
+             const pecaRef = getCol("pecas").doc(item.id);
+             batch.update(pecaRef, { estoque: firebase.firestore.FieldValue.increment(-item.qtd) });
+             
+             // Historico
+             const histRef = getCol("historico_estoque").doc();
+             batch.set(histRef, { pecaId: item.id, pecaNome: item.nome, tipo: 'saida', quantidade: item.qtd, motivo: `Venda PDV #${vendaId.substring(0,6)}`, responsavel: emailAdminLogado, data: firebase.firestore.FieldValue.serverTimestamp() });
+          }
+        });
+
+        await batch.commit();
+        
+        if(confirm("Venda finalizada com sucesso! Deseja imprimir o recibo?")) {
+           gerarReciboPDV(vendaId, clienteNome, carrinhoPDV, totalFechado, desconto, formaPag, new Date());
+        }
+        
+        limparPDV();
+      } catch(e) {
+        alert("Erro ao finalizar venda: " + e.message);
+      }
+    }
+
+    // ==========================================
+    // 6. RELATÓRIOS E IMPRESSÃO
+    // ==========================================
+    function carregarVendas() {
+      getCol("vendas").orderBy("data", "desc").limit(100).onSnapshot(snap => {
+        const tbody = document.getElementById("lista-vendas-tabela");
+        tbody.innerHTML = '';
+        snap.forEach(doc => {
+          const v = doc.data();
+          v.id = doc.id;
+          let dtStr = v.data ? v.data.toDate().toLocaleString('pt-BR') : 'Agora';
+          
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-50">
+              <td class="p-4 text-xs text-slate-500">${dtStr}</td>
+              <td class="p-4 font-bold text-slate-800">${v.clienteNome}</td>
+              <td class="p-4 text-center">${v.itens.length} itens</td>
+              <td class="p-4 font-bold text-emerald-600 text-right">R$ ${v.total.toFixed(2)}</td>
+              <td class="p-4 text-center text-xs text-slate-500">${v.formaPagamento}</td>
+              <td class="p-4 text-right">
+                <button onclick="reimprimirVenda('${doc.id}')" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded shadow-sm flex items-center gap-1 ml-auto text-xs font-semibold">
+                  <i data-lucide="printer" class="w-3 h-3"></i> Recibo
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+        lucide.createIcons();
+      });
+    }
+
+    async function reimprimirVenda(id) {
+      const doc = await getCol("vendas").doc(id).get();
+      if(doc.exists) {
+        const v = doc.data();
+        gerarReciboPDV(id, v.clienteNome, v.itens, v.total, v.desconto, v.formaPagamento, v.data.toDate());
+      }
+    }
+
+    function gerarReciboPDV(id, cliente, itens, total, desconto, pag, dataObj) {
+      let divDados = document.getElementById('cupom-dados');
+      let divItens = document.getElementById('cupom-itens');
+      let divTotais = document.getElementById('cupom-totais');
+      
+      divDados.innerHTML = `
+        <p><b>Data:</b> ${dataObj.toLocaleString('pt-BR')}</p>
+        <p><b>Op.:</b> ${id.substring(0,8).toUpperCase()}</p>
+        <p><b>Cliente:</b> ${cliente}</p>
+      `;
+
+      let htmlItens = '';
+      itens.forEach(i => {
+        htmlItens += `
+          <tr>
+            <td>${i.qtd}</td>
+            <td>${i.nome.substring(0, 18)}</td>
+            <td style="text-align: right;">${i.subtotal.toFixed(2)}</td>
+          </tr>
+        `;
+      });
+      divItens.innerHTML = htmlItens;
+
+      let sub = total + desconto;
+      divTotais.innerHTML = `
+        <p>Subtotal: R$ ${sub.toFixed(2)}</p>
+        <p>Desconto: R$ ${desconto.toFixed(2)}</p>
+        <p style="font-weight:bold; font-size: 14px;">Total: R$ ${total.toFixed(2)}</p>
+        <p>Pgto: ${pag}</p>
+      `;
+
+      // Aciona o modo de impressão do navegador
+      window.print();
     }
   </script>
 </body>
