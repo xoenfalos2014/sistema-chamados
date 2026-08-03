@@ -12,6 +12,9 @@
         body {
             font-family: 'Poppins', sans-serif;
         }
+        #formCadastro {
+            transition: all 0.3s ease-in-out;
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
@@ -22,19 +25,36 @@
 
         <!-- Formulário de Login -->
         <div>
-            <h2 class="text-xl font-bold text-center mb-4 text-slate-100">Login do Cliente</h2>
+            <h2 class="text-xl font-bold text-center mb-4 text-slate-100">Acesso do Cliente</h2>
             <form class="space-y-4" id="formLogin">
-                <input class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500" id="email" placeholder="Email" required="" type="email"/>
-                <input class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500" id="senha" placeholder="Senha" required="" type="password"/>
+                <input class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500" id="loginEmail" placeholder="Email" required="" type="email"/>
+                <input class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500" id="loginSenha" placeholder="Senha" required="" type="password"/>
                 <button class="w-full bg-sky-600 text-white font-semibold py-3 rounded-lg hover:bg-sky-500 transition-colors" type="submit">Entrar</button>
+            </form>
+        </div>
+
+        <div class="text-center my-6">
+            <span class="text-slate-500">ou</span>
+        </div>
+
+        <!-- Cadastro -->
+        <div>
+            <h2 class="text-lg font-semibold text-center mb-4 text-slate-300">Não tem uma conta?</h2>
+            <button class="w-full bg-slate-600 hover:bg-slate-500 text-white font-semibold py-3 rounded-lg transition-colors" id="toggleCadastro" type="button">Crie uma agora</button>
+            
+            <form class="space-y-4 mt-4 overflow-hidden" id="formCadastro" style="display: none;">
+                <input class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500" id="cadastroNome" placeholder="Seu Nome Completo" required="" type="text"/>
+                <input class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500" id="cadastroEmail" placeholder="Seu Email" required="" type="email"/>
+                <input class="w-full p-3 rounded-lg bg-slate-700 text-white border border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500" id="cadastroSenha" placeholder="Crie uma Senha" required="" type="password"/>
+                <button class="w-full bg-green-600 text-white font-semibold py-3 rounded-lg hover:bg-green-500 transition-colors" type="submit">Cadastrar</button>
             </form>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyBOc-qReOgBoDWQOYVNSlNMgRjF_hfH6uw",
@@ -48,8 +68,8 @@
 
         document.getElementById("formLogin").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const email = document.getElementById("email").value;
-            const senha = document.getElementById("senha").value;
+            const email = document.getElementById("loginEmail").value;
+            const senha = document.getElementById("loginSenha").value;
 
             try {
                 const userCredential = await signInWithEmailAndPassword(auth, email, senha);
@@ -61,23 +81,60 @@
                     const tipo = dadosUsuario.tipo;
                     const status = dadosUsuario.status || 'ativo';
 
-                    // VERIFICAÇÃO DE BLOQUEIO DE STATUS
+                    // VERIFICAÇÃO DE BLOQUEIO DE STATUS AQUI
                     if (status === 'pausado' || status === 'excluido') {
                         await auth.signOut();
                         alert("Acesso negado. Sua conta encontra-se " + status + " no sistema.");
                         return;
                     }
 
-                    // Qualquer um com conta válida acessa como cliente
-                    window.location.href = "cliente.html";
-                    
+                    if (tipo === "cliente") {
+                        window.location.href = "cliente.html";
+                    } else {
+                        await auth.signOut();
+                        alert("Este login não tem permissão de cliente.");
+                    }
                 } else {
                     await auth.signOut();
-                    alert("Cadastro não encontrado no banco de dados.");
+                    alert("Cadastro não encontrado.");
                 }
             } catch (err) {
                 alert("Erro ao fazer login. Verifique e-mail e senha.");
                 console.error(err);
+            }
+        });
+
+        document.getElementById("formCadastro").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("cadastroEmail").value;
+            const senha = document.getElementById("cadastroSenha").value;
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+                const user = userCredential.user;
+
+                const nome = document.getElementById("cadastroNome").value;
+                await setDoc(doc(db, "usuarios", user.uid), {
+                    nome: nome,
+                    email: email,
+                    tipo: "cliente",
+                    status: "ativo" // SALVA STATUS ATIVO AUTOMATICAMENTE
+                });
+
+                alert("Cadastro realizado com sucesso! Redirecionando...");
+                window.location.href = "cliente.html";
+            } catch (err) {
+                alert("Erro ao cadastrar. Verifique os dados ou se o e-mail já está em uso.");
+                console.error(err);
+            }
+        });
+      
+        document.getElementById("toggleCadastro").addEventListener("click", () => {
+            const form = document.getElementById("formCadastro");
+            if (form.style.display === "none") {
+                form.style.display = "block";
+            } else {
+                form.style.display = "none";
             }
         });
     </script>
