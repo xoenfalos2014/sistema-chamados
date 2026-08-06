@@ -369,6 +369,22 @@
         <span id="toastMessage">Mensagem</span>
     </div>
 
+    <!-- Modal de Confirmação de Exclusão -->
+    <div id="modalDelete" class="no-print fixed inset-0 bg-black/60 z-[60] hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-slate-800 p-6 rounded-xl shadow-2xl border border-slate-700 max-w-sm w-full mx-4 transform transition-all">
+            <h3 class="text-xl font-bold text-white mb-2 flex items-center">
+                <i class="fa-solid fa-triangle-exclamation text-red-500 mr-3"></i> Excluir Dossiê?
+            </h3>
+            <p class="text-sm text-slate-300 mb-6">Tem certeza que deseja excluir este dossiê permanentemente? Esta ação não pode ser desfeita.</p>
+            <div class="flex justify-end gap-3">
+                <button onclick="fecharModalDelete()" class="px-4 py-2 bg-slate-700 text-white hover:bg-slate-600 rounded-lg font-medium text-sm transition">Cancelar</button>
+                <button id="btnConfirmDelete" onclick="executarExclusaoDossie()" class="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-medium text-sm transition shadow-lg flex items-center">
+                    Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- INICIALIZAÇÃO DO FIREBASE ---
         if (!firebase.apps.length) {
@@ -708,15 +724,30 @@
                               <p class="font-semibold text-teal-400 text-sm group-hover:text-teal-300 transition">${d.clienteNome || 'Cliente não informado'}</p>
                               <p class="text-xs text-slate-400 mt-0.5">${dateStr || 'Sem data'} - ${d.tecnicoNome || 'Técnico'}</p>
                           </div>
-                          <button class="text-teal-400 hover:text-white bg-slate-800 hover:bg-teal-600 transition px-3 py-1.5 rounded-md shadow-sm border border-slate-600 text-xs font-semibold" title="Visualizar">
-                              <i class="fa-solid fa-eye mr-1"></i> Ver
-                          </button>
+                          <div class="flex gap-2">
+                              <button class="btn-ver text-teal-400 hover:text-white bg-slate-800 hover:bg-teal-600 transition px-2.5 py-1.5 rounded-md shadow-sm border border-slate-600 text-xs" title="Visualizar">
+                                  <i class="fa-solid fa-eye"></i>
+                              </button>
+                              <button class="btn-excluir text-red-400 hover:text-white bg-slate-800 hover:bg-red-600 transition px-2.5 py-1.5 rounded-md shadow-sm border border-slate-600 text-xs opacity-0 group-hover:opacity-100 focus:opacity-100" title="Excluir">
+                                  <i class="fa-solid fa-trash"></i>
+                              </button>
+                          </div>
                       `;
                       
-                      div.onclick = () => {
+                      const btnVer = div.querySelector('.btn-ver');
+                      const btnExcluir = div.querySelector('.btn-excluir');
+
+                      div.onclick = (e) => {
+                          if (e.target.closest('.btn-excluir')) return; // Ignora se o clique foi na lixeira
                           injetarDadosNaFolha(d);
                           showToast("Dossiê carregado do banco de dados!");
                       };
+
+                      btnExcluir.onclick = (e) => {
+                          e.stopPropagation(); // Evita que o dossiê seja carregado na tela de preview
+                          confirmarExclusaoDossie(doc.id);
+                      };
+                      
                       lista.appendChild(div);
                   });
               }, error => {
@@ -779,6 +810,40 @@
                  document.getElementById('docAssinaturaNomeCliente').textContent = dados.clienteNome;
             } else {
                  imgCli.classList.add('hidden');
+            }
+        }
+
+        // --- FUNÇÕES DE EXCLUSÃO DE DOSSIÊ ---
+        let idDossieParaExcluir = null;
+
+        function confirmarExclusaoDossie(id) {
+            idDossieParaExcluir = id;
+            document.getElementById('modalDelete').classList.remove('hidden');
+        }
+
+        function fecharModalDelete() {
+            idDossieParaExcluir = null;
+            document.getElementById('modalDelete').classList.add('hidden');
+        }
+
+        async function executarExclusaoDossie() {
+            if (!idDossieParaExcluir) return;
+            
+            const btn = document.getElementById('btnConfirmDelete');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Excluindo...';
+            btn.disabled = true;
+
+            try {
+                await db.collection("dossies_conclusao").doc(idDossieParaExcluir).delete();
+                showToast("Dossiê excluído permanentemente!");
+                fecharModalDelete();
+            } catch (error) {
+                console.error("Erro ao excluir dossiê:", error);
+                showToast("Erro: Você não tem permissão para excluir.", true);
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
             }
         }
 
