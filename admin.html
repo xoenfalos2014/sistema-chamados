@@ -94,7 +94,7 @@
         </a>
 
         <!-- NOVO BOTÃO GERADOR DE DOSSIÊ -->
-        <a href="gerador_dossie.html" class="card-hover bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 text-teal-600 hover:text-teal-700 btn-transition text-center">
+        <a href="gerador_dossie.html" target="_blank" class="card-hover bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 text-teal-600 hover:text-teal-700 btn-transition text-center">
           <div class="bg-teal-100 p-3 rounded-full">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
           </div>
@@ -199,10 +199,9 @@
     const auth = firebase.auth();
 
     // --- CONFIGURAÇÃO DE CAMINHOS SEGURA DO FIRESTORE ---
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    const basePath = `artifacts/${appId}/public/data`;
+    // Removido o caminho de demonstração para ler direto da raiz do seu banco de dados real
     function getCol(name) { 
-      return db.collection(`${basePath}/${name}`); 
+      return db.collection(name); 
     }
 
     // Verifica Autenticação
