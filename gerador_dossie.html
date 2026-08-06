@@ -19,6 +19,14 @@
     <!-- Signature Pad -->
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 
+    <!-- Firebase Compat (Unificado) - MESMO PADRÃO DO ADMIN -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
+    <!-- Arquivo de configuração externo (CAMINHO CORRIGIDO SEM A BARRA INICIAL) -->
+    <script src="js/firebase-config.js"></script>
+
     <style>
         body { 
             font-family: 'Poppins', sans-serif; 
@@ -47,8 +55,8 @@
         
         /* Custom Scrollbar for dark theme */
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; } /* slate-800 */
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; } /* slate-600 */
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
@@ -59,8 +67,8 @@
             <i class="fa-solid fa-file-signature mr-3 text-teal-500"></i> Gerador de Dossiê
         </h1>
         <div class="flex flex-wrap gap-3">
-            <button id="btnSalvarNuvem" class="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-indigo-500 transition shadow hidden flex items-center">
-                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Salvar na Nuvem
+            <button id="btnSalvarNuvem" onclick="salvarDossieFirebase()" class="bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-indigo-500 transition shadow flex items-center">
+                <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Salvar no Banco (Nuvem)
             </button>
             <button onclick="window.print()" class="bg-teal-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-teal-500 transition shadow flex items-center">
                 <i class="fa-solid fa-print mr-2"></i> Gerar PDF / Imprimir
@@ -70,6 +78,7 @@
 
     <div class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
         
+        <!-- PAINEL ESQUERDO: Formulário -->
         <div class="w-full lg:w-5/12 space-y-6 no-print">
             
             <!-- Card 1: Informações Gerais -->
@@ -125,6 +134,7 @@
                 </div>
             </div>
 
+            <!-- Card 2: Serviços Realizados -->
             <div class="bg-slate-800 p-6 rounded-lg shadow-lg border border-slate-700">
                 <h2 class="text-lg font-semibold text-white mb-4 border-b border-slate-700 pb-2 flex items-center">
                     <i class="fa-solid fa-list-check mr-2 text-teal-500"></i> 2. Serviços Realizados
@@ -161,6 +171,7 @@
                     </label>
                 </div>
 
+                <!-- Adicionar novo serviço -->
                 <div class="mt-4 pt-4 border-t border-slate-700 flex gap-2">
                     <input type="text" id="novoServicoInput" placeholder="Novo serviço..." class="flex-1 p-2 bg-slate-700 border border-slate-600 rounded-lg text-sm text-slate-200 focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
                     <button type="button" onclick="adicionarServicoCustomizado()" class="bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-500 transition text-sm font-semibold shadow">
@@ -169,6 +180,7 @@
                 </div>
             </div>
 
+            <!-- Card 3: Gestão de PC -->
             <div class="bg-slate-800 p-6 rounded-lg shadow-lg border border-slate-700">
                 <h2 class="text-lg font-semibold text-white mb-4 border-b border-slate-700 pb-2 flex items-center">
                     <i class="fa-solid fa-desktop mr-2 text-teal-500"></i> 3. Gestão de PC
@@ -205,6 +217,7 @@
                 </div>
             </div>
 
+            <!-- Card 4: Assinaturas Digitais -->
             <div class="bg-slate-800 p-6 rounded-lg shadow-lg border border-slate-700">
                 <h2 class="text-lg font-semibold text-white mb-4 border-b border-slate-700 pb-2 flex items-center">
                     <i class="fa-solid fa-pen-nib mr-2 text-teal-500"></i> 4. Assinaturas Digitais
@@ -213,13 +226,12 @@
                 <div class="space-y-6">
                     <div>
                         <label class="block text-sm font-medium text-slate-300 mb-2">Assinatura do Técnico</label>
-                        <!-- Usando fundo claro para o pad para garantir o contraste da caneta -->
                         <div class="border-2 border-dashed border-slate-500 rounded-lg overflow-hidden bg-slate-100 flex flex-col">
                             <canvas id="canvasTecnico" class="signature-pad w-full h-32"></canvas>
                         </div>
                         <div class="flex justify-end mt-2 gap-2">
                             <button onclick="limparAssinatura('tecnico')" class="text-xs text-red-400 hover:text-red-300 px-3 py-1.5 transition"><i class="fa-solid fa-eraser"></i> Limpar</button>
-                            <button onclick="salvarAssinatura('tecnico')" class="text-xs bg-teal-600 text-white px-4 py-1.5 rounded hover:bg-teal-500 transition font-medium shadow">Aplicar</button>
+                            <button onclick="salvarAssinaturaNaFolha('tecnico')" class="text-xs bg-teal-600 text-white px-4 py-1.5 rounded hover:bg-teal-500 transition font-medium shadow">Aplicar na Folha</button>
                         </div>
                     </div>
 
@@ -230,15 +242,16 @@
                         </div>
                         <div class="flex justify-end mt-2 gap-2">
                             <button onclick="limparAssinatura('cliente')" class="text-xs text-red-400 hover:text-red-300 px-3 py-1.5 transition"><i class="fa-solid fa-eraser"></i> Limpar</button>
-                            <button onclick="salvarAssinatura('cliente')" class="text-xs bg-teal-600 text-white px-4 py-1.5 rounded hover:bg-teal-500 transition font-medium shadow">Aplicar</button>
+                            <button onclick="salvarAssinaturaNaFolha('cliente')" class="text-xs bg-teal-600 text-white px-4 py-1.5 rounded hover:bg-teal-500 transition font-medium shadow">Aplicar na Folha</button>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Card 5: Histórico do Firebase -->
             <div class="bg-slate-800 p-6 rounded-lg shadow-lg border border-slate-700 mt-6">
                 <h2 class="text-lg font-semibold text-white mb-4 border-b border-slate-700 pb-2 flex items-center">
-                    <i class="fa-solid fa-clock-rotate-left mr-2 text-teal-500"></i> 5. Histórico Salvo
+                    <i class="fa-solid fa-clock-rotate-left mr-2 text-teal-500"></i> 5. Histórico Firebase
                 </h2>
                 <div id="listaHistorico" class="space-y-3 max-h-60 overflow-y-auto pr-2">
                     <p class="text-sm text-slate-500 italic">Conectando ao banco de dados...</p>
@@ -247,7 +260,6 @@
         </div>
 
         <!-- PAINEL DIREITO: Preview do Dossiê (Visualização e Impressão) -->
-        <!-- MANTIDO CLARO PORQUE REPRESENTA UMA FOLHA A4 IMPRESSA -->
         <div class="w-full lg:w-7/12 print-area flex justify-center">
             <div class="bg-white text-gray-900 border border-gray-200 shadow-xl print:shadow-none print:border-none w-full max-w-[21cm] min-h-[29.7cm] p-8 md:p-12 relative">
                 
@@ -257,7 +269,8 @@
                         <p class="text-sm text-gray-600 font-semibold tracking-widest mt-1 m-0">CONCLUSÃO DE SERVIÇO</p>
                     </div>
                     <div class="text-right">
-                        <img src="img/logo-wg.png" alt="Logo WG Informática" class="h-12 object-contain print:max-h-16">
+                        <!-- Logo (pode usar o seu arquivo local aqui. Fallback textual incluído) -->
+                        <img src="img/logo-wg.png" alt="WG Informática" class="h-12 object-contain" onerror="this.outerHTML='<h2 class=\'text-3xl font-black text-gray-900 tracking-tighter\'>WG<span class=\'text-teal-600\'>INF</span></h2>'">
                     </div>
                 </div>
 
@@ -357,11 +370,32 @@
     </div>
 
     <script>
+        // --- INICIALIZAÇÃO DO FIREBASE ---
+        if (!firebase.apps.length) {
+            alert("⚠️ ALERTA DE CONEXÃO:\n\nO sistema não conseguiu carregar o seu arquivo 'js/firebase-config.js'.\n\nO Firebase está rodando em modo 'demo' e os salvamentos na nuvem vão falhar. Verifique se a pasta 'js' está no mesmo lugar deste arquivo HTML.");
+        }
+        const db = firebase.firestore();
+        // ---------------------------------
+
         // Variáveis Globais
         let pcs = [];
         let servicosCustomizados = [];
         let padTecnico = null;
         let padCliente = null;
+
+        // Funções de Interface
+        function showToast(msg, error = false) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            toastMsg.textContent = msg;
+            if(error) {
+                toast.classList.replace('bg-teal-600', 'bg-red-500');
+            } else {
+                toast.classList.replace('bg-red-500', 'bg-teal-600');
+            }
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => { toast.classList.add('translate-y-20', 'opacity-0'); }, 3000);
+        }
 
         function formatarData(dataISO) {
             if (!dataISO) return '';
@@ -372,23 +406,15 @@
         function toggleClienteManual() {
             const select = document.getElementById('clienteSelect');
             const manual = document.getElementById('clienteManual');
-            if (select.value === 'outro') {
-                manual.classList.remove('hidden');
-            } else {
-                manual.classList.add('hidden');
-                manual.value = '';
-            }
+            if (select.value === 'outro') manual.classList.remove('hidden');
+            else { manual.classList.add('hidden'); manual.value = ''; }
         }
 
         function toggleTecnicoManual() {
             const select = document.getElementById('tecnicoSelect');
             const manual = document.getElementById('tecnicoManual');
-            if (select.value === 'outro') {
-                manual.classList.remove('hidden');
-            } else {
-                manual.classList.add('hidden');
-                manual.value = '';
-            }
+            if (select.value === 'outro') manual.classList.remove('hidden');
+            else { manual.classList.add('hidden'); manual.value = ''; }
         }
 
         function atualizarDados() {
@@ -433,7 +459,7 @@
                 { id: 'chk_cftv', text: 'Atualização de segurança em equipamentos de CFTV/DVRs.' }
             ];
 
-            checksPadrao.forEach(c => {
+            [...checksPadrao, ...servicosCustomizados].forEach(c => {
                 const el = document.getElementById(c.id);
                 if (el && el.checked) {
                     marcados++;
@@ -443,21 +469,12 @@
                 }
             });
 
-            servicosCustomizados.forEach(s => {
-                const el = document.getElementById(s.id);
-                if (el && el.checked) {
-                    marcados++;
-                    const li = document.createElement('li');
-                    li.innerHTML = `[ <i class="fa-solid fa-check text-green-600 mx-1"></i> ] ${s.text}`;
-                    ulChecklist.appendChild(li);
-                }
-            });
-
             if (marcados === 0) {
                 ulChecklist.innerHTML = '<li class="text-gray-400 italic">Nenhum serviço selecionado.</li>';
             }
         }
 
+        // Funções de Serviços e PCs
         function adicionarServicoCustomizado() {
             const input = document.getElementById('novoServicoInput');
             const texto = input.value.trim();
@@ -495,10 +512,7 @@
             const nome = document.getElementById('pcNome').value.trim();
             const status = document.getElementById('pcStatus').value;
 
-            if (!setor || !nome) {
-                alert("Preencha Setor e Nome do PC!");
-                return;
-            }
+            if (!setor || !nome) return alert("Preencha Setor e Nome do PC!");
 
             pcs.push({ setor, nome, status });
             document.getElementById('pcSetor').value = '';
@@ -521,8 +535,7 @@
 
             const select = document.getElementById('clienteSelect');
             const manual = document.getElementById('clienteManual');
-            let nomeCliente = select.value === 'outro' ? manual.value : select.value;
-            nomeCliente = nomeCliente || 'Empresa';
+            const nomeCliente = (select.value === 'outro' ? manual.value : select.value) || 'Empresa';
 
             if (pcs.length === 0) {
                 formTbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-slate-500 italic border-t border-slate-600">Nenhum PC cadastrado.</td></tr>`;
@@ -554,6 +567,7 @@
             });
         }
 
+        // Funções de Assinatura
         function inicializarPads() {
             const canvasTec = document.getElementById('canvasTecnico');
             const canvasCli = document.getElementById('canvasCliente');
@@ -569,19 +583,8 @@
             resizeCanvas(canvasCli);
 
             const padOptions = { penColor: "rgb(0, 0, 128)" };
-            
             padTecnico = new SignaturePad(canvasTec, padOptions);
             padCliente = new SignaturePad(canvasCli, padOptions);
-            
-            window.addEventListener("resize", () => {
-                const dataTec = padTecnico.toData();
-                resizeCanvas(canvasTec);
-                padTecnico.fromData(dataTec);
-                
-                const dataCli = padCliente.toData();
-                resizeCanvas(canvasCli);
-                padCliente.fromData(dataCli);
-            });
         }
 
         function limparAssinatura(tipo) {
@@ -596,21 +599,20 @@
             }
         }
 
-        function salvarAssinatura(tipo) {
+        function salvarAssinaturaNaFolha(tipo) {
             if(tipo === 'tecnico' && !padTecnico.isEmpty()) {
-                const dataUrl = padTecnico.toDataURL("image/png");
-                const img = document.getElementById('imgAssinaturaTecnico');
-                img.src = dataUrl;
-                img.classList.remove('hidden');
+                document.getElementById('imgAssinaturaTecnico').src = padTecnico.toDataURL("image/png");
+                document.getElementById('imgAssinaturaTecnico').classList.remove('hidden');
+                showToast("Assinatura do Técnico aplicada!");
             } else if (tipo === 'cliente' && !padCliente.isEmpty()) {
-                const dataUrl = padCliente.toDataURL("image/png");
-                const img = document.getElementById('imgAssinaturaCliente');
-                img.src = dataUrl;
-                img.classList.remove('hidden');
+                document.getElementById('imgAssinaturaCliente').src = padCliente.toDataURL("image/png");
+                document.getElementById('imgAssinaturaCliente').classList.remove('hidden');
+                showToast("Assinatura do Cliente aplicada!");
             }
         }
 
-        window.obterDadosAtuais = function() {
+        // --- INTEGRAÇÃO FIREBASE (SALVAR E CARREGAR) ---
+        function obterDadosAtuais() {
             const select = document.getElementById('clienteSelect');
             const manual = document.getElementById('clienteManual');
             const tecSelect = document.getElementById('tecnicoSelect');
@@ -634,33 +636,95 @@
                 tecnicoNome: tecSelect.value === 'outro' ? tecManual.value : tecSelect.value,
                 senhaRustdesk: document.getElementById('senhaRustdesk').value,
                 servicosRealizados: servicosRealizados,
-                pcs: JSON.parse(JSON.stringify(pcs)),
-                assinaturaTecnico: document.getElementById('imgAssinaturaTecnico').src,
-                assinaturaCliente: document.getElementById('imgAssinaturaCliente').src
+                pcs: pcs,
+                assinaturaTecnico: document.getElementById('imgAssinaturaTecnico').src || "",
+                assinaturaCliente: document.getElementById('imgAssinaturaCliente').src || ""
             };
-        };
+        }
 
-        window.carregarDadosHistorico = function(dados) {
+        async function salvarDossieFirebase() {
+            const data = obterDadosAtuais();
+            if (!data.clienteNome) {
+                return showToast("Atenção: Preencha o nome do cliente antes de salvar!", true);
+            }
+
+            const btn = document.getElementById('btnSalvarNuvem');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Salvando...';
+            btn.disabled = true;
+
+            try {
+                // Adiciona timestamp do servidor do Firebase
+                data.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
+                
+                // Salva na coleção "dossies_conclusao"
+                await db.collection("dossies_conclusao").add(data);
+                
+                showToast("Dossiê salvo no Firebase com sucesso!");
+                limparAssinatura('tecnico');
+                limparAssinatura('cliente');
+            } catch (error) {
+                console.error("Erro ao salvar no Firebase:", error);
+                showToast("Erro ao salvar! Verifique a conexão.", true);
+            } finally {
+                btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-2"></i> Salvar no Banco (Nuvem)';
+                btn.disabled = false;
+            }
+        }
+
+        function carregarHistoricoFirebase() {
+            const lista = document.getElementById('listaHistorico');
+            
+            // Puxa os dados ordenados do mais recente pro mais antigo
+            db.collection("dossies_conclusao")
+              .orderBy("criadoEm", "desc")
+              .onSnapshot(snapshot => {
+                  lista.innerHTML = '';
+                  
+                  if(snapshot.empty) {
+                      lista.innerHTML = '<p class="text-sm text-slate-500 italic">Nenhum dossiê salvo ainda.</p>';
+                      return;
+                  }
+
+                  snapshot.forEach(doc => {
+                      const d = doc.data();
+                      const div = document.createElement('div');
+                      div.className = 'p-3 bg-slate-700 rounded-lg border border-slate-600 hover:bg-slate-600 cursor-pointer transition flex justify-between items-center group mb-2';
+                      
+                      let dateStr = d.dataConclusao;
+                      if(dateStr && dateStr.includes('-')) {
+                          const p = dateStr.split('-');
+                          dateStr = `${p[2]}/${p[1]}/${p[0]}`;
+                      }
+                      
+                      div.innerHTML = `
+                          <div>
+                              <p class="font-semibold text-teal-400 text-sm group-hover:text-teal-300 transition">${d.clienteNome || 'Cliente não informado'}</p>
+                              <p class="text-xs text-slate-400 mt-0.5">${dateStr || 'Sem data'} - ${d.tecnicoNome || 'Técnico'}</p>
+                          </div>
+                          <button class="text-teal-400 hover:text-white bg-slate-800 hover:bg-teal-600 transition px-3 py-1.5 rounded-md shadow-sm border border-slate-600 text-xs font-semibold" title="Visualizar">
+                              <i class="fa-solid fa-eye mr-1"></i> Ver
+                          </button>
+                      `;
+                      
+                      div.onclick = () => {
+                          injetarDadosNaFolha(d);
+                          showToast("Dossiê carregado do banco de dados!");
+                      };
+                      lista.appendChild(div);
+                  });
+              }, error => {
+                  console.error("Erro ao ler Firebase:", error);
+                  lista.innerHTML = '<p class="text-sm text-red-400 italic">Erro ao conectar com o Firebase.</p>';
+              });
+        }
+
+        function injetarDadosNaFolha(dados) {
             document.getElementById('docCliente').textContent = dados.clienteNome || '_________________________________';
             document.getElementById('docData').textContent = formatarData(dados.dataConclusao) || '___/___/202__';
             document.getElementById('docTecnico').textContent = dados.tecnicoNome || '____________________';
             document.getElementById('docAssinaturaTecnico').textContent = dados.tecnicoNome || 'Técnico Responsável';
             document.getElementById('docSenhaRustdesk').textContent = dados.senhaRustdesk || '___________________';
             
-            const tecSelect = document.getElementById('tecnicoSelect');
-            const tecManual = document.getElementById('tecnicoManual');
-            if (dados.tecnicoNome) {
-                const options = Array.from(tecSelect.options).map(o => o.value);
-                if (options.includes(dados.tecnicoNome)) {
-                    tecSelect.value = dados.tecnicoNome;
-                    tecManual.classList.add('hidden');
-                } else {
-                    tecSelect.value = 'outro';
-                    tecManual.value = dados.tecnicoNome;
-                    tecManual.classList.remove('hidden');
-                }
-            }
-
             const ulChecklist = document.getElementById('docChecklist');
             ulChecklist.innerHTML = '';
             if (dados.servicosRealizados && dados.servicosRealizados.length > 0) {
@@ -709,141 +773,18 @@
             } else {
                  imgCli.classList.add('hidden');
             }
-        };
+        }
 
+        // Inicialização
         window.onload = function() {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('dataConclusao').value = today;
             atualizarDados();
             inicializarPads();
+            
+            // Inicia o leitor de histórico do Firebase
+            carregarHistoricoFirebase();
         };
-    </script>
-
-    <!-- FIREBASE - Padrão do seu sistema (Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-    
-    <!-- SEU ARQUIVO DE CONFIGURAÇÃO (Descomente quando colocar no seu servidor) -->
-    <!-- <script src="js/firebase-config.js"></script> -->
-
-    <script>
-        // Bloco de fallback apenas para o ambiente de testes (sandbox)
-        if (typeof firebase === 'undefined' || !firebase.apps.length) {
-            const tempConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { projectId: "demo-project" };
-            if(typeof firebase !== 'undefined') firebase.initializeApp(tempConfig);
-        }
-
-        function showToast(msg, error = false) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toastMessage');
-            toastMsg.textContent = msg;
-            
-            if(error) {
-                toast.classList.replace('bg-teal-600', 'bg-red-500');
-            } else {
-                toast.classList.replace('bg-red-500', 'bg-teal-600');
-            }
-            
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
-        }
-
-        // Tenta inicializar o banco de dados
-        let db;
-        try {
-            db = firebase.firestore();
-            document.getElementById('btnSalvarNuvem').classList.remove('hidden');
-            document.getElementById('btnSalvarNuvem').addEventListener('click', salvarDossie);
-            carregarHistorico();
-        } catch (e) {
-            console.warn("Firebase não inicializado corretamente. Rodando modo local.", e);
-            document.getElementById('listaHistorico').innerHTML = '<p class="text-sm text-red-400">Banco de dados desconectado.</p>';
-        }
-
-        async function salvarDossie() {
-            if (!db) return;
-            
-            const data = window.obterDadosAtuais();
-            if (!data.clienteNome) {
-                showToast("Atenção: Preencha o nome do cliente antes de salvar!", true);
-                return;
-            }
-
-            const btn = document.getElementById('btnSalvarNuvem');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Salvando...';
-            btn.disabled = true;
-
-            try {
-                data.timestamp = firebase.firestore.FieldValue.serverTimestamp();
-                data.timestampLocal = Date.now(); // Backup para ordenação local
-                
-                // SALVA NA NOVA COLEÇÃO 'dossies_conclusao' PARA NÃO GERAR CONFLITO
-                await db.collection('dossies_conclusao').add(data);
-                showToast("Dossiê salvo no histórico com sucesso!");
-                
-                // Limpar assinaturas após salvar para evitar salvar duplicado sem querer
-                limparAssinatura('tecnico');
-                limparAssinatura('cliente');
-                
-            } catch (e) {
-                console.error("Erro ao salvar no Firestore:", e);
-                showToast("Erro ao salvar.", true);
-            } finally {
-                btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-2"></i> Salvar na Nuvem';
-                btn.disabled = false;
-            }
-        }
-
-        function carregarHistorico() {
-            if (!db) return;
-            
-            // Busca na coleção 'dossies_conclusao'
-            db.collection('dossies_conclusao')
-              .orderBy('timestampLocal', 'desc')
-              .limit(15) // Mostra os últimos 15
-              .onSnapshot((snapshot) => {
-                const lista = document.getElementById('listaHistorico');
-                lista.innerHTML = '';
-                
-                if(snapshot.empty) {
-                    lista.innerHTML = '<p class="text-sm text-slate-500 italic">Nenhum dossiê salvo ainda.</p>';
-                    return;
-                }
-
-                snapshot.forEach(doc => {
-                    const d = doc.data();
-                    const div = document.createElement('div');
-                    div.className = 'p-3 bg-slate-700 rounded-lg border border-slate-600 hover:bg-slate-600 cursor-pointer transition flex justify-between items-center group mb-2';
-                    
-                    let dateStr = d.dataConclusao;
-                    if(dateStr && dateStr.includes('-')) {
-                        const p = dateStr.split('-');
-                        dateStr = `${p[2]}/${p[1]}/${p[0]}`;
-                    }
-                    
-                    div.innerHTML = `
-                        <div>
-                            <p class="font-semibold text-teal-400 text-sm group-hover:text-teal-300 transition">${d.clienteNome}</p>
-                            <p class="text-xs text-slate-400 mt-0.5">${dateStr || 'Sem data'} - ${d.tecnicoNome || 'Téc'}</p>
-                        </div>
-                        <button class="text-teal-400 hover:text-white bg-slate-800 hover:bg-teal-600 transition px-3 py-1.5 rounded-md shadow-sm border border-slate-600 text-xs font-semibold" title="Visualizar">
-                            <i class="fa-solid fa-eye mr-1"></i> Ver
-                        </button>
-                    `;
-                    
-                    div.onclick = () => {
-                        window.carregarDadosHistorico(d);
-                        showToast("Dossiê carregado na folha visual!");
-                    };
-                    lista.appendChild(div);
-                });
-            }, (error) => {
-                console.error("Erro ao puxar histórico:", error);
-                document.getElementById('listaHistorico').innerHTML = '<p class="text-sm text-red-400">Erro ao carregar histórico.</p>';
-            });
-        }
     </script>
 </body>
 </html>
