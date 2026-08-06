@@ -375,6 +375,7 @@
             alert("⚠️ ALERTA DE CONEXÃO:\n\nO sistema não conseguiu carregar o seu arquivo 'js/firebase-config.js'.\n\nO Firebase está rodando em modo 'demo' e os salvamentos na nuvem vão falhar. Verifique se a pasta 'js' está no mesmo lugar deste arquivo HTML.");
         }
         const db = firebase.firestore();
+        const auth = firebase.auth(); // <--- Adicionado para controle de autenticação
         // ---------------------------------
 
         // Variáveis Globais
@@ -643,6 +644,11 @@
         }
 
         async function salvarDossieFirebase() {
+            // Verifica se o usuário está logado antes de deixar salvar
+            if (!auth.currentUser) {
+                return showToast("Erro: Você precisa estar logado para salvar!", true);
+            }
+
             const data = obterDadosAtuais();
             if (!data.clienteNome) {
                 return showToast("Atenção: Preencha o nome do cliente antes de salvar!", true);
@@ -655,6 +661,7 @@
             try {
                 // Adiciona timestamp do servidor do Firebase
                 data.criadoEm = firebase.firestore.FieldValue.serverTimestamp();
+                data.criadoPor = auth.currentUser.email; // Salva quem gerou o dossiê
                 
                 // Salva na coleção "dossies_conclusao"
                 await db.collection("dossies_conclusao").add(data);
@@ -664,7 +671,7 @@
                 limparAssinatura('cliente');
             } catch (error) {
                 console.error("Erro ao salvar no Firebase:", error);
-                showToast("Erro ao salvar! Verifique a conexão.", true);
+                showToast("Erro de Permissão: Verifique as regras do Firestore.", true);
             } finally {
                 btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-2"></i> Salvar no Banco (Nuvem)';
                 btn.disabled = false;
@@ -714,7 +721,7 @@
                   });
               }, error => {
                   console.error("Erro ao ler Firebase:", error);
-                  lista.innerHTML = '<p class="text-sm text-red-400 italic">Erro ao conectar com o Firebase.</p>';
+                  lista.innerHTML = '<p class="text-sm text-red-400 italic">Erro de permissão no Firebase.</p>';
               });
         }
 
@@ -782,8 +789,14 @@
             atualizarDados();
             inicializarPads();
             
-            // Inicia o leitor de histórico do Firebase
-            carregarHistoricoFirebase();
+            // Inicia a verificação de login ANTES de ler o histórico
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    carregarHistoricoFirebase();
+                } else {
+                    document.getElementById('listaHistorico').innerHTML = '<p class="text-sm text-yellow-500 italic">Aguardando login no sistema...</p>';
+                }
+            });
         };
     </script>
 </body>
