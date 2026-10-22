@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSNSA - Controle de Estacionamento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos base e transições */
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: #f8fafc; overflow: hidden; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Notificações na tela (Toasts) */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { padding: 15px 20px; border-radius: 8px; color: white; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease-out; }
+        .toast.success { background-color: #10b981; } /* Verde */
+        .toast.error { background-color: #ef4444; } /* Vermelho */
+        .toast.warning { background-color: #f59e0b; } /* Laranja */
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Estilos de Impressão */
+        @media print {
+            body { overflow: visible; background: white; }
+            #sidebar, header, .print-hide { display: none !important; }
+            #app-container, .main-content { display: block; width: 100%; height: auto; overflow: visible; }
+            .tab-content { display: none; }
+            #sec-relatorio { display: block !important; padding: 0; }
+            .shadow-md { box-shadow: none !important; border: 1px solid #ddd; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+            h3::before { content: "Relatório de Pátio CSNSA\A"; white-space: pre-wrap; font-size: 18px; color: #333; display: block; margin-bottom: 10px; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex h-screen">
+
+    <!-- CONTAINER DE NOTIFICAÇÕES -->
+    <div id="toast-container"></div>
+
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md m-4">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-blue-600 mb-2">CSNSA</h1>
+                <p class="text-slate-500">Controle de Acesso ao Estacionamento</p>
+            </div>
+            <form onsubmit="fazerLogin(event)" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Usuário</label>
+                    <input type="text" id="login-user" required class="w-full p-3 border border-slate-300 rounded-lg outline-none focus:border-blue-500" placeholder="Ex: admin ou portaria">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
+                    <input type="password" id="login-senha" required class="w-full p-3 border border-slate-300 rounded-lg outline-none focus:border-blue-500" placeholder="Digite 123">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                    Entrar no Sistema
+                </button>
+            </form>
+            <div class="mt-4 text-xs text-slate-400 text-center">
+                Dica: Use <b>admin/123</b> para acesso total ou <b>portaria/123</b> para portaria.
+            </div>
+        </div>
+    </div>
+
+    <!-- APLICATIVO PRINCIPAL (Oculto no início) -->
+    <div id="app-container" class="hidden w-full h-full flex flex-col md:flex-row">
+        
+        <!-- Overlay Mobile -->
+        <div id="mobile-overlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden" onclick="toggleMenu()"></div>
+
+        <!-- Sidebar / Menu -->
+        <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-64 bg-slate-900 text-white transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-50 flex flex-col h-full shadow-2xl">
+            <div class="p-6 text-center border-b border-slate-800 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-blue-400 w-full">CSNSA</h1>
+                <button class="md:hidden text-2xl" onclick="toggleMenu()">✖</button>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                <button onclick="navigate('sec-painel')" id="nav-sec-painel" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left bg-blue-600 text-white font-medium transition-colors">
+                    <span>🏠</span> Operação
+                </button>
+                <button onclick="navigate('sec-cadastro')" id="nav-sec-cadastro" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                    <span>📋</span> Cadastros
+                </button>
+                <button onclick="navigate('sec-relatorio')" id="nav-sec-relatorio" class="nav-btn admin-only hidden w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+                    <span>📊</span> Relatórios
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-bold text-blue-300" id="user-avatar">A</div>
+                    <div>
+                        <p class="text-sm font-medium" id="user-name">Admin</p>
+                        <p class="text-xs text-slate-400" id="user-role">Administrador</p>
+                    </div>
+                </div>
+                <button onclick="fazerLogout()" class="text-red-400 hover:text-red-300 hover:bg-slate-800 p-2 rounded-lg transition-colors" title="Sair">
+                    🚪
+                </button>
+            </div>
+        </aside>
+
+        <!-- Área de Conteúdo -->
+        <main class="main-content flex-1 flex flex-col h-full overflow-hidden bg-slate-50">
+            <!-- Cabeçalho Mobile/Desktop -->
+            <header class="bg-white p-4 shadow-sm flex justify-between items-center z-30">
+                <div class="flex items-center gap-4">
+                    <button class="md:hidden text-2xl text-slate-600" onclick="toggleMenu()">☰</button>
+                    <h2 class="text-xl font-bold text-slate-800" id="header-title">Painel de Operação</h2>
+                </div>
+            </header>
+
+            <!-- Seções / Abas -->
+            <div class="flex-1 overflow-y-auto p-4 md:p-6">
+                
+                <!-- ================= ABA 1: PAINEL DE OPERAÇÃO ================= -->
+                <section id="sec-painel" class="tab-content active">
+                    <!-- Cards de Resumo -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-500">
+                            <h3 class="text-sm text-slate-500 font-medium">No Pátio Agora</h3>
+                            <p class="text-3xl font-bold text-slate-800" id="stat-patio">0</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-emerald-500">
+                            <h3 class="text-sm text-slate-500 font-medium">Entradas Hoje</h3>
+                            <p class="text-3xl font-bold text-slate-800" id="stat-hoje">0</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-red-500">
+                            <h3 class="text-sm text-slate-500 font-medium">Alertas Pernoite (+24h)</h3>
+                            <p class="text-3xl font-bold text-red-600" id="stat-alertas">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Controle Rápido -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-slate-200">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Controle de Acesso Rápido</h3>
+                        <div class="flex flex-col gap-4">
+                            <label class="text-sm font-medium text-slate-600">Placa do Veículo:</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="placa-busca" class="flex-1 p-4 border-2 border-slate-300 rounded-lg text-2xl uppercase text-center font-bold outline-none focus:border-blue-500" placeholder="ABC-1234" maxlength="8">
+                                <button onclick="simularOCR()" class="bg-slate-800 text-white p-4 rounded-lg font-bold hover:bg-slate-700 w-20 flex flex-col items-center justify-center text-xs">
+                                    <span class="text-xl mb-1">📷</span> LER
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mt-2">
+                                <button onclick="registrarAcesso('ENTRADA')" class="bg-emerald-500 hover:bg-emerald-600 text-white p-4 rounded-lg font-bold text-lg shadow-md transition-colors">
+                                    🟢 ENTRADA
+                                </button>
+                                <button onclick="registrarAcesso('SAIDA')" class="bg-red-500 hover:bg-red-600 text-white p-4 rounded-lg font-bold text-lg shadow-md transition-colors">
+                                    🔴 SAÍDA
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Últimas Movimentações -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-4 border-b bg-slate-50">
+                            <h3 class="font-bold text-slate-800">Últimas Movimentações</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[500px]">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-600 text-sm">
+                                        <th class="p-3 border-b">Hora</th>
+                                        <th class="p-3 border-b">Placa</th>
+                                        <th class="p-3 border-b">Proprietário</th>
+                                        <th class="p-3 border-b">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-movimentos">
+                                    <!-- Inserido via JS Firebase -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================= ABA 2: CADASTROS ================= -->
+                <section id="sec-cadastro" class="tab-content">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Novo Cadastro Unificado</h3>
+                        
+                        <form onsubmit="salvarCadastro(event)" class="space-y-6">
+                            <!-- Dados do Proprietário -->
+                            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <h4 class="font-bold text-blue-600 mb-3 text-sm uppercase">1. Dados do Proprietário</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Nome Completo *</label>
+                                        <input type="text" id="cad-nome" required class="w-full p-2.5 border rounded-lg outline-none focus:border-blue-500" placeholder="Ex: Dr. Carlos Silva">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">WhatsApp / Telefone</label>
+                                        <input type="text" id="cad-tel" class="w-full p-2.5 border rounded-lg outline-none focus:border-blue-500" placeholder="(21) 99999-9999">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Categoria *</label>
+                                        <select id="cad-cat" required class="w-full p-2.5 border rounded-lg outline-none focus:border-blue-500 bg-white">
+                                            <option value="">Selecione...</option>
+                                            <option value="Médico(a)">Médico(a)</option>
+                                            <option value="Diretoria">Diretoria</option>
+                                            <option value="Colaborador">Colaborador</option>
+                                            <option value="Fornecedor">Fornecedor Fixo</option>
+                                            <option value="Avulso">Avulso</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-1">Setor / Departamento</label>
+                                        <input type="text" id="cad-setor" class="w-full p-2.5 border rounded-lg outline-none focus:border-blue-500" placeholder="Ex: UTI, Manutenção">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Veículos -->
+                            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h4 class="font-bold text-blue-600 text-sm uppercase">2. Veículos Autorizados</h4>
+                                </div>
+                                
+                                <div id="lista-veiculos" class="space-y-4">
+                                    <!-- Veículo Base -->
+                                    <div class="flex flex-col md:flex-row gap-3 items-end bg-white p-3 rounded border" id="veiculo-base">
+                                        <div class="w-full md:w-1/3">
+                                            <label class="block text-xs font-medium text-slate-500 mb-1">Placa *</label>
+                                            <input type="text" required class="placa-input w-full p-2 border rounded uppercase" placeholder="ABC-1234">
+                                        </div>
+                                        <div class="w-full md:w-1/3">
+                                            <label class="block text-xs font-medium text-slate-500 mb-1">Marca/Modelo</label>
+                                            <input type="text" class="modelo-input w-full p-2 border rounded" placeholder="Ex: Honda Civic">
+                                        </div>
+                                        <div class="w-full md:w-1/3">
+                                            <label class="block text-xs font-medium text-slate-500 mb-1">Cor</label>
+                                            <input type="text" class="cor-input w-full p-2 border rounded" placeholder="Prata">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button type="button" onclick="adicionarCampoVeiculo()" class="mt-3 text-sm text-blue-600 font-bold hover:text-blue-800 flex items-center gap-1">
+                                    <span>+</span> Adicionar Outro Veículo
+                                </button>
+                            </div>
+
+                            <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg transition-colors">
+                                Salvar Cadastro Completo
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Administração de Acessos (Só Admin vê) -->
+                    <div class="admin-only hidden bg-white rounded-xl shadow-sm border border-red-200 overflow-hidden">
+                        <div class="p-4 border-b bg-red-50">
+                            <h3 class="font-bold text-red-700">Gestão de Bloqueios (Administração)</h3>
+                            <p class="text-xs text-red-600">Bloqueie o acesso de ex-colaboradores ou placas específicas.</p>
+                        </div>
+                        <div class="p-4 overflow-x-auto">
+                            <table class="w-full text-left text-sm border-collapse min-w-[500px]">
+                                <thead>
+                                    <tr class="bg-slate-100">
+                                        <th class="p-2 border-b">Proprietário</th>
+                                        <th class="p-2 border-b">Placa</th>
+                                        <th class="p-2 border-b">Status Atual</th>
+                                        <th class="p-2 border-b">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-bloqueios-admin">
+                                    <!-- Inserido via Firebase -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ================= ABA 3: RELATÓRIOS (Admin) ================= -->
+                <section id="sec-relatorio" class="tab-content">
+                    <div class="print-hide bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4">
+                        <h3 class="font-bold text-slate-800 mb-3">Filtros de Busca</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">Buscar por Placa</label>
+                                <input type="text" id="filtro-placa" onkeyup="filtrarRelatorio()" class="w-full p-2 border rounded uppercase" placeholder="ABC...">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">Nome do Proprietário</label>
+                                <input type="text" id="filtro-nome" onkeyup="filtrarRelatorio()" class="w-full p-2 border rounded" placeholder="Digite o nome">
+                            </div>
+                            <div class="flex items-center pb-2">
+                                <input type="checkbox" id="filtro-alertas" onchange="filtrarRelatorio()" class="w-4 h-4 mr-2">
+                                <label for="filtro-alertas" class="text-sm font-medium text-red-600 font-bold">Mostrar Apenas Alertas (+24h)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                        <div class="flex justify-between items-center mb-4 border-b pb-2">
+                            <h3 class="font-bold text-slate-800">Histórico Completo</h3>
+                            <button onclick="window.print()" class="print-hide bg-slate-800 text-white px-3 py-1.5 rounded text-sm font-bold flex items-center gap-2">
+                                🖨️ Imprimir / PDF
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm border-collapse min-w-[700px]">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-600">
+                                        <th class="p-3 border-b">Data/Hora</th>
+                                        <th class="p-3 border-b">Placa / Veículo</th>
+                                        <th class="p-3 border-b">Proprietário / Cat.</th>
+                                        <th class="p-3 border-b">Status</th>
+                                        <th class="p-3 border-b print-hide">Contato</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-relatorios">
+                                    <!-- Inserido via JS Firebase -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- SCRIPT PRINCIPAL E FIREBASE 11 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ================= CONFIGURAÇÃO DO SEU FIREBASE REAL =================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDd-aXxqrv_qAVjtGJvbW3mOy2VnQrvRhE",
+            authDomain: "revistamariana-4edab.firebaseapp.com",
+            projectId: "revistamariana-4edab",
+            storageBucket: "revistamariana-4edab.firebasestorage.app",
+            messagingSenderId: "859779275496",
+            appId: "1:859779275496:web:6e76260fc396b65633075d",
+            measurementId: "G-XCLQ33BBWW"
+        };
+        
+        // Identificador fixo para isolar nossos dados no banco
+        const appId = "csnsa-v1";
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        let firebaseUser = null;
+        let cadastrosSalvos = [];
+        let movimentacoesSalvas = [];
+
+        // Conectar anonimamente ao abrir (Exige ativar Auth Anonymous no Console Firebase)
+        async function conectarFirebase() {
+            try {
+                await signInAnonymously(auth);
+                firebaseUser = auth.currentUser;
+                iniciarSincronizacao();
+            } catch (error) {
+                console.error("Erro ao conectar no Firebase:", error);
+                mostrarNotificacao("Erro: Ative o Login Anônimo no Firebase Authentication.", "error");
+            }
+        }
+
+        function iniciarSincronizacao() {
+            if (!firebaseUser) return;
+
+            // Pastas obrigatórias no banco para garantir compatibilidade
+            const cadastrosRef = collection(db, 'artifacts', appId, 'public', 'data', 'cadastros');
+            const movimentosRef = collection(db, 'artifacts', appId, 'public', 'data', 'movimentacoes');
+
+            // Ouvir Cadastros
+            onSnapshot(cadastrosRef, (snapshot) => {
+                cadastrosSalvos = [];
+                snapshot.forEach(doc => cadastrosSalvos.push({ id: doc.id, ...doc.data() }));
+                atualizarTabelaAdmin();
+            }, (error) => console.error("Erro snapshot cadastros:", error));
+
+            // Ouvir Movimentações
+            onSnapshot(movimentosRef, (snapshot) => {
+                movimentacoesSalvas = [];
+                snapshot.forEach(doc => movimentacoesSalvas.push({ id: doc.id, ...doc.data() }));
+                
+                movimentacoesSalvas.sort((a, b) => b.timestamp - a.timestamp);
+                
+                atualizarTabelaMovimentos();
+                atualizarTabelaRelatorios();
+                atualizarCardsPainel();
+            }, (error) => console.error("Erro snapshot movimentos:", error));
+        }
+
+        // ================= SISTEMA DE TOASTS (NOTIFICAÇÕES) =================
+        window.mostrarNotificacao = function(mensagem, tipo = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+            let icone = tipo === 'success' ? '✅' : (tipo === 'error' ? '❌' : '⚠️');
+            toast.innerHTML = `<span>${icone}</span> <span>${mensagem}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // ================= SISTEMA DE LOGIN =================
+        let usuarioAtual = null;
+
+        window.fazerLogin = function(event) {
+            event.preventDefault();
+            const user = document.getElementById('login-user').value.toLowerCase();
+            const pass = document.getElementById('login-senha').value;
+
+            if (user === 'admin' && pass === '123') {
+                usuarioAtual = { nome: 'Admin', role: 'Administrador', isAdmin: true };
+            } else if (user === 'portaria' && pass === '123') {
+                usuarioAtual = { nome: 'Portaria', role: 'Operador', isAdmin: false };
+            } else {
+                mostrarNotificacao('Usuário ou senha incorretos!', 'error');
+                return;
+            }
+
+            document.getElementById('user-name').innerText = usuarioAtual.nome;
+            document.getElementById('user-role').innerText = usuarioAtual.role;
+            document.getElementById('user-avatar').innerText = usuarioAtual.nome.charAt(0).toUpperCase();
+
+            // Esconde/mostra partes de admin
+            const adminElements = document.querySelectorAll('.admin-only');
+            adminElements.forEach(el => {
+                if (usuarioAtual.isAdmin) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            
+            mostrarNotificacao(`Bem-vindo(a), ${usuarioAtual.nome}!`, 'success');
+            window.navigate('sec-painel');
+        }
+
+        window.fazerLogout = function() {
+            usuarioAtual = null;
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('login-user').value = '';
+            document.getElementById('login-senha').value = '';
+        }
+
+        // ================= NAVEGAÇÃO SPA E MOBILE =================
+        window.navigate = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('text-slate-300');
+            });
+
+            document.getElementById(tabId).classList.add('active');
+            const activeBtn = document.getElementById('nav-' + tabId);
+            if(activeBtn) {
+                activeBtn.classList.remove('text-slate-300');
+                activeBtn.classList.add('bg-blue-600', 'text-white');
+            }
+
+            let titulos = { 'sec-painel': 'Painel de Operação', 'sec-cadastro': 'Gestão de Cadastros', 'sec-relatorio': 'Relatórios' };
+            document.getElementById('header-title').innerText = titulos[tabId];
+
+            if (window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+                document.getElementById('mobile-overlay').classList.add('hidden');
+            }
+        }
+
+        window.toggleMenu = function() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('mobile-overlay').classList.toggle('hidden');
+        }
+
+        // ================= CADASTROS (FIREBASE) =================
+        window.adicionarCampoVeiculo = function() {
+            const lista = document.getElementById('lista-veiculos');
+            const idTemp = 'veiculo-' + Math.random().toString(36).substr(2, 9);
+            const novoVeiculo = document.createElement('div');
+            novoVeiculo.className = 'flex flex-col md:flex-row gap-3 items-end bg-white p-3 rounded border relative';
+            novoVeiculo.id = idTemp;
+            novoVeiculo.innerHTML = `
+                <button type="button" onclick="document.getElementById('${idTemp}').remove()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow hover:bg-red-600" title="Remover">X</button>
+                <div class="w-full md:w-1/3"><label class="block text-xs font-medium text-slate-500 mb-1">Placa *</label><input type="text" required class="placa-input w-full p-2 border rounded uppercase" placeholder="Placa"></div>
+                <div class="w-full md:w-1/3"><label class="block text-xs font-medium text-slate-500 mb-1">Marca/Modelo</label><input type="text" class="modelo-input w-full p-2 border rounded" placeholder="Modelo"></div>
+                <div class="w-full md:w-1/3"><label class="block text-xs font-medium text-slate-500 mb-1">Cor</label><input type="text" class="cor-input w-full p-2 border rounded" placeholder="Cor"></div>
+            `;
+            lista.appendChild(novoVeiculo);
+        }
+
+        window.salvarCadastro = async function(event) {
+            event.preventDefault();
+            if (!firebaseUser) return mostrarNotificacao("Conectando ao banco, tente novamente.", "warning");
+
+            const nome = document.getElementById('cad-nome').value;
+            const telefone = document.getElementById('cad-tel').value;
+            const categoria = document.getElementById('cad-cat').value;
+            const setor = document.getElementById('cad-setor').value;
+
+            const divVeiculos = document.getElementById('lista-veiculos').children;
+            const cadastrosRef = collection(db, 'artifacts', appId, 'public', 'data', 'cadastros');
+
+            try {
+                // Salvar 1 documento no banco para cada veículo da pessoa
+                for (let div of divVeiculos) {
+                    let placa = div.querySelector('.placa-input').value.toUpperCase();
+                    let modelo = div.querySelector('.modelo-input').value;
+                    let cor = div.querySelector('.cor-input').value;
+
+                    await addDoc(cadastrosRef, {
+                        proprietario: nome,
+                        telefone: telefone,
+                        categoria: categoria,
+                        setor: setor,
+                        placa: placa,
+                        modelo: modelo,
+                        cor: cor,
+                        status: 'LIBERADO', // Todo cadastro novo nasce liberado
+                        timestamp: Date.now()
+                    });
+                }
+
+                mostrarNotificacao('Salvo na nuvem com sucesso!', 'success');
+                event.target.reset(); // Limpa formulário
+                // Remove veículos extras adicionados na tela
+                while(divVeiculos.length > 1) { divVeiculos[1].remove(); }
+            } catch (e) {
+                console.error("Erro ao salvar:", e);
+                mostrarNotificacao('Erro ao salvar cadastro.', 'error');
+            }
+        }
+
+        // ================= BLOQUEIO DE VEÍCULOS (ADMIN) =================
+        window.mudarStatusPlaca = async function(docId, novoStatus) {
+            if (!firebaseUser) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'cadastros', docId);
+                await updateDoc(docRef, { status: novoStatus });
+                mostrarNotificacao(`Placa atualizada para ${novoStatus}!`, novoStatus === 'BLOQUEADO' ? 'warning' : 'success');
+            } catch (e) {
+                console.error("Erro ao atualizar status:", e);
+            }
+        }
+
+        function atualizarTabelaAdmin() {
+            const tbody = document.getElementById('tabela-bloqueios-admin');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            cadastrosSalvos.forEach(cad => {
+                const isBloqueado = cad.status === 'BLOQUEADO';
+                const badge = isBloqueado 
+                    ? `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">BLOQUEADO</span>`
+                    : `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">LIBERADO</span>`;
+                
+                const btnAcao = isBloqueado
+                    ? `<button onclick="mudarStatusPlaca('${cad.id}', 'LIBERADO')" class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded hover:bg-emerald-200">🔓 Liberar</button>`
+                    : `<button onclick="mudarStatusPlaca('${cad.id}', 'BLOQUEADO')" class="bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200">🚫 Bloquear</button>`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-2 border-b">${cad.proprietario}</td>
+                        <td class="p-2 border-b font-bold">${cad.placa}</td>
+                        <td class="p-2 border-b">${badge}</td>
+                        <td class="p-2 border-b">${btnAcao}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // ================= OPERAÇÃO (ENTRADA E SAÍDA) =================
+        window.simularOCR = function() {
+            mostrarNotificacao('Câmera aberta. Analisando placa...', 'warning');
+            setTimeout(() => {
+                if(cadastrosSalvos.length > 0) {
+                    const placaAleatoria = cadastrosSalvos[Math.floor(Math.random() * cadastrosSalvos.length)].placa;
+                    document.getElementById('placa-busca').value = placaAleatoria;
+                } else {
+                    document.getElementById('placa-busca').value = 'ABC-1234';
+                }
+                mostrarNotificacao('Placa detectada pela câmera!', 'success');
+            }, 2000);
+        }
+
+        window.registrarAcesso = async function(tipo) {
+            if (!firebaseUser) return mostrarNotificacao("Sem conexão com banco.", "error");
+            
+            const placa = document.getElementById('placa-busca').value.toUpperCase();
+            if(!placa) return mostrarNotificacao('Digite ou escaneie uma placa primeiro!', 'error');
+
+            const cadastro = cadastrosSalvos.find(c => c.placa === placa);
+            
+            // Verifica Bloqueio (Blacklist)
+            if (cadastro && cadastro.status === 'BLOQUEADO') {
+                return mostrarNotificacao('❌ ACESSO NEGADO - Procure a Administração', 'error');
+            }
+
+            const proprietario = cadastro ? `${cadastro.proprietario} (${cadastro.categoria})` : 'Visitante Avulso';
+            const telefone = cadastro ? cadastro.telefone : '';
+            
+            try {
+                const movimentosRef = collection(db, 'artifacts', appId, 'public', 'data', 'movimentacoes');
+                await addDoc(movimentosRef, {
+                    placa: placa,
+                    tipo: tipo,
+                    proprietario: proprietario,
+                    telefone: telefone,
+                    dataHoraLocal: new Date().toLocaleString('pt-BR'),
+                    timestamp: Date.now()
+                });
+
+                mostrarNotificacao(`${tipo} registrada! Dono: ${proprietario}`, 'success');
+                document.getElementById('placa-busca').value = '';
+            } catch (e) {
+                console.error("Erro na movimentacao:", e);
+                mostrarNotificacao('Falha ao registrar', 'error');
+            }
+        }
+
+        // ================= ATUALIZAÇÃO DAS TELAS =================
+        function atualizarTabelaMovimentos() {
+            const tabela = document.getElementById('tabela-movimentos');
+            if(!tabela) return;
+            tabela.innerHTML = '';
+            
+            // Mostra só os 8 últimos registros na home
+            const ultimos = movimentacoesSalvas.slice(0, 8);
+            
+            ultimos.forEach(mov => {
+                const corAcao = mov.tipo === 'ENTRADA' ? 'text-emerald-600' : 'text-red-600';
+                const hora = mov.dataHoraLocal.split(' ')[1].substring(0, 5); // Ex: 14:30
+                
+                tabela.innerHTML += `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-3 text-sm">${hora}</td>
+                        <td class="p-3 font-bold">${mov.placa}</td>
+                        <td class="p-3 text-sm">${mov.proprietario}</td>
+                        <td class="p-3 font-bold ${corAcao}">${mov.tipo}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function atualizarCardsPainel() {
+            // Conta os carros baseado no último status de cada placa
+            const ultimoStatusPorPlaca = {};
+            movimentacoesSalvas.forEach(mov => {
+                if(!ultimoStatusPorPlaca[mov.placa]) ultimoStatusPorPlaca[mov.placa] = mov;
+            });
+
+            let noPatio = 0;
+            let alertas = 0;
+            let acessosHoje = 0;
+
+            const inicioDoDia = new Date();
+            inicioDoDia.setHours(0,0,0,0);
+
+            for (let placa in ultimoStatusPorPlaca) {
+                const mov = ultimoStatusPorPlaca[placa];
+                if (mov.tipo === 'ENTRADA') {
+                    noPatio++;
+                    // Se estiver no pátio e entrou há mais de 24h (86.400.000 ms)
+                    if (Date.now() - mov.timestamp > 86400000) alertas++;
+                }
+            }
+
+            movimentacoesSalvas.forEach(mov => {
+                if (mov.timestamp > inicioDoDia.getTime() && mov.tipo === 'ENTRADA') acessosHoje++;
+            });
+
+            document.getElementById('stat-patio').innerText = noPatio;
+            document.getElementById('stat-hoje').innerText = acessosHoje;
+            document.getElementById('stat-alertas').innerText = alertas;
+        }
+
+        // ================= RELATÓRIOS E FILTROS =================
+        function atualizarTabelaRelatorios() {
+            const tbody = document.getElementById('tabela-relatorios');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            const ultimoStatusPorPlaca = {};
+            movimentacoesSalvas.forEach(mov => {
+                if(!ultimoStatusPorPlaca[mov.placa]) ultimoStatusPorPlaca[mov.placa] = mov;
+            });
+
+            movimentacoesSalvas.forEach(mov => {
+                let statusNoPatio = "";
+                let classLinha = "hover:bg-slate-50";
+                
+                const isUltimoRegistro = (ultimoStatusPorPlaca[mov.placa].id === mov.id);
+                const tempoNoPatio = Date.now() - mov.timestamp;
+                const maisDe24h = (isUltimoRegistro && mov.tipo === 'ENTRADA' && tempoNoPatio > 86400000);
+
+                if (isUltimoRegistro && mov.tipo === 'ENTRADA') {
+                    if (maisDe24h) {
+                        statusNoPatio = `<span class="text-red-600 font-bold">⚠️ +24h NO PÁTIO</span>`;
+                        classLinha = "bg-red-50 hover:bg-red-100 border-l-4 border-red-500 linha-alerta";
+                    } else {
+                        statusNoPatio = `<span class="text-emerald-600 font-bold">No Pátio Agora</span>`;
+                    }
+                } else if (mov.tipo === 'SAIDA') {
+                    statusNoPatio = `<span class="text-slate-500">Saiu</span>`;
+                    classLinha = "hover:bg-slate-50 opacity-75";
+                }
+
+                // Botão de WhatsApp (Só aparece se o cara estiver no pátio e tiver telefone)
+                let btnZap = '-';
+                if (mov.telefone && isUltimoRegistro && mov.tipo === 'ENTRADA') {
+                    let soNumeros = mov.telefone.replace(/\D/g, '');
+                    let msg = encodeURIComponent(`Olá, portaria do Hospital informando: o veículo placa ${mov.placa} consta em nosso pátio. Favor verificar.`);
+                    btnZap = `<a href="https://wa.me/55${soNumeros}?text=${msg}" target="_blank" class="bg-green-500 text-white px-2 py-1 rounded text-xs inline-flex items-center gap-1 hover:bg-green-600">💬 Avisar</a>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="${classLinha} filtro-linha" data-placa="${mov.placa}" data-nome="${mov.proprietario.toLowerCase()}">
+                        <td class="p-3 border-b text-xs">${mov.dataHoraLocal}</td>
+                        <td class="p-3 border-b font-bold">${mov.placa}</td>
+                        <td class="p-3 border-b">${mov.proprietario}</td>
+                        <td class="p-3 border-b">${statusNoPatio}</td>
+                        <td class="p-3 border-b print-hide">${btnZap}</td>
+                    </tr>
+                `;
+            });
+            
+            // Re-aplica filtro caso o cara receba dados em tempo real com filtro ativo
+            window.filtrarRelatorio();
+        }
+
+        window.filtrarRelatorio = function() {
+            const buscaPlaca = document.getElementById('filtro-placa').value.toUpperCase();
+            const buscaNome = document.getElementById('filtro-nome').value.toLowerCase();
+            const apenasAlertas = document.getElementById('filtro-alertas').checked;
+            
+            const linhas = document.querySelectorAll('.filtro-linha');
+            
+            linhas.forEach(linha => {
+                const placa = linha.getAttribute('data-placa');
+                const nome = linha.getAttribute('data-nome');
+                const isAlerta = linha.classList.contains('linha-alerta');
+
+                let mostra = true;
+                if (buscaPlaca && !placa.includes(buscaPlaca)) mostra = false;
+                if (buscaNome && !nome.includes(buscaNome)) mostra = false;
+                if (apenasAlertas && !isAlerta) mostra = false;
+
+                linha.style.display = mostra ? '' : 'none';
+            });
+        }
+
+        // STARTUP
+        conectarFirebase();
+    </script>
+</body>
+</html>
