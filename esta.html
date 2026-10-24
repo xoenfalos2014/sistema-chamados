@@ -5,24 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CSNSA - Controle de Estacionamento</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Adicionando a Biblioteca de Inteligência Artificial para Leitura de Imagens -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        /* Estilos base e transições */
         body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: #f8fafc; overflow: hidden; }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Notificações na tela (Toasts) */
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .toast { padding: 15px 20px; border-radius: 8px; color: white; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease-out; }
-        .toast.success { background-color: #10b981; } /* Verde */
-        .toast.error { background-color: #ef4444; } /* Vermelho */
-        .toast.warning { background-color: #f59e0b; } /* Laranja */
+        .toast.success { background-color: #10b981; }
+        .toast.error { background-color: #ef4444; }
+        .toast.warning { background-color: #f59e0b; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        /* Estilos de Impressão */
         @media print {
             body { overflow: visible; background: white; }
             #sidebar, header, .print-hide { display: none !important; }
@@ -38,10 +34,8 @@
 </head>
 <body class="text-slate-800 flex h-screen">
 
-    <!-- CONTAINER DE NOTIFICAÇÕES -->
     <div id="toast-container"></div>
 
-    <!-- MODAL DA CÂMERA AO VIVO -->
     <div id="camera-modal" class="fixed inset-0 bg-black z-[200] hidden flex-col items-center justify-center">
         <div class="relative w-full max-w-md bg-black h-full flex flex-col">
             <div class="p-4 text-center text-white bg-slate-900 flex justify-between items-center shadow-lg">
@@ -49,9 +43,7 @@
                 <button onclick="fecharCamera()" class="bg-red-500 text-white px-3 py-1 rounded font-bold hover:bg-red-600 transition-colors">FECHAR</button>
             </div>
             <div class="flex-1 relative flex items-center justify-center overflow-hidden">
-                <!-- Vídeo da câmera -->
                 <video id="video-leitor" autoplay playsinline class="min-w-full min-h-full object-cover"></video>
-                <!-- Guia visual (Mira) -->
                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div class="border-2 border-green-500 w-3/4 h-24 rounded-lg bg-green-500/10 shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] flex items-center justify-center">
                         <span class="text-green-500 font-bold text-xs bg-black/50 px-2 rounded">Alinhe a placa aqui</span>
@@ -61,12 +53,10 @@
             <div class="p-4 bg-slate-900 text-center text-white text-xs font-bold" id="status-leitura">
                 Inicializando câmera...
             </div>
-            <!-- Canvas invisível (onde a IA trabalha) -->
             <canvas id="canvas-leitor" class="hidden"></canvas>
         </div>
     </div>
 
-    <!-- TELA DE LOGIN -->
     <div id="login-screen" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md m-4">
             <div class="text-center mb-8">
@@ -87,18 +77,15 @@
                 </button>
             </form>
             <div class="mt-4 text-xs text-slate-400 text-center">
-                Dica: Use <b>admin/123</b> para acesso total ou <b>portaria/123</b> para portaria.
+                Dica: Use <b>admin/123</b> ou <b>portaria/123</b>
             </div>
         </div>
     </div>
 
-    <!-- APLICATIVO PRINCIPAL (Oculto no início) -->
     <div id="app-container" class="hidden w-full h-full flex flex-col md:flex-row">
         
-        <!-- Overlay Mobile -->
         <div id="mobile-overlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden" onclick="toggleMenu()"></div>
 
-        <!-- Sidebar / Menu -->
         <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-64 bg-slate-900 text-white transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-50 flex flex-col h-full shadow-2xl">
             <div class="p-6 text-center border-b border-slate-800 flex justify-between items-center">
                 <h1 class="text-2xl font-bold text-blue-400 w-full">CSNSA</h1>
@@ -131,9 +118,7 @@
             </div>
         </aside>
 
-        <!-- Área de Conteúdo -->
         <main class="main-content flex-1 flex flex-col h-full overflow-hidden bg-slate-50">
-            <!-- Cabeçalho Mobile/Desktop -->
             <header class="bg-white p-4 shadow-sm flex justify-between items-center z-30">
                 <div class="flex items-center gap-4">
                     <button class="md:hidden text-2xl text-slate-600" onclick="toggleMenu()">☰</button>
@@ -141,12 +126,9 @@
                 </div>
             </header>
 
-            <!-- Seções / Abas -->
             <div class="flex-1 overflow-y-auto p-4 md:p-6">
                 
-                <!-- ================= ABA 1: PAINEL DE OPERAÇÃO ================= -->
                 <section id="sec-painel" class="tab-content active">
-                    <!-- Cards de Resumo -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-500">
                             <h3 class="text-sm text-slate-500 font-medium">No Pátio Agora</h3>
@@ -162,15 +144,13 @@
                         </div>
                     </div>
 
-                    <!-- Controle Rápido -->
                     <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm mb-6 border border-slate-200 w-full overflow-hidden">
                         <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Controle de Acesso Rápido</h3>
                         <div class="flex flex-col gap-4 w-full">
                             <label class="text-sm font-medium text-slate-600">Placa ou Identificação do Veículo:</label>
                             
-                            <!-- LINHA CORRIGIDA: Campo e Câmera alinhados sem quebrar a tela -->
                             <div class="flex w-full gap-2">
-                                <input type="text" id="placa-busca" class="flex-1 w-full min-w-0 p-3 md:p-4 border-2 border-slate-300 rounded-lg text-xl md:text-2xl uppercase text-center font-bold outline-none focus:border-blue-500" placeholder="ABC-1234" maxlength="12">
+                                <input type="text" id="placa-busca" class="flex-1 min-w-0 p-3 md:p-4 border-2 border-slate-300 rounded-lg text-xl md:text-2xl uppercase text-center font-bold outline-none focus:border-blue-500" placeholder="ABC-1234 ou BIKE-01" maxlength="12">
                                 
                                 <button type="button" onclick="abrirCameraAoVivo()" class="bg-slate-800 text-white p-2 md:p-4 rounded-lg font-bold hover:bg-slate-700 w-20 flex-shrink-0 flex flex-col items-center justify-center text-xs cursor-pointer shadow-md transition-colors">
                                     <span class="text-xl mb-1">📷</span> LER
@@ -188,7 +168,6 @@
                         </div>
                     </div>
 
-                    <!-- Últimas Movimentações -->
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <div class="p-4 border-b bg-slate-50">
                             <h3 class="font-bold text-slate-800">Últimas Movimentações</h3>
@@ -198,26 +177,23 @@
                                 <thead>
                                     <tr class="bg-slate-100 text-slate-600 text-sm">
                                         <th class="p-3 border-b">Hora</th>
-                                        <th class="p-3 border-b">Placa</th>
+                                        <th class="p-3 border-b">Placa / ID</th>
                                         <th class="p-3 border-b">Proprietário</th>
                                         <th class="p-3 border-b">Ação</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabela-movimentos">
-                                    <!-- Inserido via JS Firebase -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </section>
 
-                <!-- ================= ABA 2: CADASTROS ================= -->
                 <section id="sec-cadastro" class="tab-content">
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
                         <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Novo Cadastro Unificado</h3>
                         
                         <form onsubmit="salvarCadastro(event)" class="space-y-6">
-                            <!-- Dados do Proprietário -->
                             <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                                 <h4 class="font-bold text-blue-600 mb-3 text-sm uppercase">1. Dados do Proprietário</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -247,14 +223,12 @@
                                 </div>
                             </div>
 
-                            <!-- Veículos -->
                             <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                                 <div class="flex justify-between items-center mb-3">
                                     <h4 class="font-bold text-blue-600 text-sm uppercase">2. Veículos Autorizados</h4>
                                 </div>
                                 
                                 <div id="lista-veiculos" class="space-y-4">
-                                    <!-- Veículo Base -->
                                     <div class="flex flex-col md:flex-row gap-3 items-end bg-white p-3 rounded border" id="veiculo-base">
                                         <div class="w-full md:w-1/4">
                                             <label class="block text-xs font-medium text-slate-500 mb-1">Identificação/Placa *</label>
@@ -291,7 +265,6 @@
                         </form>
                     </div>
 
-                    <!-- Administração de Acessos (Só Admin vê) -->
                     <div class="admin-only hidden bg-white rounded-xl shadow-sm border border-red-200 overflow-hidden">
                         <div class="p-4 border-b bg-red-50">
                             <h3 class="font-bold text-red-700">Gestão de Bloqueios (Administração)</h3>
@@ -302,26 +275,24 @@
                                 <thead>
                                     <tr class="bg-slate-100">
                                         <th class="p-2 border-b">Proprietário</th>
-                                        <th class="p-2 border-b">Placa</th>
+                                        <th class="p-2 border-b">Placa / ID</th>
                                         <th class="p-2 border-b">Status Atual</th>
                                         <th class="p-2 border-b">Ação</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabela-bloqueios-admin">
-                                    <!-- Inserido via Firebase -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </section>
 
-                <!-- ================= ABA 3: RELATÓRIOS (Admin) ================= -->
                 <section id="sec-relatorio" class="tab-content">
                     <div class="print-hide bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4">
                         <h3 class="font-bold text-slate-800 mb-3">Filtros de Busca</h3>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                             <div>
-                                <label class="block text-xs font-medium text-slate-500 mb-1">Buscar por Placa</label>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">Buscar por Placa / ID</label>
                                 <input type="text" id="filtro-placa" onkeyup="filtrarRelatorio()" class="w-full p-2 border rounded uppercase" placeholder="ABC...">
                             </div>
                             <div>
@@ -355,7 +326,6 @@
                                     </tr>
                                 </thead>
                                 <tbody id="tabela-relatorios">
-                                    <!-- Inserido via JS Firebase -->
                                 </tbody>
                             </table>
                         </div>
@@ -366,74 +336,31 @@
         </main>
     </div>
 
-        async function processarFrame() {
-            if (!scannerAtivo) return;
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-            try {
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0);
+        // SUA CONFIGURAÇÃO DO FIREBASE (NÃO APAGUE)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDd-aXxqrv_qAVjtGJvbW3mOy2VnQrvRhE",
+            authDomain: "revistamariana-4edab.firebaseapp.com",
+            projectId: "revistamariana-4edab",
+            storageBucket: "revistamariana-4edab.firebasestorage.app",
+            messagingSenderId: "859779275496",
+            appId: "1:859779275496:web:6e76260fc396b65633075d"
+        };
 
-                const result = await Tesseract.recognize(canvas, 'eng');
-                
-                // Limpa tudo que não for letra ou número para facilitar a leitura
-                let text = result.data.text.toUpperCase().replace(/[^A-Z0-9]/g, ''); 
-                
-                // Procura exatamente: 3 Letras + 1 Número + 1 Letra ou Número + 2 Números
-                const regexPlaca = /([A-Z]{3})([0-9])([A-Z0-9])([0-9]{2})/;
-                const match = text.match(regexPlaca);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        let firebaseUser = null;
+        let cadastrosSalvos = [];
+        let movimentacoesSalvas = [];
+        let usuarioAtual = null;
 
-                if (match) {
-                    let placaLida = match[0];
-                    
-                    // Verifica se é o padrão antigo (o 5º caractere, índice 4, é um número)
-                    if (!isNaN(placaLida[4])) {
-                        placaLida = placaLida.substring(0,3) + '-' + placaLida.substring(3); // Fica ABC-1234
-                    }
-                    // Se for Mercosul, continua ABC1D23 direto.
-
-                    fecharScanner();
-                    document.getElementById('placa-busca').value = placaLida;
-                    mostrarNotificacao('✅ Placa identificada: ' + placaLida, 'success');
-                } else {
-                    // Se não achou, tenta ler o próximo quadro após 1 segundo
-                    setTimeout(processarFrame, 1000);
-                }
-            } catch (e) {
-                console.error(e);
-                setTimeout(processarFrame, 1000);
-            }
-        }
-
-        function iniciarSincronizacao() {
-            if (!firebaseUser) return;
-
-            // Pastas obrigatórias no banco para garantir compatibilidade
-            const cadastrosRef = collection(db, 'artifacts', appId, 'public', 'data', 'cadastros');
-            const movimentosRef = collection(db, 'artifacts', appId, 'public', 'data', 'movimentacoes');
-
-            // Ouvir Cadastros
-            onSnapshot(cadastrosRef, (snapshot) => {
-                cadastrosSalvos = [];
-                snapshot.forEach(doc => cadastrosSalvos.push({ id: doc.id, ...doc.data() }));
-                atualizarTabelaAdmin();
-            }, (error) => console.error("Erro snapshot cadastros:", error));
-
-            // Ouvir Movimentações
-            onSnapshot(movimentosRef, (snapshot) => {
-                movimentacoesSalvas = [];
-                snapshot.forEach(doc => movimentacoesSalvas.push({ id: doc.id, ...doc.data() }));
-                
-                movimentacoesSalvas.sort((a, b) => b.timestamp - a.timestamp);
-                
-                atualizarTabelaMovimentos();
-                atualizarTabelaRelatorios();
-                atualizarCardsPainel();
-            }, (error) => console.error("Erro snapshot movimentos:", error));
-        }
-
-        // ================= SISTEMA DE TOASTS (NOTIFICAÇÕES) =================
+        // UI Helpers
         window.mostrarNotificacao = function(mensagem, tipo = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -448,67 +375,20 @@
             }, 3500);
         }
 
-        // ================= SISTEMA DE LOGIN =================
-        let usuarioAtual = null;
-
-        window.fazerLogin = function(event) {
-            event.preventDefault();
-            const user = document.getElementById('login-user').value.toLowerCase();
-            const pass = document.getElementById('login-senha').value;
-
-            if (user === 'admin' && pass === '123') {
-                usuarioAtual = { nome: 'Admin', role: 'Administrador', isAdmin: true };
-            } else if (user === 'portaria' && pass === '123') {
-                usuarioAtual = { nome: 'Portaria', role: 'Operador', isAdmin: false };
-            } else {
-                mostrarNotificacao('Usuário ou senha incorretos!', 'error');
-                return;
-            }
-
-            document.getElementById('user-name').innerText = usuarioAtual.nome;
-            document.getElementById('user-role').innerText = usuarioAtual.role;
-            document.getElementById('user-avatar').innerText = usuarioAtual.nome.charAt(0).toUpperCase();
-
-            // Esconde/mostra partes de admin
-            const adminElements = document.querySelectorAll('.admin-only');
-            adminElements.forEach(el => {
-                if (usuarioAtual.isAdmin) el.classList.remove('hidden');
-                else el.classList.add('hidden');
-            });
-
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
-            
-            mostrarNotificacao(`Bem-vindo(a), ${usuarioAtual.nome}!`, 'success');
-            window.navigate('sec-painel');
-        }
-
-        window.fazerLogout = function() {
-            usuarioAtual = null;
-            document.getElementById('app-container').classList.add('hidden');
-            document.getElementById('login-screen').classList.remove('hidden');
-            document.getElementById('login-user').value = '';
-            document.getElementById('login-senha').value = '';
-        }
-
-        // ================= NAVEGAÇÃO SPA E MOBILE =================
         window.navigate = function(tabId) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.classList.remove('bg-blue-600', 'text-white');
                 btn.classList.add('text-slate-300');
             });
-
             document.getElementById(tabId).classList.add('active');
             const activeBtn = document.getElementById('nav-' + tabId);
             if(activeBtn) {
                 activeBtn.classList.remove('text-slate-300');
                 activeBtn.classList.add('bg-blue-600', 'text-white');
             }
-
             let titulos = { 'sec-painel': 'Painel de Operação', 'sec-cadastro': 'Gestão de Cadastros', 'sec-relatorio': 'Relatórios' };
             document.getElementById('header-title').innerText = titulos[tabId];
-
             if (window.innerWidth < 768) {
                 document.getElementById('sidebar').classList.add('-translate-x-full');
                 document.getElementById('mobile-overlay').classList.add('hidden');
@@ -520,107 +400,53 @@
             document.getElementById('mobile-overlay').classList.toggle('hidden');
         }
 
-        // ================= CADASTROS (FIREBASE) =================
-        window.adicionarCampoVeiculo = function() {
-            const lista = document.getElementById('lista-veiculos');
-            const idTemp = 'veiculo-' + Math.random().toString(36).substr(2, 9);
-            const novoVeiculo = document.createElement('div');
-            novoVeiculo.className = 'flex flex-col md:flex-row gap-3 items-end bg-white p-3 rounded border relative';
-            novoVeiculo.id = idTemp;
-            novoVeiculo.innerHTML = `
-                <button type="button" onclick="document.getElementById('${idTemp}').remove()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow hover:bg-red-600" title="Remover">X</button>
-                <div class="w-full md:w-1/4"><label class="block text-xs font-medium text-slate-500 mb-1">Identificação/Placa *</label><input type="text" required class="placa-input w-full p-2 border rounded uppercase" placeholder="Placa ou BIKE-01"></div>
-                <div class="w-full md:w-1/4"><label class="block text-xs font-medium text-slate-500 mb-1">Tipo</label><select class="tipo-veiculo-input w-full p-2 border rounded bg-white"><option value="Carro">Carro</option><option value="Moto">Moto</option><option value="Bicicleta/Elétrica">Bicicleta/Elétrica</option><option value="Outros">Outros</option></select></div>
-                <div class="w-full md:w-1/4"><label class="block text-xs font-medium text-slate-500 mb-1">Marca/Modelo</label><input type="text" class="modelo-input w-full p-2 border rounded" placeholder="Modelo"></div>
-                <div class="w-full md:w-1/4"><label class="block text-xs font-medium text-slate-500 mb-1">Cor</label><input type="text" class="cor-input w-full p-2 border rounded" placeholder="Cor"></div>
-            `;
-            lista.appendChild(novoVeiculo);
-        }
-
-        window.salvarCadastro = async function(event) {
+        // Login System
+        window.fazerLogin = function(event) {
             event.preventDefault();
-            if (!firebaseUser) return mostrarNotificacao("Conectando ao banco, tente novamente.", "warning");
+            const user = document.getElementById('login-user').value.toLowerCase();
+            const pass = document.getElementById('login-senha').value;
 
-            const nome = document.getElementById('cad-nome').value;
-            const telefone = document.getElementById('cad-tel').value;
-            const categoria = document.getElementById('cad-cat').value;
-            const setor = document.getElementById('cad-setor').value;
-
-            const divVeiculos = document.getElementById('lista-veiculos').children;
-            const cadastrosRef = collection(db, 'artifacts', appId, 'public', 'data', 'cadastros');
-
-            try {
-                // Salvar 1 documento no banco para cada veículo da pessoa
-                for (let div of divVeiculos) {
-                    let placa = div.querySelector('.placa-input').value.toUpperCase();
-                    let tipoVeiculo = div.querySelector('.tipo-veiculo-input').value;
-                    let modelo = div.querySelector('.modelo-input').value;
-                    let cor = div.querySelector('.cor-input').value;
-
-                    await addDoc(cadastrosRef, {
-                        proprietario: nome,
-                        telefone: telefone,
-                        categoria: categoria,
-                        setor: setor,
-                        placa: placa,
-                        tipoVeiculo: tipoVeiculo,
-                        modelo: modelo,
-                        cor: cor,
-                        status: 'LIBERADO', // Todo cadastro novo nasce liberado
-                        timestamp: Date.now()
-                    });
-                }
-
-                mostrarNotificacao('Salvo na nuvem com sucesso!', 'success');
-                event.target.reset(); // Limpa formulário
-                // Remove veículos extras adicionados na tela
-                while(divVeiculos.length > 1) { divVeiculos[1].remove(); }
-            } catch (e) {
-                console.error("Erro ao salvar:", e);
-                mostrarNotificacao('Erro ao salvar cadastro.', 'error');
+            if (user === 'admin' && pass === '123') {
+                usuarioAtual = { nome: 'Admin', role: 'Administrador', isAdmin: true };
+            } else if (user === 'portaria' && pass === '123') {
+                usuarioAtual = { nome: 'Portaria', role: 'Operador', isAdmin: false };
+            } else {
+                window.mostrarNotificacao('Usuário ou senha incorretos!', 'error');
+                return;
             }
-        }
 
-        // ================= BLOQUEIO DE VEÍCULOS (ADMIN) =================
-        window.mudarStatusPlaca = async function(docId, novoStatus) {
-            if (!firebaseUser) return;
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'cadastros', docId);
-                await updateDoc(docRef, { status: novoStatus });
-                mostrarNotificacao(`Placa atualizada para ${novoStatus}!`, novoStatus === 'BLOQUEADO' ? 'warning' : 'success');
-            } catch (e) {
-                console.error("Erro ao atualizar status:", e);
-            }
-        }
+            document.getElementById('user-name').innerText = usuarioAtual.nome;
+            document.getElementById('user-role').innerText = usuarioAtual.role;
+            document.getElementById('user-avatar').innerText = usuarioAtual.nome.charAt(0).toUpperCase();
 
-        function atualizarTabelaAdmin() {
-            const tbody = document.getElementById('tabela-bloqueios-admin');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            
-            cadastrosSalvos.forEach(cad => {
-                const isBloqueado = cad.status === 'BLOQUEADO';
-                const badge = isBloqueado 
-                    ? `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">BLOQUEADO</span>`
-                    : `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">LIBERADO</span>`;
-                
-                const btnAcao = isBloqueado
-                    ? `<button onclick="mudarStatusPlaca('${cad.id}', 'LIBERADO')" class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded hover:bg-emerald-200">🔓 Liberar</button>`
-                    : `<button onclick="mudarStatusPlaca('${cad.id}', 'BLOQUEADO')" class="bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200">🚫 Bloquear</button>`;
+            document.querySelectorAll('.admin-only').forEach(el => {
+                if (usuarioAtual.isAdmin) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
 
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="p-2 border-b">${cad.proprietario}</td>
-                        <td class="p-2 border-b font-bold">${cad.placa}</td>
-                        <td class="p-2 border-b">${badge}</td>
-                        <td class="p-2 border-b">${btnAcao}</td>
-                    </tr>
-                `;
+            // Conecta ao Firebase ANÔNIMO no momento do login
+            signInAnonymously(auth).then((cred) => {
+                firebaseUser = cred.user;
+                iniciarSincronizacao();
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                window.mostrarNotificacao(`Bem-vindo(a), ${usuarioAtual.nome}!`, 'success');
+                window.navigate('sec-painel');
+            }).catch((error) => {
+                console.error("Erro Firebase Auth:", error);
+                window.mostrarNotificacao("Erro de conexão com o banco de dados.", "error");
             });
         }
 
-        // ================= OPERAÇÃO (ENTRADA E SAÍDA) =================
-        
+        window.fazerLogout = function() {
+            usuarioAtual = null;
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('login-user').value = '';
+            document.getElementById('login-senha').value = '';
+        }
+
+        // Camera Logic
         let videoStream = null;
         let loopLeitura = null;
         let lendoFrame = false;
@@ -635,21 +461,16 @@
             status.innerText = "Solicitando acesso à câmera...";
 
             try {
-                // Solicita a câmera traseira do celular
-                videoStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'environment' } 
-                });
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 video.srcObject = videoStream;
-                
-                // Quando o vídeo começar a tocar, inicia a inteligência artificial
                 video.onplaying = () => {
-                    status.innerText = "Analisando... Mantenha a placa no quadro.";
-                    iniciarLeituraContinua();
+                    status.innerText = "Analisando... Mantenha a placa no quadro verde.";
+                    loopLeitura = setInterval(analisarFrameAoVivo, 2000);
                 };
             } catch (err) {
                 console.error("Erro na câmera:", err);
                 status.innerText = "Erro ao acessar câmera. Permissão negada?";
-                setTimeout(fecharCamera, 3000);
+                setTimeout(window.fecharCamera, 3000);
             }
         }
 
@@ -669,13 +490,8 @@
             lendoFrame = false;
         }
 
-        function iniciarLeituraContinua() {
-            // A cada 2 segundos tira uma foto invisível e manda pra IA tentar ler
-            loopLeitura = setInterval(analisarFrameAoVivo, 2000);
-        }
-
         async function analisarFrameAoVivo() {
-            if (lendoFrame) return; // Se a IA ainda está pensando na foto anterior, espera
+            if (lendoFrame) return; 
             lendoFrame = true;
 
             const video = document.getElementById('video-leitor');
@@ -688,49 +504,45 @@
             
             try {
                 const result = await Tesseract.recognize(canvas, 'eng');
-                const text = result.data.text.toUpperCase();
-                console.log("IA leu na câmera:", text);
-
-                // Expressão Regular mais tolerante (aceita letras/numeros misturados que a IA confunde)
-                const regexPlaca = /[A-Z0-9]{3}[- ]?[A-Z0-9]{4}/;
+                let text = result.data.text.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                
+                const regexPlaca = /([A-Z]{3})([0-9])([A-Z0-9])([0-9]{2})/;
                 const match = text.match(regexPlaca);
 
                 if (match) {
-                    let placaLimpa = match[0].replace(/[^A-Z0-9]/g, '');
-                    
-                    if (placaLimpa.length === 7) {
-                        placaLimpa = placaLimpa.substring(0,3) + '-' + placaLimpa.substring(3);
-                        document.getElementById('placa-busca').value = placaLimpa;
-                        mostrarNotificacao('✅ Placa detectada: ' + placaLimpa, 'success');
-                        
-                        fecharCamera(); // Encontrou a placa? Fecha a câmera na hora!
+                    let placaLida = match[0];
+                    if (!isNaN(placaLida[4])) {
+                        placaLida = placaLida.substring(0,3) + '-' + placaLida.substring(3);
                     }
+                    
+                    window.fecharCamera();
+                    document.getElementById('placa-busca').value = placaLida;
+                    window.mostrarNotificacao('✅ Placa identificada: ' + placaLida, 'success');
                 }
             } catch (error) {
                 console.error("Erro OCR:", error);
             }
-
             lendoFrame = false;
         }
 
+        // Operação & Firebase Sync
         window.registrarAcesso = async function(tipo) {
-            if (!firebaseUser) return mostrarNotificacao("Sem conexão com banco.", "error");
+            if (!firebaseUser) return window.mostrarNotificacao("Sem conexão.", "error");
             
             const placa = document.getElementById('placa-busca').value.toUpperCase();
-            if(!placa) return mostrarNotificacao('Digite ou escaneie uma placa primeiro!', 'error');
+            if(!placa) return window.mostrarNotificacao('Digite a identificação ou placa primeiro!', 'error');
 
             const cadastro = cadastrosSalvos.find(c => c.placa === placa);
             
-            // Verifica Bloqueio (Blacklist)
             if (cadastro && cadastro.status === 'BLOQUEADO') {
-                return mostrarNotificacao('❌ ACESSO NEGADO - Procure a Administração', 'error');
+                return window.mostrarNotificacao('❌ ACESSO NEGADO - Procure a Administração', 'error');
             }
 
             const proprietario = cadastro ? `${cadastro.proprietario} (${cadastro.categoria})` : 'Visitante Avulso';
             const telefone = cadastro ? cadastro.telefone : '';
             
             try {
-                const movimentosRef = collection(db, 'artifacts', appId, 'public', 'data', 'movimentacoes');
+                const movimentosRef = collection(db, 'movimentacoes');
                 await addDoc(movimentosRef, {
                     placa: placa,
                     tipo: tipo,
@@ -739,28 +551,132 @@
                     dataHoraLocal: new Date().toLocaleString('pt-BR'),
                     timestamp: Date.now()
                 });
-
-                mostrarNotificacao(`${tipo} registrada! Dono: ${proprietario}`, 'success');
+                window.mostrarNotificacao(`${tipo} registrada! Dono: ${proprietario}`, 'success');
                 document.getElementById('placa-busca').value = '';
             } catch (e) {
-                console.error("Erro na movimentacao:", e);
-                mostrarNotificacao('Falha ao registrar', 'error');
+                console.error("Erro registrar:", e);
+                window.mostrarNotificacao('Falha ao registrar', 'error');
             }
         }
 
-        // ================= ATUALIZAÇÃO DAS TELAS =================
+        window.salvarCadastro = async function(event) {
+            event.preventDefault();
+            if (!firebaseUser) return window.mostrarNotificacao("Sem conexão.", "error");
+
+            const nome = document.getElementById('cad-nome').value;
+            const telefone = document.getElementById('cad-tel').value;
+            const categoria = document.getElementById('cad-cat').value;
+            const setor = document.getElementById('cad-setor').value;
+
+            const divVeiculos = document.getElementById('lista-veiculos').children;
+            const cadastrosRef = collection(db, 'cadastros');
+
+            try {
+                for (let div of divVeiculos) {
+                    let placa = div.querySelector('.placa-input').value.toUpperCase();
+                    let tipoVeiculo = div.querySelector('.tipo-veiculo-input').value;
+                    let modelo = div.querySelector('.modelo-input').value;
+                    let cor = div.querySelector('.cor-input').value;
+
+                    await addDoc(cadastrosRef, {
+                        proprietario: nome,
+                        telefone: telefone,
+                        categoria: categoria,
+                        setor: setor,
+                        placa: placa,
+                        tipoVeiculo: tipoVeiculo,
+                        modelo: modelo,
+                        cor: cor,
+                        status: 'LIBERADO',
+                        timestamp: Date.now()
+                    });
+                }
+                window.mostrarNotificacao('Salvo na nuvem com sucesso!', 'success');
+                event.target.reset();
+                while(divVeiculos.length > 1) { divVeiculos[1].remove(); }
+            } catch (e) {
+                console.error("Erro salvar cadastro:", e);
+                window.mostrarNotificacao('Erro ao salvar cadastro.', 'error');
+            }
+        }
+
+        window.adicionarCampoVeiculo = function() {
+            const lista = document.getElementById('lista-veiculos');
+            const idTemp = 'veiculo-' + Math.random().toString(36).substr(2, 9);
+            const novoVeiculo = document.createElement('div');
+            novoVeiculo.className = 'flex flex-col md:flex-row gap-3 items-end bg-white p-3 rounded border relative';
+            novoVeiculo.id = idTemp;
+            novoVeiculo.innerHTML = `
+                <button type="button" onclick="document.getElementById('${idTemp}').remove()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow hover:bg-red-600">X</button>
+                <div class="w-full md:w-1/4"><label class="block text-xs font-medium text-slate-500 mb-1">Identificação/Placa *</label><input type="text" required class="placa-input w-full p-2 border rounded uppercase" placeholder="Placa ou BIKE-01"></div>
+                <div class="w-full md:w-1/4"><label class="block text-xs font-medium text-slate-500 mb-1">Tipo</label><select class="tipo-veiculo-input w-full p-2 border rounded bg-white"><option value="Carro">Carro</option><option value="Moto">Moto</option><option value="Bicicleta/Elétrica">Bicicleta/Elétrica</option><option value="Outros">Outros</option></select></div>
+                <div class="w-full md:w-1/4"><label class="block text-xs font-medium text-slate-500 mb-1">Marca/Modelo</label><input type="text" class="modelo-input w-full p-2 border rounded" placeholder="Modelo"></div>
+                <div class="w-full md:w-1/4"><label class="block text-xs font-medium text-slate-500 mb-1">Cor</label><input type="text" class="cor-input w-full p-2 border rounded" placeholder="Cor"></div>
+            `;
+            lista.appendChild(novoVeiculo);
+        }
+
+        window.mudarStatusPlaca = async function(docId, novoStatus) {
+            try {
+                const docRef = doc(db, 'cadastros', docId);
+                await updateDoc(docRef, { status: novoStatus });
+                window.mostrarNotificacao(`Status atualizado para ${novoStatus}!`, novoStatus === 'BLOQUEADO' ? 'warning' : 'success');
+            } catch (e) {
+                console.error("Erro atualizar status:", e);
+            }
+        }
+
+        function iniciarSincronizacao() {
+            onSnapshot(collection(db, 'cadastros'), (snapshot) => {
+                cadastrosSalvos = [];
+                snapshot.forEach(doc => cadastrosSalvos.push({ id: doc.id, ...doc.data() }));
+                atualizarTabelaAdmin();
+            });
+
+            onSnapshot(collection(db, 'movimentacoes'), (snapshot) => {
+                movimentacoesSalvas = [];
+                snapshot.forEach(doc => movimentacoesSalvas.push({ id: doc.id, ...doc.data() }));
+                movimentacoesSalvas.sort((a, b) => b.timestamp - a.timestamp);
+                
+                atualizarTabelaMovimentos();
+                atualizarCardsPainel();
+                atualizarTabelaRelatorios();
+            });
+        }
+
+        function atualizarTabelaAdmin() {
+            const tbody = document.getElementById('tabela-bloqueios-admin');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            cadastrosSalvos.forEach(cad => {
+                const isBloqueado = cad.status === 'BLOQUEADO';
+                const badge = isBloqueado 
+                    ? `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">BLOQUEADO</span>`
+                    : `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">LIBERADO</span>`;
+                const btnAcao = isBloqueado
+                    ? `<button onclick="window.mudarStatusPlaca('${cad.id}', 'LIBERADO')" class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded hover:bg-emerald-200">🔓 Liberar</button>`
+                    : `<button onclick="window.mudarStatusPlaca('${cad.id}', 'BLOQUEADO')" class="bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200">🚫 Bloquear</button>`;
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-2 border-b">${cad.proprietario}</td>
+                        <td class="p-2 border-b font-bold">${cad.placa}</td>
+                        <td class="p-2 border-b">${badge}</td>
+                        <td class="p-2 border-b">${btnAcao}</td>
+                    </tr>
+                `;
+            });
+        }
+
         function atualizarTabelaMovimentos() {
             const tabela = document.getElementById('tabela-movimentos');
             if(!tabela) return;
             tabela.innerHTML = '';
             
-            // Mostra só os 8 últimos registros na home
             const ultimos = movimentacoesSalvas.slice(0, 8);
-            
             ultimos.forEach(mov => {
                 const corAcao = mov.tipo === 'ENTRADA' ? 'text-emerald-600' : 'text-red-600';
-                const hora = mov.dataHoraLocal.split(' ')[1].substring(0, 5); // Ex: 14:30
-                
+                const hora = mov.dataHoraLocal.split(' ')[1].substring(0, 5); 
                 tabela.innerHTML += `
                     <tr class="border-b hover:bg-slate-50">
                         <td class="p-3 text-sm">${hora}</td>
@@ -773,16 +689,12 @@
         }
 
         function atualizarCardsPainel() {
-            // Conta os carros baseado no último status de cada placa
             const ultimoStatusPorPlaca = {};
             movimentacoesSalvas.forEach(mov => {
                 if(!ultimoStatusPorPlaca[mov.placa]) ultimoStatusPorPlaca[mov.placa] = mov;
             });
 
-            let noPatio = 0;
-            let alertas = 0;
-            let acessosHoje = 0;
-
+            let noPatio = 0, alertas = 0, acessosHoje = 0;
             const inicioDoDia = new Date();
             inicioDoDia.setHours(0,0,0,0);
 
@@ -790,7 +702,6 @@
                 const mov = ultimoStatusPorPlaca[placa];
                 if (mov.tipo === 'ENTRADA') {
                     noPatio++;
-                    // Se estiver no pátio e entrou há mais de 24h (86.400.000 ms)
                     if (Date.now() - mov.timestamp > 86400000) alertas++;
                 }
             }
@@ -804,7 +715,6 @@
             document.getElementById('stat-alertas').innerText = alertas;
         }
 
-        // ================= RELATÓRIOS E FILTROS =================
         function atualizarTabelaRelatorios() {
             const tbody = document.getElementById('tabela-relatorios');
             if(!tbody) return;
@@ -835,11 +745,10 @@
                     classLinha = "hover:bg-slate-50 opacity-75";
                 }
 
-                // Botão de WhatsApp (Só aparece se o cara estiver no pátio e tiver telefone)
                 let btnZap = '-';
                 if (mov.telefone && isUltimoRegistro && mov.tipo === 'ENTRADA') {
                     let soNumeros = mov.telefone.replace(/\D/g, '');
-                    let msg = encodeURIComponent(`Olá, portaria do Hospital informando: o veículo placa ${mov.placa} consta em nosso pátio. Favor verificar.`);
+                    let msg = encodeURIComponent(`Olá, portaria do Hospital informando: o veículo de identificação ${mov.placa} consta em nosso pátio. Favor verificar.`);
                     btnZap = `<a href="https://wa.me/55${soNumeros}?text=${msg}" target="_blank" class="bg-green-500 text-white px-2 py-1 rounded text-xs inline-flex items-center gap-1 hover:bg-green-600">💬 Avisar</a>`;
                 }
 
@@ -853,8 +762,6 @@
                     </tr>
                 `;
             });
-            
-            // Re-aplica filtro caso o cara receba dados em tempo real com filtro ativo
             window.filtrarRelatorio();
         }
 
@@ -863,9 +770,7 @@
             const buscaNome = document.getElementById('filtro-nome').value.toLowerCase();
             const apenasAlertas = document.getElementById('filtro-alertas').checked;
             
-            const linhas = document.querySelectorAll('.filtro-linha');
-            
-            linhas.forEach(linha => {
+            document.querySelectorAll('.filtro-linha').forEach(linha => {
                 const placa = linha.getAttribute('data-placa');
                 const nome = linha.getAttribute('data-nome');
                 const isAlerta = linha.classList.contains('linha-alerta');
@@ -878,9 +783,6 @@
                 linha.style.display = mostra ? '' : 'none';
             });
         }
-
-        // STARTUP
-        conectarFirebase();
     </script>
 </body>
 </html>
