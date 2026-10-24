@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CSNSA - Controle de Estacionamento</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Adicionando a Biblioteca de Inteligência Artificial para Leitura de Imagens -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         /* Estilos base e transições */
         body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: #f8fafc; overflow: hidden; }
@@ -142,9 +144,12 @@
                             <label class="text-sm font-medium text-slate-600">Placa do Veículo:</label>
                             <div class="flex gap-2">
                                 <input type="text" id="placa-busca" class="flex-1 p-4 border-2 border-slate-300 rounded-lg text-2xl uppercase text-center font-bold outline-none focus:border-blue-500" placeholder="ABC-1234" maxlength="8">
-                                <button onclick="simularOCR()" class="bg-slate-800 text-white p-4 rounded-lg font-bold hover:bg-slate-700 w-20 flex flex-col items-center justify-center text-xs">
+                                
+                                <!-- Botão atualizado para abrir a câmera traseira do celular -->
+                                <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="processarImagemCamera(event)">
+                                <label for="camera-input" class="bg-slate-800 text-white p-4 rounded-lg font-bold hover:bg-slate-700 w-20 flex flex-col items-center justify-center text-xs cursor-pointer shadow-md transition-colors">
                                     <span class="text-xl mb-1">📷</span> LER
-                                </button>
+                                </label>
                             </div>
                             <div class="grid grid-cols-2 gap-4 mt-2">
                                 <button onclick="registrarAcesso('ENTRADA')" class="bg-emerald-500 hover:bg-emerald-600 text-white p-4 rounded-lg font-bold text-lg shadow-md transition-colors">
@@ -577,17 +582,45 @@
         }
 
         // ================= OPERAÇÃO (ENTRADA E SAÍDA) =================
-        window.simularOCR = function() {
-            mostrarNotificacao('Câmera aberta. Analisando placa...', 'warning');
-            setTimeout(() => {
-                if(cadastrosSalvos.length > 0) {
-                    const placaAleatoria = cadastrosSalvos[Math.floor(Math.random() * cadastrosSalvos.length)].placa;
-                    document.getElementById('placa-busca').value = placaAleatoria;
+        
+        // Nova função inteligente que usa a câmera e o Tesseract.js
+        window.processarImagemCamera = async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            mostrarNotificacao('📷 Câmera recebida. A IA está analisando a foto...', 'warning');
+            
+            try {
+                // Tesseract processa a imagem para extrair qualquer texto
+                const result = await Tesseract.recognize(file, 'eng'); 
+                const text = result.data.text.toUpperCase();
+                console.log("Texto bruto lido pela IA:", text);
+                
+                // Expressão Regular para encontrar placas BR: ABC-1234 ou Mercosul ABC1D23
+                const regexPlaca = /[A-Z]{3}[- ]?[0-9][A-Z0-9][0-9]{2}/;
+                const match = text.match(regexPlaca);
+
+                if (match) {
+                    // Limpa a placa tirando espaços ou traços que a IA tenha lido
+                    let placaLimpa = match[0].replace(/\s+/g, '').replace('-', '');
+                    
+                    // Se for placa antiga (7 letras/numeros e o 4º caractere é numero), coloca o traço
+                    if (placaLimpa.length === 7 && !isNaN(placaLimpa[3])) {
+                        placaLimpa = placaLimpa.substring(0,3) + '-' + placaLimpa.substring(3);
+                    }
+                    
+                    document.getElementById('placa-busca').value = placaLimpa;
+                    mostrarNotificacao('✅ Placa identificada com sucesso!', 'success');
                 } else {
-                    document.getElementById('placa-busca').value = 'ABC-1234';
+                    mostrarNotificacao('❌ Nenhuma placa nítida encontrada. Tente aproximar ou digite manualmente.', 'error');
                 }
-                mostrarNotificacao('Placa detectada pela câmera!', 'success');
-            }, 2000);
+            } catch (error) {
+                console.error("Erro no OCR:", error);
+                mostrarNotificacao('❌ Erro ao processar a imagem.', 'error');
+            }
+            
+            // Limpa o input para permitir tirar nova foto logo em seguida
+            event.target.value = '';
         }
 
         window.registrarAcesso = async function(tipo) {
