@@ -2,68 +2,74 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CSNSA - Controle de Estacionamento</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: #f8fafc; overflow: hidden; }
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast { padding: 15px 20px; border-radius: 8px; color: white; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease-out; }
+        .toast { padding: 15px 20px; border-radius: 8px; color: white; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease-out; font-size: 14px; }
         .toast.success { background-color: #10b981; }
         .toast.error { background-color: #ef4444; }
         .toast.warning { background-color: #f59e0b; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
+        /* Ajustes Mobile Smooth Scroll */
+        .main-content { height: 100dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
         @media print {
-            body { overflow: visible; background: white; }
-            #sidebar, header, .print-hide { display: none !important; }
+            body { overflow: visible; background: white; height: auto; }
+            #sidebar, header, .print-hide, #toast-container { display: none !important; }
             #app-container, .main-content { display: block; width: 100%; height: auto; overflow: visible; }
             .tab-content { display: none; }
             #sec-relatorio { display: block !important; padding: 0; }
-            .shadow-md { box-shadow: none !important; border: 1px solid #ddd; }
+            .shadow-sm, .shadow-md { box-shadow: none !important; border: 1px solid #ddd; }
             table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; font-size: 12px; }
             h3::before { content: "Relatório de Pátio CSNSA\A"; white-space: pre-wrap; font-size: 18px; color: #333; display: block; margin-bottom: 10px; }
         }
     </style>
 </head>
-<body class="text-slate-800 flex h-screen">
+<body class="text-slate-800 flex h-[100dvh] overflow-hidden">
 
+    <!-- Sistema de Notificações -->
     <div id="toast-container"></div>
 
+    <!-- Tela da Câmera (Leitura Inteligente) -->
     <div id="camera-modal" class="fixed inset-0 bg-black z-[200] hidden flex-col items-center justify-center">
         <div class="relative w-full max-w-md bg-black h-full flex flex-col">
             <div class="p-4 text-center text-white bg-slate-900 flex justify-between items-center shadow-lg">
-                <span class="font-bold text-sm">Aponte para a placa...</span>
-                <button onclick="fecharCamera()" class="bg-red-500 text-white px-3 py-1 rounded font-bold hover:bg-red-600 transition-colors">FECHAR</button>
+                <span class="font-bold text-sm">Escaneando Placa...</span>
+                <button onclick="fecharCamera()" class="bg-red-500 text-white px-3 py-1 rounded font-bold hover:bg-red-600 transition-colors text-xs">FECHAR</button>
             </div>
             <div class="flex-1 relative flex items-center justify-center overflow-hidden">
                 <video id="video-leitor" autoplay playsinline class="min-w-full min-h-full object-cover"></video>
                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div class="border-2 border-green-500 w-3/4 h-24 rounded-lg bg-green-500/10 shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] flex items-center justify-center">
-                        <span class="text-green-500 font-bold text-xs bg-black/50 px-2 rounded">Alinhe a placa aqui</span>
+                    <div class="border-4 border-emerald-500 w-[85%] h-32 rounded-lg bg-emerald-500/10 shadow-[0_0_0_9999px_rgba(0,0,0,0.75)] flex flex-col items-center justify-center">
+                        <span class="text-white font-bold text-xs bg-black/70 px-2 py-1 rounded mt-12 text-center">Posicione a placa dentro deste quadro<br>Aguarde a leitura automática.</span>
                     </div>
                 </div>
             </div>
-            <div class="p-4 bg-slate-900 text-center text-white text-xs font-bold" id="status-leitura">
-                Inicializando câmera...
+            <div class="p-4 bg-slate-900 text-center text-emerald-400 text-sm font-bold" id="status-leitura">
+                Iniciando câmera traseira...
             </div>
             <canvas id="canvas-leitor" class="hidden"></canvas>
         </div>
     </div>
 
-    <div id="login-screen" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md m-4">
+    <!-- Tela de Login -->
+    <div id="login-screen" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center overflow-y-auto p-4">
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-2xl w-full max-w-md">
             <div class="text-center mb-8">
-                <h1 class="text-4xl font-bold text-blue-600 mb-2">CSNSA</h1>
-                <p class="text-slate-500">Controle de Acesso ao Estacionamento</p>
+                <h1 class="text-3xl md:text-4xl font-bold text-blue-600 mb-2">CSNSA</h1>
+                <p class="text-slate-500 text-sm md:text-base">Controle Inteligente de Acesso</p>
             </div>
-            <form onsubmit="fazerLogin(event)" class="space-y-6">
+            <form onsubmit="fazerLogin(event)" class="space-y-5">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Usuário</label>
                     <input type="text" id="login-user" required class="w-full p-3 border border-slate-300 rounded-lg outline-none focus:border-blue-500" placeholder="Ex: admin ou portaria">
@@ -72,114 +78,123 @@
                     <label class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
                     <input type="password" id="login-senha" required class="w-full p-3 border border-slate-300 rounded-lg outline-none focus:border-blue-500" placeholder="Digite 123">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-md">
                     Entrar no Sistema
                 </button>
             </form>
-            <div class="mt-4 text-xs text-slate-400 text-center">
-                Dica: Use <b>admin/123</b> ou <b>portaria/123</b>
+            <div class="mt-6 text-xs text-slate-400 text-center bg-slate-50 p-2 rounded border">
+                Contas de teste: <b>admin/123</b> (Completo) ou <b>portaria/123</b> (Apenas Entrada/Saída)
             </div>
         </div>
     </div>
 
-    <div id="app-container" class="hidden w-full h-full flex flex-col md:flex-row">
+    <!-- Container Principal do App -->
+    <div id="app-container" class="hidden w-full h-[100dvh] flex flex-col md:flex-row relative">
         
-        <div id="mobile-overlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden" onclick="toggleMenu()"></div>
+        <!-- Menu Overlay (Mobile) -->
+        <div id="mobile-overlay" class="fixed inset-0 bg-slate-900/60 z-40 hidden md:hidden backdrop-blur-sm transition-opacity" onclick="toggleMenu()"></div>
 
-        <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-64 bg-slate-900 text-white transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-50 flex flex-col h-full shadow-2xl">
-            <div class="p-6 text-center border-b border-slate-800 flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-blue-400 w-full">CSNSA</h1>
-                <button class="md:hidden text-2xl" onclick="toggleMenu()">✖</button>
+        <!-- Barra Lateral (Menu) -->
+        <aside id="sidebar" class="absolute md:relative inset-y-0 left-0 w-64 bg-slate-900 text-white transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-50 flex flex-col h-full shadow-2xl">
+            <div class="p-5 text-center border-b border-slate-800 flex justify-between items-center">
+                <h1 class="text-xl font-bold text-blue-400 w-full text-left pl-2">Painel CSNSA</h1>
+                <button class="md:hidden text-2xl text-slate-400 hover:text-white" onclick="toggleMenu()">✕</button>
             </div>
             
-            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+            <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
                 <button onclick="navigate('sec-painel')" id="nav-sec-painel" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left bg-blue-600 text-white font-medium transition-colors">
-                    <span>🏠</span> Operação
+                    <span class="text-xl">🏠</span> Operação
                 </button>
                 <button onclick="navigate('sec-cadastro')" id="nav-sec-cadastro" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                    <span>📋</span> Cadastros
+                    <span class="text-xl">📋</span> Cadastros
                 </button>
                 <button onclick="navigate('sec-relatorio')" id="nav-sec-relatorio" class="nav-btn admin-only hidden w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
-                    <span>📊</span> Relatórios
+                    <span class="text-xl">📊</span> Relatórios
                 </button>
             </nav>
 
-            <div class="p-4 border-t border-slate-800 flex items-center justify-between">
+            <div class="p-4 border-t border-slate-800 bg-slate-950 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-bold text-blue-300" id="user-avatar">A</div>
-                    <div>
-                        <p class="text-sm font-medium" id="user-name">Admin</p>
-                        <p class="text-xs text-slate-400" id="user-role">Administrador</p>
+                    <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-blue-400" id="user-avatar">A</div>
+                    <div class="overflow-hidden">
+                        <p class="text-sm font-bold truncate" id="user-name">Admin</p>
+                        <p class="text-xs text-slate-500 truncate" id="user-role">Administrador</p>
                     </div>
                 </div>
-                <button onclick="fazerLogout()" class="text-red-400 hover:text-red-300 hover:bg-slate-800 p-2 rounded-lg transition-colors" title="Sair">
+                <button onclick="fazerLogout()" class="text-red-400 hover:text-red-300 bg-slate-800 p-2 rounded-lg transition-colors" title="Sair do Sistema">
                     🚪
                 </button>
             </div>
         </aside>
 
-        <main class="main-content flex-1 flex flex-col h-full overflow-hidden bg-slate-50">
-            <header class="bg-white p-4 shadow-sm flex justify-between items-center z-30">
-                <div class="flex items-center gap-4">
-                    <button class="md:hidden text-2xl text-slate-600" onclick="toggleMenu()">☰</button>
-                    <h2 class="text-xl font-bold text-slate-800" id="header-title">Painel de Operação</h2>
-                </div>
+        <!-- Área de Conteúdo -->
+        <main class="main-content flex-1 flex flex-col bg-slate-50 w-full relative">
+            <header class="bg-white p-4 shadow-sm flex items-center gap-4 sticky top-0 z-30 border-b border-slate-200">
+                <button class="md:hidden text-2xl text-slate-600 focus:outline-none" onclick="toggleMenu()">☰</button>
+                <h2 class="text-lg md:text-xl font-bold text-slate-800 truncate" id="header-title">Painel de Operação</h2>
             </header>
 
-            <div class="flex-1 overflow-y-auto p-4 md:p-6">
+            <div class="p-4 md:p-6 pb-24 md:pb-6 max-w-7xl mx-auto w-full">
                 
-                <section id="sec-painel" class="tab-content active">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-500">
-                            <h3 class="text-sm text-slate-500 font-medium">No Pátio Agora</h3>
-                            <p class="text-3xl font-bold text-slate-800" id="stat-patio">0</p>
+                <!-- ABA 1: OPERAÇÃO E PORTARIA -->
+                <section id="sec-painel" class="tab-content active space-y-6">
+                    <!-- Cards de Resumo -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border-l-4 border-blue-500 flex flex-col justify-center">
+                            <h3 class="text-xs md:text-sm text-slate-500 font-bold uppercase">Veículos no Pátio</h3>
+                            <p class="text-2xl md:text-3xl font-black text-slate-800 mt-1" id="stat-patio">0</p>
                         </div>
-                        <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-emerald-500">
-                            <h3 class="text-sm text-slate-500 font-medium">Entradas Hoje</h3>
-                            <p class="text-3xl font-bold text-slate-800" id="stat-hoje">0</p>
+                        <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border-l-4 border-emerald-500 flex flex-col justify-center">
+                            <h3 class="text-xs md:text-sm text-slate-500 font-bold uppercase">Acessos Hoje</h3>
+                            <p class="text-2xl md:text-3xl font-black text-slate-800 mt-1" id="stat-hoje">0</p>
                         </div>
-                        <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-red-500">
-                            <h3 class="text-sm text-slate-500 font-medium">Alertas Pernoite (+24h)</h3>
-                            <p class="text-3xl font-bold text-red-600" id="stat-alertas">0</p>
+                        <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border-l-4 border-red-500 flex flex-col justify-center">
+                            <h3 class="text-xs md:text-sm text-slate-500 font-bold uppercase">Alertas (+24h)</h3>
+                            <p class="text-2xl md:text-3xl font-black text-red-600 mt-1" id="stat-alertas">0</p>
                         </div>
                     </div>
 
-                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm mb-6 border border-slate-200 w-full overflow-hidden">
-                        <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Controle de Acesso Rápido</h3>
-                        <div class="flex flex-col gap-4 w-full">
-                            <label class="text-sm font-medium text-slate-600">Placa ou Identificação do Veículo:</label>
+                    <!-- Módulo de Cancela (Acesso) -->
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-base md:text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b pb-3">
+                            <span>🚘</span> Controle de Cancela
+                        </h3>
+                        <div class="flex flex-col gap-4">
+                            <label class="text-sm font-bold text-slate-600">Placa ou Identificação (Ex: ABC-1234 ou BIKE-01):</label>
                             
-                            <div class="flex w-full gap-2">
-                                <input type="text" id="placa-busca" class="flex-1 min-w-0 p-3 md:p-4 border-2 border-slate-300 rounded-lg text-xl md:text-2xl uppercase text-center font-bold outline-none focus:border-blue-500" placeholder="ABC-1234 ou BIKE-01" maxlength="12">
+                            <!-- O flex foi ajustado para não quebrar a tela no mobile -->
+                            <div class="flex flex-row w-full gap-2 items-stretch">
+                                <input type="text" id="placa-busca" class="flex-1 min-w-0 p-3 md:p-4 border-2 border-slate-300 rounded-lg text-lg md:text-2xl uppercase text-center font-black outline-none focus:border-blue-500 focus:bg-blue-50 transition-colors shadow-inner" placeholder="ABC-1234" maxlength="12">
                                 
-                                <button type="button" onclick="abrirCameraAoVivo()" class="bg-slate-800 text-white p-2 md:p-4 rounded-lg font-bold hover:bg-slate-700 w-20 flex-shrink-0 flex flex-col items-center justify-center text-xs cursor-pointer shadow-md transition-colors">
-                                    <span class="text-xl mb-1">📷</span> LER
+                                <button type="button" onclick="abrirCameraAoVivo()" class="bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-700 w-16 md:w-24 flex-shrink-0 flex flex-col items-center justify-center text-[10px] md:text-xs cursor-pointer shadow-md transition-all active:scale-95">
+                                    <span class="text-xl md:text-2xl mb-1">📷</span> LER
                                 </button>
                             </div>
                             
-                            <div class="grid grid-cols-2 gap-3 mt-2 w-full">
-                                <button onclick="registrarAcesso('ENTRADA')" class="bg-emerald-500 hover:bg-emerald-600 text-white p-3 md:p-4 rounded-lg font-bold text-base md:text-lg shadow-md transition-colors w-full">
-                                    🟢 ENTRADA
+                            <div class="grid grid-cols-2 gap-3 md:gap-4 mt-2">
+                                <button onclick="registrarAcesso('ENTRADA')" class="bg-emerald-500 hover:bg-emerald-600 text-white p-4 md:p-5 rounded-lg font-black text-sm md:text-lg shadow-md transition-colors flex items-center justify-center gap-2 active:scale-95">
+                                    <span class="text-xl">⬇️</span> ENTRADA
                                 </button>
-                                <button onclick="registrarAcesso('SAIDA')" class="bg-red-500 hover:bg-red-600 text-white p-3 md:p-4 rounded-lg font-bold text-base md:text-lg shadow-md transition-colors w-full">
-                                    🔴 SAÍDA
+                                <button onclick="registrarAcesso('SAIDA')" class="bg-red-500 hover:bg-red-600 text-white p-4 md:p-5 rounded-lg font-black text-sm md:text-lg shadow-md transition-colors flex items-center justify-center gap-2 active:scale-95">
+                                    <span class="text-xl">⬆️</span> SAÍDA
                                 </button>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Tabela de Movimentações Recentes -->
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <div class="p-4 border-b bg-slate-50">
-                            <h3 class="font-bold text-slate-800">Últimas Movimentações</h3>
+                            <h3 class="font-bold text-slate-800 text-sm">Últimas Movimentações na Portaria</h3>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse min-w-[500px]">
                                 <thead>
-                                    <tr class="bg-slate-100 text-slate-600 text-sm">
-                                        <th class="p-3 border-b">Hora</th>
-                                        <th class="p-3 border-b">Placa / ID</th>
-                                        <th class="p-3 border-b">Proprietário</th>
-                                        <th class="p-3 border-b">Ação</th>
+                                    <tr class="bg-slate-100 text-slate-500 text-xs uppercase">
+                                        <th class="p-3 border-b font-bold">Hora</th>
+                                        <th class="p-3 border-b font-bold">Placa/ID</th>
+                                        <th class="p-3 border-b font-bold">Proprietário</th>
+                                        <th class="p-3 border-b font-bold">Ação</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabela-movimentos">
@@ -189,25 +204,39 @@
                     </div>
                 </section>
 
-                <section id="sec-cadastro" class="tab-content">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
-                        <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Novo Cadastro Unificado</h3>
+                <!-- ABA 2: CADASTROS (COM EDIÇÃO E BUSCA) -->
+                <section id="sec-cadastro" class="tab-content space-y-6">
+                    
+                    <!-- Busca e Edição de Cadastro -->
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-blue-200 bg-blue-50/30">
+                        <h3 class="text-sm font-bold text-blue-800 mb-3 uppercase flex items-center gap-2">
+                            <span>🔍</span> Buscar / Editar Proprietário
+                        </h3>
+                        <div class="flex gap-2">
+                            <input type="text" id="busca-prop" class="flex-1 min-w-0 p-3 border rounded-lg outline-none focus:border-blue-500 shadow-sm" placeholder="Digite o nome da pessoa...">
+                            <button onclick="buscarProprietario()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold shadow-md">Buscar</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Ficha de Cadastro</h3>
                         
                         <form onsubmit="salvarCadastro(event)" class="space-y-6">
+                            <!-- Dados Pessoais -->
                             <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                                <h4 class="font-bold text-blue-600 mb-3 text-sm uppercase">1. Dados do Proprietário</h4>
+                                <h4 class="font-bold text-slate-700 mb-4 text-sm uppercase">1. Dados do Proprietário</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-slate-700 mb-1">Nome Completo *</label>
-                                        <input type="text" id="cad-nome" required class="w-full p-2.5 border rounded-lg outline-none focus:border-blue-500" placeholder="Ex: Dr. Carlos Silva">
+                                        <label class="block text-xs font-bold text-slate-500 mb-1">Nome Completo *</label>
+                                        <input type="text" id="cad-nome" required class="w-full p-3 border rounded-lg outline-none focus:border-blue-500 bg-white" placeholder="Ex: Dr. Carlos Silva">
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-slate-700 mb-1">WhatsApp / Telefone</label>
-                                        <input type="text" id="cad-tel" class="w-full p-2.5 border rounded-lg outline-none focus:border-blue-500" placeholder="(21) 99999-9999">
+                                        <label class="block text-xs font-bold text-slate-500 mb-1">WhatsApp / Telefone</label>
+                                        <input type="text" id="cad-tel" class="w-full p-3 border rounded-lg outline-none focus:border-blue-500 bg-white" placeholder="(21) 99999-9999">
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-slate-700 mb-1">Categoria *</label>
-                                        <select id="cad-cat" required class="w-full p-2.5 border rounded-lg outline-none focus:border-blue-500 bg-white">
+                                        <label class="block text-xs font-bold text-slate-500 mb-1">Categoria *</label>
+                                        <select id="cad-cat" required class="w-full p-3 border rounded-lg outline-none focus:border-blue-500 bg-white">
                                             <option value="">Selecione...</option>
                                             <option value="Médico(a)">Médico(a)</option>
                                             <option value="Diretoria">Diretoria</option>
@@ -217,67 +246,70 @@
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-slate-700 mb-1">Setor / Departamento</label>
-                                        <input type="text" id="cad-setor" class="w-full p-2.5 border rounded-lg outline-none focus:border-blue-500" placeholder="Ex: UTI, Manutenção">
+                                        <label class="block text-xs font-bold text-slate-500 mb-1">Setor / Departamento</label>
+                                        <input type="text" id="cad-setor" class="w-full p-3 border rounded-lg outline-none focus:border-blue-500 bg-white" placeholder="Ex: UTI, Manutenção">
                                     </div>
                                 </div>
                             </div>
 
+                            <!-- Veículos Registrados (Aparece ao editar) -->
+                            <div id="area-veiculos-existentes" class="hidden bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <h4 class="font-bold text-slate-700 mb-3 text-sm uppercase">Veículos Salvos Deste Proprietário</h4>
+                                <div id="lista-veiculos-existentes" class="space-y-2">
+                                    <!-- Preenchido via JS -->
+                                </div>
+                            </div>
+
+                            <!-- Adicionar Veículo Novo -->
                             <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                                <div class="flex justify-between items-center mb-3">
-                                    <h4 class="font-bold text-blue-600 text-sm uppercase">2. Veículos Autorizados</h4>
-                                </div>
+                                <h4 class="font-bold text-emerald-700 mb-3 text-sm uppercase">2. Adicionar Veículo</h4>
+                                <p class="text-xs text-slate-500 mb-3">Preencha abaixo para adicionar um veículo ou tag a esta pessoa. (Deixe em branco se for apenas atualizar o nome).</p>
                                 
-                                <div id="lista-veiculos" class="space-y-4">
-                                    <div class="flex flex-col md:flex-row gap-3 items-end bg-white p-3 rounded border" id="veiculo-base">
-                                        <div class="w-full md:w-1/4">
-                                            <label class="block text-xs font-medium text-slate-500 mb-1">Identificação/Placa *</label>
-                                            <input type="text" required class="placa-input w-full p-2 border rounded uppercase" placeholder="Placa ou BIKE-01">
-                                        </div>
-                                        <div class="w-full md:w-1/4">
-                                            <label class="block text-xs font-medium text-slate-500 mb-1">Tipo</label>
-                                            <select class="tipo-veiculo-input w-full p-2 border rounded bg-white">
-                                                <option value="Carro">Carro</option>
-                                                <option value="Moto">Moto</option>
-                                                <option value="Bicicleta/Elétrica">Bicicleta/Elétrica</option>
-                                                <option value="Outros">Outros</option>
-                                            </select>
-                                        </div>
-                                        <div class="w-full md:w-1/4">
-                                            <label class="block text-xs font-medium text-slate-500 mb-1">Marca/Modelo</label>
-                                            <input type="text" class="modelo-input w-full p-2 border rounded" placeholder="Ex: Honda Civic">
-                                        </div>
-                                        <div class="w-full md:w-1/4">
-                                            <label class="block text-xs font-medium text-slate-500 mb-1">Cor</label>
-                                            <input type="text" class="cor-input w-full p-2 border rounded" placeholder="Prata">
-                                        </div>
+                                <div class="flex flex-col md:flex-row gap-3 items-start md:items-end bg-white p-3 rounded border border-emerald-100">
+                                    <div class="w-full md:w-1/4">
+                                        <label class="block text-xs font-bold text-slate-500 mb-1">Identificação / Placa</label>
+                                        <input type="text" id="cad-novo-placa" class="w-full p-2.5 border rounded uppercase bg-emerald-50 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" placeholder="Ex: ABC-1234">
+                                    </div>
+                                    <div class="w-full md:w-1/4">
+                                        <label class="block text-xs font-bold text-slate-500 mb-1">Tipo</label>
+                                        <select id="cad-novo-tipo" class="w-full p-2.5 border rounded bg-white">
+                                            <option value="Carro">Carro</option>
+                                            <option value="Moto">Moto</option>
+                                            <option value="Bicicleta/Elétrica">Bicicleta/Elétrica</option>
+                                            <option value="Outros">Outros</option>
+                                        </select>
+                                    </div>
+                                    <div class="w-full md:w-1/4">
+                                        <label class="block text-xs font-bold text-slate-500 mb-1">Marca/Modelo</label>
+                                        <input type="text" id="cad-novo-modelo" class="w-full p-2.5 border rounded focus:border-blue-500 outline-none" placeholder="Ex: Honda Civic">
+                                    </div>
+                                    <div class="w-full md:w-1/4">
+                                        <label class="block text-xs font-bold text-slate-500 mb-1">Cor</label>
+                                        <input type="text" id="cad-novo-cor" class="w-full p-2.5 border rounded focus:border-blue-500 outline-none" placeholder="Ex: Prata">
                                     </div>
                                 </div>
-                                
-                                <button type="button" onclick="adicionarCampoVeiculo()" class="mt-3 text-sm text-blue-600 font-bold hover:text-blue-800 flex items-center gap-1">
-                                    <span>+</span> Adicionar Outro Veículo
-                                </button>
                             </div>
 
-                            <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg transition-colors">
-                                Salvar Cadastro Completo
+                            <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-lg transition-colors shadow-lg text-lg">
+                                SALVAR INFORMAÇÕES
                             </button>
                         </form>
                     </div>
 
-                    <div class="admin-only hidden bg-white rounded-xl shadow-sm border border-red-200 overflow-hidden">
+                    <!-- Administração de Bloqueios -->
+                    <div class="admin-only hidden bg-white rounded-xl shadow-sm border border-red-200 overflow-hidden mt-6">
                         <div class="p-4 border-b bg-red-50">
-                            <h3 class="font-bold text-red-700">Gestão de Bloqueios (Administração)</h3>
-                            <p class="text-xs text-red-600">Bloqueie o acesso de ex-colaboradores ou placas específicas.</p>
+                            <h3 class="font-bold text-red-700">Controle de Bloqueios</h3>
+                            <p class="text-xs text-red-600">Restrinja o acesso de placas específicas na portaria.</p>
                         </div>
-                        <div class="p-4 overflow-x-auto">
+                        <div class="p-0 overflow-x-auto">
                             <table class="w-full text-left text-sm border-collapse min-w-[500px]">
                                 <thead>
-                                    <tr class="bg-slate-100">
-                                        <th class="p-2 border-b">Proprietário</th>
-                                        <th class="p-2 border-b">Placa / ID</th>
-                                        <th class="p-2 border-b">Status Atual</th>
-                                        <th class="p-2 border-b">Ação</th>
+                                    <tr class="bg-slate-100 text-slate-600 text-xs uppercase">
+                                        <th class="p-3 border-b">Proprietário</th>
+                                        <th class="p-3 border-b">Placa / ID</th>
+                                        <th class="p-3 border-b">Status Atual</th>
+                                        <th class="p-3 border-b">Ação</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabela-bloqueios-admin">
@@ -287,42 +319,43 @@
                     </div>
                 </section>
 
-                <section id="sec-relatorio" class="tab-content">
-                    <div class="print-hide bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4">
-                        <h3 class="font-bold text-slate-800 mb-3">Filtros de Busca</h3>
+                <!-- ABA 3: RELATÓRIOS -->
+                <section id="sec-relatorio" class="tab-content space-y-4">
+                    <div class="print-hide bg-white p-4 md:p-5 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-slate-800 mb-3 text-sm uppercase">Filtros de Busca Rápida</h3>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
                             <div>
-                                <label class="block text-xs font-medium text-slate-500 mb-1">Buscar por Placa / ID</label>
-                                <input type="text" id="filtro-placa" onkeyup="filtrarRelatorio()" class="w-full p-2 border rounded uppercase" placeholder="ABC...">
+                                <label class="block text-xs font-bold text-slate-500 mb-1">Buscar por Placa / ID</label>
+                                <input type="text" id="filtro-placa" onkeyup="filtrarRelatorio()" class="w-full p-2.5 border rounded uppercase" placeholder="ABC...">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-slate-500 mb-1">Nome do Proprietário</label>
-                                <input type="text" id="filtro-nome" onkeyup="filtrarRelatorio()" class="w-full p-2 border rounded" placeholder="Digite o nome">
+                                <label class="block text-xs font-bold text-slate-500 mb-1">Buscar por Proprietário</label>
+                                <input type="text" id="filtro-nome" onkeyup="filtrarRelatorio()" class="w-full p-2.5 border rounded" placeholder="Digite o nome...">
                             </div>
-                            <div class="flex items-center pb-2">
-                                <input type="checkbox" id="filtro-alertas" onchange="filtrarRelatorio()" class="w-4 h-4 mr-2">
-                                <label for="filtro-alertas" class="text-sm font-medium text-red-600 font-bold">Mostrar Apenas Alertas (+24h)</label>
+                            <div class="flex items-center pb-3 md:col-span-2">
+                                <input type="checkbox" id="filtro-alertas" onchange="filtrarRelatorio()" class="w-5 h-5 mr-2 accent-red-500">
+                                <label for="filtro-alertas" class="text-sm font-bold text-red-600 cursor-pointer">Mostrar Apenas Alertas de Pernoite (+24h)</label>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                        <div class="flex justify-between items-center mb-4 border-b pb-2">
-                            <h3 class="font-bold text-slate-800">Histórico Completo</h3>
-                            <button onclick="window.print()" class="print-hide bg-slate-800 text-white px-3 py-1.5 rounded text-sm font-bold flex items-center gap-2">
-                                🖨️ Imprimir / PDF
+                    <div class="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-slate-200">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3 border-b pb-3">
+                            <h3 class="font-bold text-slate-800">Histórico de Movimentação e Permanência</h3>
+                            <button onclick="window.print()" class="print-hide bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 shadow-md hover:bg-slate-700">
+                                🖨️ Imprimir / Gerar PDF
                             </button>
                         </div>
 
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm border-collapse min-w-[700px]">
+                            <table class="w-full text-left text-sm border-collapse min-w-[800px]">
                                 <thead>
-                                    <tr class="bg-slate-100 text-slate-600">
-                                        <th class="p-3 border-b">Data/Hora</th>
-                                        <th class="p-3 border-b">Placa / Veículo</th>
-                                        <th class="p-3 border-b">Proprietário / Cat.</th>
-                                        <th class="p-3 border-b">Status</th>
-                                        <th class="p-3 border-b print-hide">Contato</th>
+                                    <tr class="bg-slate-100 text-slate-600 text-xs uppercase">
+                                        <th class="p-3 border-b font-bold">Data / Hora</th>
+                                        <th class="p-3 border-b font-bold">Placa / Identificação</th>
+                                        <th class="p-3 border-b font-bold">Proprietário / Vínculo</th>
+                                        <th class="p-3 border-b font-bold">Tempo / Status</th>
+                                        <th class="p-3 border-b font-bold print-hide">Contato Rápido</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabela-relatorios">
@@ -336,19 +369,22 @@
         </main>
     </div>
 
+    <!-- CÓDIGO FUNCIONAL DO SISTEMA -->
     <script type="module">
+        // Importações do Firebase v10
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // SUA CONFIGURAÇÃO DO FIREBASE (NÃO APAGUE)
+        // SUAS CHAVES REAIS DO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyDd-aXxqrv_qAVjtGJvbW3mOy2VnQrvRhE",
             authDomain: "revistamariana-4edab.firebaseapp.com",
             projectId: "revistamariana-4edab",
             storageBucket: "revistamariana-4edab.firebasestorage.app",
             messagingSenderId: "859779275496",
-            appId: "1:859779275496:web:6e76260fc396b65633075d"
+            appId: "1:859779275496:web:6e76260fc396b65633075d",
+            measurementId: "G-XCLQ33BBWW"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -359,8 +395,9 @@
         let cadastrosSalvos = [];
         let movimentacoesSalvas = [];
         let usuarioAtual = null;
+        let pessoaEditando = null; // Guarda a pessoa que buscamos para editar
 
-        // UI Helpers
+        // --- SISTEMA DE NOTIFICAÇÕES (Substitui os alerts feios) ---
         window.mostrarNotificacao = function(mensagem, tipo = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -375,6 +412,7 @@
             }, 3500);
         }
 
+        // --- NAVEGAÇÃO SPA (Single Page Application) ---
         window.navigate = function(tabId) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -382,34 +420,46 @@
                 btn.classList.add('text-slate-300');
             });
             document.getElementById(tabId).classList.add('active');
+            
             const activeBtn = document.getElementById('nav-' + tabId);
             if(activeBtn) {
                 activeBtn.classList.remove('text-slate-300');
                 activeBtn.classList.add('bg-blue-600', 'text-white');
             }
-            let titulos = { 'sec-painel': 'Painel de Operação', 'sec-cadastro': 'Gestão de Cadastros', 'sec-relatorio': 'Relatórios' };
+            
+            let titulos = { 'sec-painel': 'Painel de Operação', 'sec-cadastro': 'Gestão de Cadastros', 'sec-relatorio': 'Relatórios Oficiais' };
             document.getElementById('header-title').innerText = titulos[tabId];
+            
+            // Fecha menu no mobile ao clicar
             if (window.innerWidth < 768) {
                 document.getElementById('sidebar').classList.add('-translate-x-full');
                 document.getElementById('mobile-overlay').classList.add('hidden');
+                document.getElementById('mobile-overlay').classList.remove('block');
             }
         }
 
         window.toggleMenu = function() {
             document.getElementById('sidebar').classList.toggle('-translate-x-full');
-            document.getElementById('mobile-overlay').classList.toggle('hidden');
+            const overlay = document.getElementById('mobile-overlay');
+            if (overlay.classList.contains('hidden')) {
+                overlay.classList.remove('hidden');
+                overlay.classList.add('block');
+            } else {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('block');
+            }
         }
 
-        // Login System
+        // --- LOGIN E AUTENTICAÇÃO ---
         window.fazerLogin = function(event) {
             event.preventDefault();
-            const user = document.getElementById('login-user').value.toLowerCase();
+            const user = document.getElementById('login-user').value.toLowerCase().trim();
             const pass = document.getElementById('login-senha').value;
 
             if (user === 'admin' && pass === '123') {
-                usuarioAtual = { nome: 'Admin', role: 'Administrador', isAdmin: true };
+                usuarioAtual = { nome: 'Administração', role: 'Acesso Total', isAdmin: true };
             } else if (user === 'portaria' && pass === '123') {
-                usuarioAtual = { nome: 'Portaria', role: 'Operador', isAdmin: false };
+                usuarioAtual = { nome: 'Guarita / Portaria', role: 'Operador', isAdmin: false };
             } else {
                 window.mostrarNotificacao('Usuário ou senha incorretos!', 'error');
                 return;
@@ -419,34 +469,37 @@
             document.getElementById('user-role').innerText = usuarioAtual.role;
             document.getElementById('user-avatar').innerText = usuarioAtual.nome.charAt(0).toUpperCase();
 
+            // Esconde áreas de admin para porteiros
             document.querySelectorAll('.admin-only').forEach(el => {
                 if (usuarioAtual.isAdmin) el.classList.remove('hidden');
                 else el.classList.add('hidden');
             });
 
-            // Conecta ao Firebase ANÔNIMO no momento do login
             signInAnonymously(auth).then((cred) => {
                 firebaseUser = cred.user;
                 iniciarSincronizacao();
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app-container').classList.remove('hidden');
-                window.mostrarNotificacao(`Bem-vindo(a), ${usuarioAtual.nome}!`, 'success');
+                document.getElementById('app-container').classList.add('flex');
+                window.mostrarNotificacao(`Conectado ao Firebase! Bem-vindo(a).`, 'success');
                 window.navigate('sec-painel');
             }).catch((error) => {
-                console.error("Erro Firebase Auth:", error);
-                window.mostrarNotificacao("Erro de conexão com o banco de dados.", "error");
+                console.error("Erro Auth:", error);
+                window.mostrarNotificacao("Falha ao conectar no banco de dados.", "error");
             });
         }
 
         window.fazerLogout = function() {
             usuarioAtual = null;
+            document.getElementById('app-container').classList.remove('flex');
             document.getElementById('app-container').classList.add('hidden');
             document.getElementById('login-screen').classList.remove('hidden');
             document.getElementById('login-user').value = '';
             document.getElementById('login-senha').value = '';
+            window.mostrarNotificacao('Sessão encerrada.', 'warning');
         }
 
-        // Camera Logic
+        // --- INTELIGÊNCIA ARTIFICIAL: CÂMERA E OCR ---
         let videoStream = null;
         let loopLeitura = null;
         let lendoFrame = false;
@@ -458,19 +511,19 @@
             
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            status.innerText = "Solicitando acesso à câmera...";
+            status.innerText = "Acessando câmera traseira...";
 
             try {
                 videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 video.srcObject = videoStream;
                 video.onplaying = () => {
-                    status.innerText = "Analisando... Mantenha a placa no quadro verde.";
+                    status.innerText = "IA Ativada: Escaneando ambiente em busca de placas...";
                     loopLeitura = setInterval(analisarFrameAoVivo, 2000);
                 };
             } catch (err) {
-                console.error("Erro na câmera:", err);
-                status.innerText = "Erro ao acessar câmera. Permissão negada?";
-                setTimeout(window.fecharCamera, 3000);
+                console.error("Erro câmera:", err);
+                status.innerText = "Erro: Câmera não permitida ou não encontrada.";
+                setTimeout(window.fecharCamera, 4000);
             }
         }
 
@@ -503,58 +556,67 @@
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
             try {
-                document.getElementById('status-leitura').innerText = "Analisando foco da imagem...";
+                document.getElementById('status-leitura').innerText = "Analisando captura...";
                 const result = await Tesseract.recognize(canvas, 'eng');
                 
-                // Pega TODO o texto lido na imagem e remove espaços, traços e símbolos
-                const textoCompleto = result.data.text.toUpperCase();
-                const textoLimpo = textoCompleto.replace(/[^A-Z0-9]/g, '');
+                // Limpa tudo que não for letra ou número
+                let textoCompleto = result.data.text.toUpperCase();
+                let textoLimpo = textoCompleto.replace(/[^A-Z0-9]/g, '');
                 
-                // Procura o padrão de placa em qualquer lugar do texto limpo (Mercosul ou Antiga)
+                let placaEncontrada = null;
+
+                // Tenta achar padrão perfeito (ABC1234 ou ABC1D23)
                 const regexPlaca = /[A-Z]{3}[0-9][A-Z0-9][0-9]{2}/;
                 const match = textoLimpo.match(regexPlaca);
 
                 if (match) {
-                    let placaEncontrada = match[0];
-                    let placaFormatada = placaEncontrada;
-                    
-                    // Se o 5º caractere for um número, é placa antiga, então colocamos o traço
+                    placaEncontrada = match[0];
                     if (!isNaN(placaEncontrada[4])) {
-                        placaFormatada = placaEncontrada.substring(0,3) + '-' + placaEncontrada.substring(3);
+                        placaEncontrada = placaEncontrada.substring(0,3) + '-' + placaEncontrada.substring(3);
                     }
-                    
+                } else if (textoLimpo.length >= 4) {
+                    // BUSCA INTELIGENTE: Se leu um pedaço, procura na base de dados
+                    for(let cad of cadastrosSalvos) {
+                        let placaBD = cad.placa.replace(/[^A-Z0-9]/g, ''); // limpa a placa do banco
+                        if (placaBD.length >= 5 && (textoLimpo.includes(placaBD) || placaBD.includes(textoLimpo))) {
+                            placaEncontrada = cad.placa; // Puxa a placa original completinha formatada
+                            break;
+                        }
+                    }
+                }
+
+                if (placaEncontrada) {
                     window.fecharCamera();
-                    document.getElementById('placa-busca').value = placaFormatada;
-                    window.mostrarNotificacao('✅ Placa identificada: ' + placaFormatada, 'success');
+                    document.getElementById('placa-busca').value = placaEncontrada;
+                    window.mostrarNotificacao(`🎯 Placa detectada: ${placaEncontrada}`, 'success');
                 } else {
-                    document.getElementById('status-leitura').innerText = "Lendo... Aproxime da placa e evite reflexos.";
+                    document.getElementById('status-leitura').innerText = "Nenhuma placa clara. Aproxime mais e mantenha o foco...";
                 }
             } catch (error) {
                 console.error("Erro OCR:", error);
-                document.getElementById('status-leitura').innerText = "Erro ao processar imagem.";
             }
             lendoFrame = false;
         }
 
-        // Operação & Firebase Sync
+        // --- LÓGICA DE OPERAÇÃO (CANCELA) ---
         window.registrarAcesso = async function(tipo) {
-            if (!firebaseUser) return window.mostrarNotificacao("Sem conexão.", "error");
+            if (!firebaseUser) return window.mostrarNotificacao("Desconectado da rede.", "error");
             
-            const placa = document.getElementById('placa-busca').value.toUpperCase();
-            if(!placa) return window.mostrarNotificacao('Digite a identificação ou placa primeiro!', 'error');
+            const placa = document.getElementById('placa-busca').value.toUpperCase().trim();
+            if(!placa) return window.mostrarNotificacao('Digite ou fotografe a identificação/placa primeiro.', 'error');
 
             const cadastro = cadastrosSalvos.find(c => c.placa === placa);
             
             if (cadastro && cadastro.status === 'BLOQUEADO') {
-                return window.mostrarNotificacao('❌ ACESSO NEGADO - Procure a Administração', 'error');
+                document.getElementById('placa-busca').value = '';
+                return window.mostrarNotificacao('🚫 ACESSO NEGADO! Veículo/Tag encontra-se bloqueado.', 'error');
             }
 
-            const proprietario = cadastro ? `${cadastro.proprietario} (${cadastro.categoria})` : 'Visitante Avulso';
+            const proprietario = cadastro ? `${cadastro.proprietario} (${cadastro.categoria})` : 'Visitante / Sem Cadastro';
             const telefone = cadastro ? cadastro.telefone : '';
             
             try {
-                const movimentosRef = collection(db, 'movimentacoes');
-                await addDoc(movimentosRef, {
+                await addDoc(collection(db, 'movimentacoes'), {
                     placa: placa,
                     tipo: tipo,
                     proprietario: proprietario,
@@ -562,81 +624,140 @@
                     dataHoraLocal: new Date().toLocaleString('pt-BR'),
                     timestamp: Date.now()
                 });
-                window.mostrarNotificacao(`${tipo} registrada! Dono: ${proprietario}`, 'success');
+                window.mostrarNotificacao(`${tipo} confirmada! Prop: ${proprietario}`, 'success');
                 document.getElementById('placa-busca').value = '';
             } catch (e) {
-                console.error("Erro registrar:", e);
-                window.mostrarNotificacao('Falha ao registrar', 'error');
+                console.error("Erro:", e);
+                window.mostrarNotificacao('Erro na conexão. Tente novamente.', 'error');
+            }
+        }
+
+        // --- LÓGICA DE CADASTROS (BUSCA, EDIÇÃO E EXCLUSÃO) ---
+        
+        window.buscarProprietario = function() {
+            let busca = document.getElementById('busca-prop').value.toLowerCase().trim();
+            if(!busca) return window.mostrarNotificacao('Digite um nome para buscar.', 'warning');
+
+            // Encontra todos os veículos cadastrados no nome dessa pessoa
+            let registrosEncontrados = cadastrosSalvos.filter(c => c.proprietario.toLowerCase().includes(busca));
+            
+            if(registrosEncontrados.length === 0) {
+                return window.mostrarNotificacao('Proprietário não encontrado no banco.', 'error');
+            }
+
+            // Preenche os dados gerais da pessoa (usando os dados do primeiro veículo encontrado)
+            let p = registrosEncontrados[0];
+            document.getElementById('cad-nome').value = p.proprietario;
+            document.getElementById('cad-tel').value = p.telefone || '';
+            document.getElementById('cad-cat').value = p.categoria;
+            document.getElementById('cad-setor').value = p.setor || '';
+
+            // Mostra os veículos que ela já tem com botão de excluir
+            const divVeiculos = document.getElementById('area-veiculos-existentes');
+            const lista = document.getElementById('lista-veiculos-existentes');
+            
+            lista.innerHTML = registrosEncontrados.map(v => `
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-3 rounded shadow-sm border gap-2">
+                    <div>
+                        <span class="font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded text-xs mr-2">${v.tipoVeiculo}</span>
+                        <span class="font-black">${v.placa}</span> 
+                        <span class="text-xs text-slate-500 block sm:inline mt-1 sm:mt-0">${v.modelo} - ${v.cor}</span>
+                    </div>
+                    <button type="button" onclick="excluirVeiculo('${v.id}')" class="bg-red-50 text-red-600 border border-red-200 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded text-xs font-bold transition-colors">
+                        🗑️ Apagar
+                    </button>
+                </div>
+            `).join('');
+
+            divVeiculos.classList.remove('hidden');
+            pessoaEditando = registrosEncontrados; // Guarda na memória que estamos editando esta pessoa
+            window.mostrarNotificacao('Dados carregados! Você pode atualizar ou adicionar veículos.', 'success');
+        }
+
+        window.excluirVeiculo = async function(docId) {
+            try {
+                // Apenas exclui diretamente do banco
+                await deleteDoc(doc(db, 'cadastros', docId));
+                window.mostrarNotificacao('Veículo/Tag removido com sucesso!', 'success');
+                // Fecha a tela de edição para forçar o usuário a buscar de novo e ver atualizado
+                document.getElementById('area-veiculos-existentes').classList.add('hidden');
+                document.getElementById('busca-prop').value = '';
+                pessoaEditando = null;
+            } catch (e) {
+                console.error("Erro excluir:", e);
+                window.mostrarNotificacao('Erro ao remover.', 'error');
             }
         }
 
         window.salvarCadastro = async function(event) {
             event.preventDefault();
-            if (!firebaseUser) return window.mostrarNotificacao("Sem conexão.", "error");
+            if (!firebaseUser) return window.mostrarNotificacao("Desconectado da rede.", "error");
 
-            const nome = document.getElementById('cad-nome').value;
-            const telefone = document.getElementById('cad-tel').value;
-            const categoria = document.getElementById('cad-cat').value;
+            const nome = document.getElementById('cad-nome').value.trim();
+            const tel = document.getElementById('cad-tel').value;
+            const cat = document.getElementById('cad-cat').value;
             const setor = document.getElementById('cad-setor').value;
 
-            const divVeiculos = document.getElementById('lista-veiculos').children;
-            const cadastrosRef = collection(db, 'cadastros');
-
             try {
-                for (let div of divVeiculos) {
-                    let placa = div.querySelector('.placa-input').value.toUpperCase();
-                    let tipoVeiculo = div.querySelector('.tipo-veiculo-input').value;
-                    let modelo = div.querySelector('.modelo-input').value;
-                    let cor = div.querySelector('.cor-input').value;
+                // 1. Se estivermos editando alguém, atualiza os dados pessoais de todos os veículos existentes dele
+                if (pessoaEditando && pessoaEditando.length > 0) {
+                    for(let v of pessoaEditando) {
+                        await updateDoc(doc(db, 'cadastros', v.id), {
+                            proprietario: nome,
+                            telefone: tel,
+                            categoria: cat,
+                            setor: setor
+                        });
+                    }
+                }
 
-                    await addDoc(cadastrosRef, {
+                // 2. Verifica se o usuário preencheu o campo de NOVO veículo
+                const placaNova = document.getElementById('cad-novo-placa').value.toUpperCase().trim();
+                
+                if (placaNova) {
+                    // Adiciona o novo veículo à conta dessa pessoa (ou cria a pessoa do zero)
+                    await addDoc(collection(db, 'cadastros'), {
                         proprietario: nome,
-                        telefone: telefone,
-                        categoria: categoria,
+                        telefone: tel,
+                        categoria: cat,
                         setor: setor,
-                        placa: placa,
-                        tipoVeiculo: tipoVeiculo,
-                        modelo: modelo,
-                        cor: cor,
+                        placa: placaNova,
+                        tipoVeiculo: document.getElementById('cad-novo-tipo').value,
+                        modelo: document.getElementById('cad-novo-modelo').value,
+                        cor: document.getElementById('cad-novo-cor').value,
                         status: 'LIBERADO',
                         timestamp: Date.now()
                     });
+                } else if (!pessoaEditando) {
+                    // Se não buscou ninguém e não botou placa nova
+                    return window.mostrarNotificacao('Insira ao menos uma Placa ou Identificação para cadastrar.', 'warning');
                 }
-                window.mostrarNotificacao('Salvo na nuvem com sucesso!', 'success');
+
+                window.mostrarNotificacao('Informações salvas na nuvem com sucesso!', 'success');
+                
+                // Reseta tudo
                 event.target.reset();
-                while(divVeiculos.length > 1) { divVeiculos[1].remove(); }
+                document.getElementById('area-veiculos-existentes').classList.add('hidden');
+                document.getElementById('busca-prop').value = '';
+                pessoaEditando = null;
+                
             } catch (e) {
-                console.error("Erro salvar cadastro:", e);
-                window.mostrarNotificacao('Erro ao salvar cadastro.', 'error');
+                console.error("Erro salvar:", e);
+                window.mostrarNotificacao('Erro na sincronização.', 'error');
             }
         }
 
-        window.adicionarCampoVeiculo = function() {
-            const lista = document.getElementById('lista-veiculos');
-            const idTemp = 'veiculo-' + Math.random().toString(36).substr(2, 9);
-            const novoVeiculo = document.createElement('div');
-            novoVeiculo.className = 'flex flex-col md:flex-row gap-3 items-end bg-white p-3 rounded border relative';
-            novoVeiculo.id = idTemp;
-            novoVeiculo.innerHTML = `
-                <button type="button" onclick="document.getElementById('${idTemp}').remove()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow hover:bg-red-600">X</button>
-                <div class="w-full md:w-1/4"><label class="block text-xs font-medium text-slate-500 mb-1">Identificação/Placa *</label><input type="text" required class="placa-input w-full p-2 border rounded uppercase" placeholder="Placa ou BIKE-01"></div>
-                <div class="w-full md:w-1/4"><label class="block text-xs font-medium text-slate-500 mb-1">Tipo</label><select class="tipo-veiculo-input w-full p-2 border rounded bg-white"><option value="Carro">Carro</option><option value="Moto">Moto</option><option value="Bicicleta/Elétrica">Bicicleta/Elétrica</option><option value="Outros">Outros</option></select></div>
-                <div class="w-full md:w-1/4"><label class="block text-xs font-medium text-slate-500 mb-1">Marca/Modelo</label><input type="text" class="modelo-input w-full p-2 border rounded" placeholder="Modelo"></div>
-                <div class="w-full md:w-1/4"><label class="block text-xs font-medium text-slate-500 mb-1">Cor</label><input type="text" class="cor-input w-full p-2 border rounded" placeholder="Cor"></div>
-            `;
-            lista.appendChild(novoVeiculo);
-        }
-
+        // --- BLOQUEIOS (ADMINISTRATIVO) ---
         window.mudarStatusPlaca = async function(docId, novoStatus) {
             try {
-                const docRef = doc(db, 'cadastros', docId);
-                await updateDoc(docRef, { status: novoStatus });
-                window.mostrarNotificacao(`Status atualizado para ${novoStatus}!`, novoStatus === 'BLOQUEADO' ? 'warning' : 'success');
+                await updateDoc(doc(db, 'cadastros', docId), { status: novoStatus });
+                window.mostrarNotificacao(`Status modificado para ${novoStatus}`, novoStatus === 'BLOQUEADO' ? 'warning' : 'success');
             } catch (e) {
-                console.error("Erro atualizar status:", e);
+                console.error("Erro status:", e);
             }
         }
 
+        // --- SINCRONIZAÇÃO EM TEMPO REAL E RELATÓRIOS ---
         function iniciarSincronizacao() {
             onSnapshot(collection(db, 'cadastros'), (snapshot) => {
                 cadastrosSalvos = [];
@@ -647,6 +768,7 @@
             onSnapshot(collection(db, 'movimentacoes'), (snapshot) => {
                 movimentacoesSalvas = [];
                 snapshot.forEach(doc => movimentacoesSalvas.push({ id: doc.id, ...doc.data() }));
+                // Ordena do mais novo para o mais antigo
                 movimentacoesSalvas.sort((a, b) => b.timestamp - a.timestamp);
                 
                 atualizarTabelaMovimentos();
@@ -663,17 +785,18 @@
             cadastrosSalvos.forEach(cad => {
                 const isBloqueado = cad.status === 'BLOQUEADO';
                 const badge = isBloqueado 
-                    ? `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold">BLOQUEADO</span>`
-                    : `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">LIBERADO</span>`;
+                    ? `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold">BLOQUEADO</span>`
+                    : `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[10px] font-bold">LIBERADO</span>`;
                 const btnAcao = isBloqueado
-                    ? `<button onclick="window.mudarStatusPlaca('${cad.id}', 'LIBERADO')" class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded hover:bg-emerald-200">🔓 Liberar</button>`
-                    : `<button onclick="window.mudarStatusPlaca('${cad.id}', 'BLOQUEADO')" class="bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200">🚫 Bloquear</button>`;
+                    ? `<button onclick="window.mudarStatusPlaca('${cad.id}', 'LIBERADO')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded hover:bg-emerald-100 font-bold text-xs">🔓 Liberar</button>`
+                    : `<button onclick="window.mudarStatusPlaca('${cad.id}', 'BLOQUEADO')" class="bg-red-50 text-red-700 border border-red-200 px-3 py-1.5 rounded hover:bg-red-100 font-bold text-xs">🚫 Bloquear</button>`;
+                
                 tbody.innerHTML += `
-                    <tr>
-                        <td class="p-2 border-b">${cad.proprietario}</td>
-                        <td class="p-2 border-b font-bold">${cad.placa}</td>
-                        <td class="p-2 border-b">${badge}</td>
-                        <td class="p-2 border-b">${btnAcao}</td>
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-2 sm:p-3 truncate max-w-[120px]" title="${cad.proprietario}">${cad.proprietario}</td>
+                        <td class="p-2 sm:p-3 font-black">${cad.placa}</td>
+                        <td class="p-2 sm:p-3">${badge}</td>
+                        <td class="p-2 sm:p-3">${btnAcao}</td>
                     </tr>
                 `;
             });
@@ -686,14 +809,19 @@
             
             const ultimos = movimentacoesSalvas.slice(0, 8);
             ultimos.forEach(mov => {
-                const corAcao = mov.tipo === 'ENTRADA' ? 'text-emerald-600' : 'text-red-600';
+                const isEntrada = mov.tipo === 'ENTRADA';
+                const corAcao = isEntrada ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-red-600 bg-red-50 border-red-100';
+                const icon = isEntrada ? '⬇️' : '⬆️';
                 const hora = mov.dataHoraLocal.split(' ')[1].substring(0, 5); 
+                
                 tabela.innerHTML += `
-                    <tr class="border-b hover:bg-slate-50">
-                        <td class="p-3 text-sm">${hora}</td>
-                        <td class="p-3 font-bold">${mov.placa}</td>
-                        <td class="p-3 text-sm">${mov.proprietario}</td>
-                        <td class="p-3 font-bold ${corAcao}">${mov.tipo}</td>
+                    <tr class="border-b hover:bg-slate-100 text-sm">
+                        <td class="p-3 font-medium text-slate-500">${hora}</td>
+                        <td class="p-3 font-black text-slate-800">${mov.placa}</td>
+                        <td class="p-3 truncate max-w-[150px]">${mov.proprietario.split(' ')[0]}</td>
+                        <td class="p-3">
+                            <span class="px-2 py-1 rounded text-xs font-bold border ${corAcao}">${icon} ${mov.tipo}</span>
+                        </td>
                     </tr>
                 `;
             });
@@ -726,6 +854,16 @@
             document.getElementById('stat-alertas').innerText = alertas;
         }
 
+        // Função auxiliar para calcular tempo bonito (ex: 2h 15m)
+        function formatarTempo(ms) {
+            let minutosTotal = Math.floor(ms / 60000);
+            let horas = Math.floor(minutosTotal / 60);
+            let min = minutosTotal % 60;
+            if (horas > 0) return `${horas}h ${min}m`;
+            if (min > 0) return `${min}m`;
+            return `Menos de 1m`;
+        }
+
         function atualizarTabelaRelatorios() {
             const tbody = document.getElementById('tabela-relatorios');
             if(!tbody) return;
@@ -738,38 +876,49 @@
 
             movimentacoesSalvas.forEach(mov => {
                 let statusNoPatio = "";
-                let classLinha = "hover:bg-slate-50";
+                let classLinha = "border-b hover:bg-slate-50 transition-colors";
                 
                 const isUltimoRegistro = (ultimoStatusPorPlaca[mov.placa].id === mov.id);
-                const tempoNoPatio = Date.now() - mov.timestamp;
-                const maisDe24h = (isUltimoRegistro && mov.tipo === 'ENTRADA' && tempoNoPatio > 86400000);
-
+                
+                // Se é o último registro e foi uma entrada
                 if (isUltimoRegistro && mov.tipo === 'ENTRADA') {
-                    if (maisDe24h) {
-                        statusNoPatio = `<span class="text-red-600 font-bold">⚠️ +24h NO PÁTIO</span>`;
-                        classLinha = "bg-red-50 hover:bg-red-100 border-l-4 border-red-500 linha-alerta";
+                    const tempoNoPatio = Date.now() - mov.timestamp;
+                    if (tempoNoPatio > 86400000) {
+                        statusNoPatio = `<span class="text-red-600 font-bold bg-red-100 px-2 py-1 rounded text-xs">⚠️ Alerta: Pernoite / Abandonado</span>`;
+                        classLinha = "border-b bg-red-50 hover:bg-red-100 border-l-4 border-l-red-500 linha-alerta";
                     } else {
-                        statusNoPatio = `<span class="text-emerald-600 font-bold">No Pátio Agora</span>`;
+                        statusNoPatio = `<span class="text-emerald-600 font-bold text-xs">🟢 No Pátio Agora</span>`;
                     }
-                } else if (mov.tipo === 'SAIDA') {
-                    statusNoPatio = `<span class="text-slate-500">Saiu</span>`;
-                    classLinha = "hover:bg-slate-50 opacity-75";
+                } 
+                // Se for uma saída, vamos calcular o TEMPO DE PERMANÊNCIA
+                else if (mov.tipo === 'SAIDA') {
+                    // Procura a entrada correspondente (a primeira ENTRADA que ocorreu ANTES dessa SAIDA)
+                    let entradaAnterior = movimentacoesSalvas.find(m => m.placa === mov.placa && m.tipo === 'ENTRADA' && m.timestamp < mov.timestamp);
+                    
+                    if (entradaAnterior) {
+                        let permanencia = formatarTempo(mov.timestamp - entradaAnterior.timestamp);
+                        statusNoPatio = `<span class="text-slate-500 font-medium text-xs">🏁 Saiu. Ficou: <b>${permanencia}</b></span>`;
+                    } else {
+                        statusNoPatio = `<span class="text-slate-500 font-medium text-xs">🏁 Saiu (Entrada não registrada)</span>`;
+                    }
+                    classLinha = "border-b hover:bg-slate-50 opacity-90";
                 }
 
+                // Lógica do botão de WhatsApp
                 let btnZap = '-';
                 if (mov.telefone && isUltimoRegistro && mov.tipo === 'ENTRADA') {
                     let soNumeros = mov.telefone.replace(/\D/g, '');
-                    let msg = encodeURIComponent(`Olá, portaria do Hospital informando: o veículo de identificação ${mov.placa} consta em nosso pátio. Favor verificar.`);
-                    btnZap = `<a href="https://wa.me/55${soNumeros}?text=${msg}" target="_blank" class="bg-green-500 text-white px-2 py-1 rounded text-xs inline-flex items-center gap-1 hover:bg-green-600">💬 Avisar</a>`;
+                    let msg = encodeURIComponent(`Olá! A portaria informa: O veículo de identificação ${mov.placa} consta em nosso pátio. Favor verificar se há alguma irregularidade.`);
+                    btnZap = `<a href="https://wa.me/55${soNumeros}?text=${msg}" target="_blank" class="bg-green-500 text-white px-3 py-1.5 rounded text-xs font-bold inline-flex items-center gap-1 hover:bg-green-600 shadow-sm transition-transform active:scale-95">💬 Chamar</a>`;
                 }
 
                 tbody.innerHTML += `
                     <tr class="${classLinha} filtro-linha" data-placa="${mov.placa}" data-nome="${mov.proprietario.toLowerCase()}">
-                        <td class="p-3 border-b text-xs">${mov.dataHoraLocal}</td>
-                        <td class="p-3 border-b font-bold">${mov.placa}</td>
-                        <td class="p-3 border-b">${mov.proprietario}</td>
-                        <td class="p-3 border-b">${statusNoPatio}</td>
-                        <td class="p-3 border-b print-hide">${btnZap}</td>
+                        <td class="p-3 text-xs md:text-sm text-slate-500">${mov.dataHoraLocal}</td>
+                        <td class="p-3 font-black text-slate-800 text-sm md:text-base">${mov.placa}</td>
+                        <td class="p-3 text-sm font-medium text-slate-700">${mov.proprietario}</td>
+                        <td class="p-3">${statusNoPatio}</td>
+                        <td class="p-3 print-hide">${btnZap}</td>
                     </tr>
                 `;
             });
