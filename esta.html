@@ -163,23 +163,25 @@
                     </div>
 
                     <!-- Controle Rápido -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-slate-200">
+                    <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm mb-6 border border-slate-200 w-full overflow-hidden">
                         <h3 class="text-lg font-bold text-slate-800 mb-4 border-b pb-2">Controle de Acesso Rápido</h3>
-                        <div class="flex flex-col gap-4">
+                        <div class="flex flex-col gap-4 w-full">
                             <label class="text-sm font-medium text-slate-600">Placa ou Identificação do Veículo:</label>
-                            <div class="flex gap-2">
-                                <input type="text" id="placa-busca" class="flex-1 p-4 border-2 border-slate-300 rounded-lg text-2xl uppercase text-center font-bold outline-none focus:border-blue-500" placeholder="ABC-1234 ou BIKE-01" maxlength="12">
+                            
+                            <!-- LINHA CORRIGIDA: Campo e Câmera alinhados sem quebrar a tela -->
+                            <div class="flex w-full gap-2">
+                                <input type="text" id="placa-busca" class="flex-1 w-full min-w-0 p-3 md:p-4 border-2 border-slate-300 rounded-lg text-xl md:text-2xl uppercase text-center font-bold outline-none focus:border-blue-500" placeholder="ABC-1234" maxlength="12">
                                 
-                                <button onclick="iniciarLeituraCamera()" class="bg-slate-800 text-white p-4 rounded-lg font-bold hover:bg-slate-700 w-20 flex flex-col items-center justify-center text-xs shadow-md transition-colors">
-                                <button type="button" onclick="abrirCameraAoVivo()" class="bg-slate-800 text-white p-4 rounded-lg font-bold hover:bg-slate-700 w-20 flex flex-col items-center justify-center text-xs cursor-pointer shadow-md transition-colors">
+                                <button type="button" onclick="abrirCameraAoVivo()" class="bg-slate-800 text-white p-2 md:p-4 rounded-lg font-bold hover:bg-slate-700 w-20 flex-shrink-0 flex flex-col items-center justify-center text-xs cursor-pointer shadow-md transition-colors">
                                     <span class="text-xl mb-1">📷</span> LER
                                 </button>
                             </div>
-                            <div class="grid grid-cols-2 gap-4 mt-2">
-                                <button onclick="registrarAcesso('ENTRADA')" class="bg-emerald-500 hover:bg-emerald-600 text-white p-4 rounded-lg font-bold text-lg shadow-md transition-colors">
+                            
+                            <div class="grid grid-cols-2 gap-3 mt-2 w-full">
+                                <button onclick="registrarAcesso('ENTRADA')" class="bg-emerald-500 hover:bg-emerald-600 text-white p-3 md:p-4 rounded-lg font-bold text-base md:text-lg shadow-md transition-colors w-full">
                                     🟢 ENTRADA
                                 </button>
-                                <button onclick="registrarAcesso('SAIDA')" class="bg-red-500 hover:bg-red-600 text-white p-4 rounded-lg font-bold text-lg shadow-md transition-colors">
+                                <button onclick="registrarAcesso('SAIDA')" class="bg-red-500 hover:bg-red-600 text-white p-3 md:p-4 rounded-lg font-bold text-base md:text-lg shadow-md transition-colors w-full">
                                     🔴 SAÍDA
                                 </button>
                             </div>
