@@ -62,6 +62,31 @@
         </div>
     </div>
 
+    <!-- Modal de Saída Retroativa (Carro Esqueceu de Sair) -->
+    <div id="modal-saida-retroativa" class="fixed inset-0 bg-slate-900/80 z-[300] hidden flex-col items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+            <h3 class="text-xl font-bold text-red-600 mb-2 flex items-center gap-2">⚠️ Saída Pendente</h3>
+            <p class="text-sm text-slate-600 mb-4">
+                O veículo <b id="placa-retroativa-display" class="bg-slate-100 px-1 rounded"></b> consta como "Dentro do Pátio". 
+                Para dar uma nova entrada hoje, registre abaixo <b>quando ele saiu</b> anteriormente:
+            </p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Data da Saída Anterior *</label>
+                    <input type="date" id="data-retroativa" class="w-full p-3 border border-slate-300 rounded-lg outline-none focus:border-red-500" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Hora da Saída Anterior *</label>
+                    <input type="time" id="hora-retroativa" class="w-full p-3 border border-slate-300 rounded-lg outline-none focus:border-red-500" required>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button onclick="fecharModalRetroativa()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 py-3 rounded-lg font-bold transition-colors">Cancelar</button>
+                    <button onclick="confirmarSaidaRetroativa()" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-bold shadow-md transition-colors">Salvar Saída</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Tela de Login -->
     <div id="login-screen" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center overflow-y-auto p-4">
         <div class="bg-white p-6 md:p-8 rounded-xl shadow-2xl w-full max-w-md">
@@ -160,9 +185,8 @@
                             <span>🚘</span> Controle de Cancela
                         </h3>
                         <div class="flex flex-col gap-4">
-                            <label class="text-sm font-bold text-slate-600">Placa ou Identificação (Ex: ABC-1234 ou BIKE-01):</label>
+                            <label class="text-sm font-bold text-slate-600">Placa ou Identificação do Veículo:</label>
                             
-                            <!-- O flex foi ajustado para não quebrar a tela no mobile -->
                             <div class="flex flex-row w-full gap-2 items-stretch">
                                 <input type="text" id="placa-busca" class="flex-1 min-w-0 p-3 md:p-4 border-2 border-slate-300 rounded-lg text-lg md:text-2xl uppercase text-center font-black outline-none focus:border-blue-500 focus:bg-blue-50 transition-colors shadow-inner" placeholder="ABC-1234" maxlength="12">
                                 
@@ -213,7 +237,7 @@
                             <span>🔍</span> Buscar / Editar Proprietário
                         </h3>
                         <div class="flex gap-2">
-                            <input type="text" id="busca-prop" class="flex-1 min-w-0 p-3 border rounded-lg outline-none focus:border-blue-500 shadow-sm" placeholder="Digite o nome da pessoa...">
+                            <input type="text" id="busca-prop" class="flex-1 min-w-0 p-3 border border-blue-200 rounded-lg outline-none focus:border-blue-500 shadow-sm" placeholder="Digite o nome da pessoa...">
                             <button onclick="buscarProprietario()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-bold shadow-md">Buscar</button>
                         </div>
                     </div>
@@ -254,7 +278,9 @@
 
                             <!-- Veículos Registrados (Aparece ao editar) -->
                             <div id="area-veiculos-existentes" class="hidden bg-slate-50 p-4 rounded-lg border border-slate-200">
-                                <h4 class="font-bold text-slate-700 mb-3 text-sm uppercase">Veículos Salvos Deste Proprietário</h4>
+                                <h4 class="font-bold text-slate-700 mb-3 text-sm uppercase flex items-center justify-between">
+                                    Veículos Salvos Deste Proprietário
+                                </h4>
                                 <div id="lista-veiculos-existentes" class="space-y-2">
                                     <!-- Preenchido via JS -->
                                 </div>
@@ -262,13 +288,13 @@
 
                             <!-- Adicionar Veículo Novo -->
                             <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                                <h4 class="font-bold text-emerald-700 mb-3 text-sm uppercase">2. Adicionar Veículo</h4>
-                                <p class="text-xs text-slate-500 mb-3">Preencha abaixo para adicionar um veículo ou tag a esta pessoa. (Deixe em branco se for apenas atualizar o nome).</p>
+                                <h4 class="font-bold text-emerald-700 mb-3 text-sm uppercase">2. Adicionar Veículo (Opcional se for só edição)</h4>
+                                <p class="text-xs text-slate-500 mb-3">Preencha abaixo para adicionar um veículo ou tag a esta pessoa. (Deixe em branco se for apenas atualizar o nome da pessoa).</p>
                                 
                                 <div class="flex flex-col md:flex-row gap-3 items-start md:items-end bg-white p-3 rounded border border-emerald-100">
                                     <div class="w-full md:w-1/4">
                                         <label class="block text-xs font-bold text-slate-500 mb-1">Identificação / Placa</label>
-                                        <input type="text" id="cad-novo-placa" class="w-full p-2.5 border rounded uppercase bg-emerald-50 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none" placeholder="Ex: ABC-1234">
+                                        <input type="text" id="cad-novo-placa" class="w-full p-2.5 border rounded uppercase bg-emerald-50 focus:border-emerald-500 outline-none" placeholder="Ex: ABC-1234">
                                     </div>
                                     <div class="w-full md:w-1/4">
                                         <label class="block text-xs font-bold text-slate-500 mb-1">Tipo</label>
@@ -291,31 +317,9 @@
                             </div>
 
                             <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-lg transition-colors shadow-lg text-lg">
-                                SALVAR INFORMAÇÕES
+                                SALVAR / ATUALIZAR INFORMAÇÕES
                             </button>
                         </form>
-                    </div>
-
-                    <!-- Administração de Bloqueios -->
-                    <div class="admin-only hidden bg-white rounded-xl shadow-sm border border-red-200 overflow-hidden mt-6">
-                        <div class="p-4 border-b bg-red-50">
-                            <h3 class="font-bold text-red-700">Controle de Bloqueios</h3>
-                            <p class="text-xs text-red-600">Restrinja o acesso de placas específicas na portaria.</p>
-                        </div>
-                        <div class="p-0 overflow-x-auto">
-                            <table class="w-full text-left text-sm border-collapse min-w-[500px]">
-                                <thead>
-                                    <tr class="bg-slate-100 text-slate-600 text-xs uppercase">
-                                        <th class="p-3 border-b">Proprietário</th>
-                                        <th class="p-3 border-b">Placa / ID</th>
-                                        <th class="p-3 border-b">Status Atual</th>
-                                        <th class="p-3 border-b">Ação</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabela-bloqueios-admin">
-                                </tbody>
-                            </table>
-                        </div>
                     </div>
                 </section>
 
@@ -371,12 +375,10 @@
 
     <!-- CÓDIGO FUNCIONAL DO SISTEMA -->
     <script type="module">
-        // Importações do Firebase v10
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // SUAS CHAVES REAIS DO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyDd-aXxqrv_qAVjtGJvbW3mOy2VnQrvRhE",
             authDomain: "revistamariana-4edab.firebaseapp.com",
@@ -395,9 +397,9 @@
         let cadastrosSalvos = [];
         let movimentacoesSalvas = [];
         let usuarioAtual = null;
-        let pessoaEditando = null; // Guarda a pessoa que buscamos para editar
+        let pessoaEditando = null; 
 
-        // --- SISTEMA DE NOTIFICAÇÕES (Substitui os alerts feios) ---
+        // --- SISTEMA DE NOTIFICAÇÕES ---
         window.mostrarNotificacao = function(mensagem, tipo = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -412,7 +414,7 @@
             }, 3500);
         }
 
-        // --- NAVEGAÇÃO SPA (Single Page Application) ---
+        // --- NAVEGAÇÃO SPA ---
         window.navigate = function(tabId) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -430,7 +432,6 @@
             let titulos = { 'sec-painel': 'Painel de Operação', 'sec-cadastro': 'Gestão de Cadastros', 'sec-relatorio': 'Relatórios Oficiais' };
             document.getElementById('header-title').innerText = titulos[tabId];
             
-            // Fecha menu no mobile ao clicar
             if (window.innerWidth < 768) {
                 document.getElementById('sidebar').classList.add('-translate-x-full');
                 document.getElementById('mobile-overlay').classList.add('hidden');
@@ -450,7 +451,7 @@
             }
         }
 
-        // --- LOGIN E AUTENTICAÇÃO ---
+        // --- LOGIN ---
         window.fazerLogin = function(event) {
             event.preventDefault();
             const user = document.getElementById('login-user').value.toLowerCase().trim();
@@ -469,7 +470,6 @@
             document.getElementById('user-role').innerText = usuarioAtual.role;
             document.getElementById('user-avatar').innerText = usuarioAtual.nome.charAt(0).toUpperCase();
 
-            // Esconde áreas de admin para porteiros
             document.querySelectorAll('.admin-only').forEach(el => {
                 if (usuarioAtual.isAdmin) el.classList.remove('hidden');
                 else el.classList.add('hidden');
@@ -517,7 +517,7 @@
                 videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 video.srcObject = videoStream;
                 video.onplaying = () => {
-                    status.innerText = "IA Ativada: Escaneando ambiente em busca de placas...";
+                    status.innerText = "IA Ativada: Analisando. Aproxime a placa do quadro...";
                     loopLeitura = setInterval(analisarFrameAoVivo, 2000);
                 };
             } catch (err) {
@@ -556,30 +556,32 @@
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
             try {
-                document.getElementById('status-leitura').innerText = "Analisando captura...";
+                document.getElementById('status-leitura').innerText = "Processando imagem, mantenha firme...";
                 const result = await Tesseract.recognize(canvas, 'eng');
                 
-                // Limpa tudo que não for letra ou número
-                let textoCompleto = result.data.text.toUpperCase();
-                let textoLimpo = textoCompleto.replace(/[^A-Z0-9]/g, '');
-                
+                // Extrai apenas letras e números de tudo que a IA leu
+                let textoLimpo = result.data.text.toUpperCase().replace(/[^A-Z0-9]/g, '');
                 let placaEncontrada = null;
 
-                // Tenta achar padrão perfeito (ABC1234 ou ABC1D23)
-                const regexPlaca = /[A-Z]{3}[0-9][A-Z0-9][0-9]{2}/;
+                // Primeiro: Tenta achar padrão perfeito (ABC1234 ou ABC1D23) no meio da imagem
+                const regexPlaca = /([A-Z]{3})([0-9][A-Z0-9][0-9]{2})/;
                 const match = textoLimpo.match(regexPlaca);
 
                 if (match) {
-                    placaEncontrada = match[0];
-                    if (!isNaN(placaEncontrada[4])) {
-                        placaEncontrada = placaEncontrada.substring(0,3) + '-' + placaEncontrada.substring(3);
+                    let letras = match[1];
+                    let resto = match[2];
+                    if (!isNaN(resto[1])) { // Se o segundo digito for número (Padrão Antigo ABC-1234)
+                        placaEncontrada = `${letras}-${resto}`;
+                    } else { // Padrão Mercosul (ABC1D23)
+                        placaEncontrada = `${letras}${resto}`;
                     }
-                } else if (textoLimpo.length >= 4) {
-                    // BUSCA INTELIGENTE: Se leu um pedaço, procura na base de dados
+                } 
+                // Segundo: Busca Inteligente no Banco se não leu 100%
+                else if (textoLimpo.length >= 4) {
                     for(let cad of cadastrosSalvos) {
-                        let placaBD = cad.placa.replace(/[^A-Z0-9]/g, ''); // limpa a placa do banco
+                        let placaBD = cad.placa.replace(/[^A-Z0-9]/g, '');
                         if (placaBD.length >= 5 && (textoLimpo.includes(placaBD) || placaBD.includes(textoLimpo))) {
-                            placaEncontrada = cad.placa; // Puxa a placa original completinha formatada
+                            placaEncontrada = cad.placa; // Puxa do banco completinha
                             break;
                         }
                     }
@@ -588,9 +590,9 @@
                 if (placaEncontrada) {
                     window.fecharCamera();
                     document.getElementById('placa-busca').value = placaEncontrada;
-                    window.mostrarNotificacao(`🎯 Placa detectada: ${placaEncontrada}`, 'success');
+                    window.mostrarNotificacao(`🎯 Placa lida: ${placaEncontrada}`, 'success');
                 } else {
-                    document.getElementById('status-leitura').innerText = "Nenhuma placa clara. Aproxime mais e mantenha o foco...";
+                    document.getElementById('status-leitura').innerText = "Aproxime mais, letras não reconhecidas ainda...";
                 }
             } catch (error) {
                 console.error("Erro OCR:", error);
@@ -598,20 +600,49 @@
             lendoFrame = false;
         }
 
-        // --- LÓGICA DE OPERAÇÃO (CANCELA) ---
+        // --- LÓGICA DE OPERAÇÃO E REGRAS DE CANCELA ---
+        let placaPendenteRetroativa = null;
+
         window.registrarAcesso = async function(tipo) {
             if (!firebaseUser) return window.mostrarNotificacao("Desconectado da rede.", "error");
             
             const placa = document.getElementById('placa-busca').value.toUpperCase().trim();
-            if(!placa) return window.mostrarNotificacao('Digite ou fotografe a identificação/placa primeiro.', 'error');
+            if(!placa) return window.mostrarNotificacao('Digite ou fotografe a placa primeiro.', 'error');
 
             const cadastro = cadastrosSalvos.find(c => c.placa === placa);
             
             if (cadastro && cadastro.status === 'BLOQUEADO') {
                 document.getElementById('placa-busca').value = '';
-                return window.mostrarNotificacao('🚫 ACESSO NEGADO! Veículo/Tag encontra-se bloqueado.', 'error');
+                return window.mostrarNotificacao('🚫 ACESSO NEGADO! Veículo encontra-se bloqueado.', 'error');
             }
 
+            // Acha o estado atual deste veículo no pátio (Entrou ou já Saiu?)
+            const ultimoStatus = movimentacoesSalvas.find(m => m.placa === placa);
+
+            // REGRA: Proibir ENTRADA se já estiver dentro
+            if (tipo === 'ENTRADA') {
+                if (ultimoStatus && ultimoStatus.tipo === 'ENTRADA') {
+                    placaPendenteRetroativa = placa;
+                    document.getElementById('placa-retroativa-display').innerText = placa;
+                    
+                    // Preenche com a data de hoje para facilitar
+                    const now = new Date();
+                    document.getElementById('data-retroativa').value = now.toISOString().split('T')[0];
+                    document.getElementById('hora-retroativa').value = ''; // Exige preencher a hora
+
+                    document.getElementById('modal-saida-retroativa').classList.remove('hidden');
+                    document.getElementById('modal-saida-retroativa').classList.add('flex');
+                    return; // Interrompe o processo normal
+                }
+            } 
+            // REGRA: Proibir SAÍDA se não estiver dentro
+            else if (tipo === 'SAIDA') {
+                if (!ultimoStatus || ultimoStatus.tipo === 'SAIDA') {
+                     return window.mostrarNotificacao('Ação negada: Este veículo já consta como FORA do pátio.', 'error');
+                }
+            }
+
+            // Se as regras passaram, salva normalmente
             const proprietario = cadastro ? `${cadastro.proprietario} (${cadastro.categoria})` : 'Visitante / Sem Cadastro';
             const telefone = cadastro ? cadastro.telefone : '';
             
@@ -624,7 +655,7 @@
                     dataHoraLocal: new Date().toLocaleString('pt-BR'),
                     timestamp: Date.now()
                 });
-                window.mostrarNotificacao(`${tipo} confirmada! Prop: ${proprietario}`, 'success');
+                window.mostrarNotificacao(`${tipo} registrada! Prop: ${proprietario}`, 'success');
                 document.getElementById('placa-busca').value = '';
             } catch (e) {
                 console.error("Erro:", e);
@@ -632,27 +663,72 @@
             }
         }
 
-        // --- LÓGICA DE CADASTROS (BUSCA, EDIÇÃO E EXCLUSÃO) ---
-        
+        window.fecharModalRetroativa = function() {
+            document.getElementById('modal-saida-retroativa').classList.add('hidden');
+            document.getElementById('modal-saida-retroativa').classList.remove('flex');
+            placaPendenteRetroativa = null;
+        }
+
+        window.confirmarSaidaRetroativa = async function() {
+            const data = document.getElementById('data-retroativa').value;
+            const hora = document.getElementById('hora-retroativa').value;
+
+            if(!data || !hora) return window.mostrarNotificacao('Preencha a data e a hora!', 'error');
+
+            const dataHoraIso = `${data}T${hora}:00`;
+            const dataObj = new Date(dataHoraIso);
+            const timestampNovo = dataObj.getTime();
+            
+            // Validações de data retroativa
+            const ultimoStatus = movimentacoesSalvas.find(m => m.placa === placaPendenteRetroativa);
+            if (ultimoStatus && timestampNovo <= ultimoStatus.timestamp) {
+                return window.mostrarNotificacao('A saída não pode ser anterior à data da entrada dele!', 'error');
+            }
+            if (timestampNovo > Date.now()) {
+                return window.mostrarNotificacao('Você não pode colocar uma data/hora no futuro!', 'error');
+            }
+
+            const dataFormatada = dataObj.toLocaleString('pt-BR');
+            const cadastro = cadastrosSalvos.find(c => c.placa === placaPendenteRetroativa);
+            const proprietario = cadastro ? `${cadastro.proprietario} (${cadastro.categoria})` : 'Visitante / Sem Cadastro';
+            const telefone = cadastro ? cadastro.telefone : '';
+
+            try {
+                await addDoc(collection(db, 'movimentacoes'), {
+                    placa: placaPendenteRetroativa,
+                    tipo: 'SAIDA',
+                    proprietario: proprietario,
+                    telefone: telefone,
+                    dataHoraLocal: dataFormatada + ' (Lanç. Atrasado)',
+                    timestamp: timestampNovo
+                });
+                window.mostrarNotificacao(`Saída de ${placaPendenteRetroativa} salva! Agora você pode dar a NOVA ENTRADA.`, 'success');
+                fecharModalRetroativa();
+            } catch (e) {
+                console.error("Erro retroativa:", e);
+                window.mostrarNotificacao('Erro ao salvar no banco.', 'error');
+            }
+        }
+
+        // --- LÓGICA DE CADASTROS (COM EDIÇÃO E EXCLUSÃO) ---
         window.buscarProprietario = function() {
             let busca = document.getElementById('busca-prop').value.toLowerCase().trim();
             if(!busca) return window.mostrarNotificacao('Digite um nome para buscar.', 'warning');
 
-            // Encontra todos os veículos cadastrados no nome dessa pessoa
             let registrosEncontrados = cadastrosSalvos.filter(c => c.proprietario.toLowerCase().includes(busca));
             
             if(registrosEncontrados.length === 0) {
                 return window.mostrarNotificacao('Proprietário não encontrado no banco.', 'error');
             }
 
-            // Preenche os dados gerais da pessoa (usando os dados do primeiro veículo encontrado)
+            // Preenche a ficha com o primeiro encontrado para edição
             let p = registrosEncontrados[0];
             document.getElementById('cad-nome').value = p.proprietario;
             document.getElementById('cad-tel').value = p.telefone || '';
             document.getElementById('cad-cat').value = p.categoria;
             document.getElementById('cad-setor').value = p.setor || '';
 
-            // Mostra os veículos que ela já tem com botão de excluir
+            // Monta a lista de veículos existentes com botão de exclusão
             const divVeiculos = document.getElementById('area-veiculos-existentes');
             const lista = document.getElementById('lista-veiculos-existentes');
             
@@ -664,28 +740,27 @@
                         <span class="text-xs text-slate-500 block sm:inline mt-1 sm:mt-0">${v.modelo} - ${v.cor}</span>
                     </div>
                     <button type="button" onclick="excluirVeiculo('${v.id}')" class="bg-red-50 text-red-600 border border-red-200 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded text-xs font-bold transition-colors">
-                        🗑️ Apagar
+                        🗑️ Excluir do Sistema
                     </button>
                 </div>
             `).join('');
 
             divVeiculos.classList.remove('hidden');
             pessoaEditando = registrosEncontrados; // Guarda na memória que estamos editando esta pessoa
-            window.mostrarNotificacao('Dados carregados! Você pode atualizar ou adicionar veículos.', 'success');
+            window.mostrarNotificacao('Dados carregados! Você pode excluir ou adicionar novos veículos a essa pessoa.', 'success');
         }
 
         window.excluirVeiculo = async function(docId) {
             try {
-                // Apenas exclui diretamente do banco
                 await deleteDoc(doc(db, 'cadastros', docId));
-                window.mostrarNotificacao('Veículo/Tag removido com sucesso!', 'success');
-                // Fecha a tela de edição para forçar o usuário a buscar de novo e ver atualizado
+                window.mostrarNotificacao('Veículo/Tag excluído com sucesso!', 'success');
+                // Força fechar para o usuário buscar novamente atualizado
                 document.getElementById('area-veiculos-existentes').classList.add('hidden');
                 document.getElementById('busca-prop').value = '';
                 pessoaEditando = null;
             } catch (e) {
                 console.error("Erro excluir:", e);
-                window.mostrarNotificacao('Erro ao remover.', 'error');
+                window.mostrarNotificacao('Erro ao excluir do banco.', 'error');
             }
         }
 
@@ -697,9 +772,19 @@
             const tel = document.getElementById('cad-tel').value;
             const cat = document.getElementById('cad-cat').value;
             const setor = document.getElementById('cad-setor').value;
+            
+            const placaNova = document.getElementById('cad-novo-placa').value.toUpperCase().trim();
 
             try {
-                // 1. Se estivermos editando alguém, atualiza os dados pessoais de todos os veículos existentes dele
+                // REGRA: Impedir Placa Duplicada no Sistema
+                if (placaNova) {
+                    const placaJaExiste = cadastrosSalvos.some(c => c.placa === placaNova);
+                    if (placaJaExiste) {
+                        return window.mostrarNotificacao(`A placa ${placaNova} já está registrada em outro cadastro!`, 'error');
+                    }
+                }
+
+                // 1. Atualizar informações pessoais se for edição de alguém existente
                 if (pessoaEditando && pessoaEditando.length > 0) {
                     for(let v of pessoaEditando) {
                         await updateDoc(doc(db, 'cadastros', v.id), {
@@ -711,11 +796,8 @@
                     }
                 }
 
-                // 2. Verifica se o usuário preencheu o campo de NOVO veículo
-                const placaNova = document.getElementById('cad-novo-placa').value.toUpperCase().trim();
-                
+                // 2. Adicionar o veículo novo (se o usuário preencheu)
                 if (placaNova) {
-                    // Adiciona o novo veículo à conta dessa pessoa (ou cria a pessoa do zero)
                     await addDoc(collection(db, 'cadastros'), {
                         proprietario: nome,
                         telefone: tel,
@@ -729,76 +811,39 @@
                         timestamp: Date.now()
                     });
                 } else if (!pessoaEditando) {
-                    // Se não buscou ninguém e não botou placa nova
-                    return window.mostrarNotificacao('Insira ao menos uma Placa ou Identificação para cadastrar.', 'warning');
+                    // Novo cadastro sem placa e sem ser edição? Impede.
+                    return window.mostrarNotificacao('Para um cadastro novo, preencha ao menos uma Identificação/Placa.', 'warning');
                 }
 
-                window.mostrarNotificacao('Informações salvas na nuvem com sucesso!', 'success');
+                window.mostrarNotificacao('Salvo com sucesso no sistema!', 'success');
                 
-                // Reseta tudo
-                event.target.reset();
+                event.target.reset(); // limpa formulário
                 document.getElementById('area-veiculos-existentes').classList.add('hidden');
                 document.getElementById('busca-prop').value = '';
                 pessoaEditando = null;
                 
             } catch (e) {
                 console.error("Erro salvar:", e);
-                window.mostrarNotificacao('Erro na sincronização.', 'error');
+                window.mostrarNotificacao('Erro ao conectar ao banco.', 'error');
             }
         }
 
-        // --- BLOQUEIOS (ADMINISTRATIVO) ---
-        window.mudarStatusPlaca = async function(docId, novoStatus) {
-            try {
-                await updateDoc(doc(db, 'cadastros', docId), { status: novoStatus });
-                window.mostrarNotificacao(`Status modificado para ${novoStatus}`, novoStatus === 'BLOQUEADO' ? 'warning' : 'success');
-            } catch (e) {
-                console.error("Erro status:", e);
-            }
-        }
-
-        // --- SINCRONIZAÇÃO EM TEMPO REAL E RELATÓRIOS ---
+        // --- SINCRONIZAÇÃO EM TEMPO REAL ---
         function iniciarSincronizacao() {
             onSnapshot(collection(db, 'cadastros'), (snapshot) => {
                 cadastrosSalvos = [];
                 snapshot.forEach(doc => cadastrosSalvos.push({ id: doc.id, ...doc.data() }));
-                atualizarTabelaAdmin();
             });
 
             onSnapshot(collection(db, 'movimentacoes'), (snapshot) => {
                 movimentacoesSalvas = [];
                 snapshot.forEach(doc => movimentacoesSalvas.push({ id: doc.id, ...doc.data() }));
-                // Ordena do mais novo para o mais antigo
+                // Mais novo no topo
                 movimentacoesSalvas.sort((a, b) => b.timestamp - a.timestamp);
                 
                 atualizarTabelaMovimentos();
                 atualizarCardsPainel();
                 atualizarTabelaRelatorios();
-            });
-        }
-
-        function atualizarTabelaAdmin() {
-            const tbody = document.getElementById('tabela-bloqueios-admin');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            
-            cadastrosSalvos.forEach(cad => {
-                const isBloqueado = cad.status === 'BLOQUEADO';
-                const badge = isBloqueado 
-                    ? `<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold">BLOQUEADO</span>`
-                    : `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[10px] font-bold">LIBERADO</span>`;
-                const btnAcao = isBloqueado
-                    ? `<button onclick="window.mudarStatusPlaca('${cad.id}', 'LIBERADO')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded hover:bg-emerald-100 font-bold text-xs">🔓 Liberar</button>`
-                    : `<button onclick="window.mudarStatusPlaca('${cad.id}', 'BLOQUEADO')" class="bg-red-50 text-red-700 border border-red-200 px-3 py-1.5 rounded hover:bg-red-100 font-bold text-xs">🚫 Bloquear</button>`;
-                
-                tbody.innerHTML += `
-                    <tr class="border-b hover:bg-slate-50">
-                        <td class="p-2 sm:p-3 truncate max-w-[120px]" title="${cad.proprietario}">${cad.proprietario}</td>
-                        <td class="p-2 sm:p-3 font-black">${cad.placa}</td>
-                        <td class="p-2 sm:p-3">${badge}</td>
-                        <td class="p-2 sm:p-3">${btnAcao}</td>
-                    </tr>
-                `;
             });
         }
 
@@ -812,7 +857,9 @@
                 const isEntrada = mov.tipo === 'ENTRADA';
                 const corAcao = isEntrada ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-red-600 bg-red-50 border-red-100';
                 const icon = isEntrada ? '⬇️' : '⬆️';
-                const hora = mov.dataHoraLocal.split(' ')[1].substring(0, 5); 
+                // Pega só a hora e tira segundos " HH:MM"
+                const horaCompleta = mov.dataHoraLocal.split(' ')[1];
+                const hora = horaCompleta ? horaCompleta.substring(0, 5) : '---'; 
                 
                 tabela.innerHTML += `
                     <tr class="border-b hover:bg-slate-100 text-sm">
@@ -829,6 +876,7 @@
 
         function atualizarCardsPainel() {
             const ultimoStatusPorPlaca = {};
+            // Como movimentacoesSalvas já está ordenado (mais novo pro mais velho), o primeiro que achar de uma placa é o último status dela.
             movimentacoesSalvas.forEach(mov => {
                 if(!ultimoStatusPorPlaca[mov.placa]) ultimoStatusPorPlaca[mov.placa] = mov;
             });
@@ -841,7 +889,7 @@
                 const mov = ultimoStatusPorPlaca[placa];
                 if (mov.tipo === 'ENTRADA') {
                     noPatio++;
-                    if (Date.now() - mov.timestamp > 86400000) alertas++;
+                    if (Date.now() - mov.timestamp > 86400000) alertas++; // Mais de 24h
                 }
             }
 
@@ -854,7 +902,7 @@
             document.getElementById('stat-alertas').innerText = alertas;
         }
 
-        // Função auxiliar para calcular tempo bonito (ex: 2h 15m)
+        // Formata milissegundos para horas/minutos legíveis
         function formatarTempo(ms) {
             let minutosTotal = Math.floor(ms / 60000);
             let horas = Math.floor(minutosTotal / 60);
@@ -890,11 +938,9 @@
                         statusNoPatio = `<span class="text-emerald-600 font-bold text-xs">🟢 No Pátio Agora</span>`;
                     }
                 } 
-                // Se for uma saída, vamos calcular o TEMPO DE PERMANÊNCIA
+                // Se for uma saída (calcula tempo)
                 else if (mov.tipo === 'SAIDA') {
-                    // Procura a entrada correspondente (a primeira ENTRADA que ocorreu ANTES dessa SAIDA)
                     let entradaAnterior = movimentacoesSalvas.find(m => m.placa === mov.placa && m.tipo === 'ENTRADA' && m.timestamp < mov.timestamp);
-                    
                     if (entradaAnterior) {
                         let permanencia = formatarTempo(mov.timestamp - entradaAnterior.timestamp);
                         statusNoPatio = `<span class="text-slate-500 font-medium text-xs">🏁 Saiu. Ficou: <b>${permanencia}</b></span>`;
@@ -904,11 +950,11 @@
                     classLinha = "border-b hover:bg-slate-50 opacity-90";
                 }
 
-                // Lógica do botão de WhatsApp
+                // Botão de WhatsApp
                 let btnZap = '-';
                 if (mov.telefone && isUltimoRegistro && mov.tipo === 'ENTRADA') {
                     let soNumeros = mov.telefone.replace(/\D/g, '');
-                    let msg = encodeURIComponent(`Olá! A portaria informa: O veículo de identificação ${mov.placa} consta em nosso pátio. Favor verificar se há alguma irregularidade.`);
+                    let msg = encodeURIComponent(`Olá! A portaria informa: O veículo de placa ${mov.placa} consta em nosso pátio.`);
                     btnZap = `<a href="https://wa.me/55${soNumeros}?text=${msg}" target="_blank" class="bg-green-500 text-white px-3 py-1.5 rounded text-xs font-bold inline-flex items-center gap-1 hover:bg-green-600 shadow-sm transition-transform active:scale-95">💬 Chamar</a>`;
                 }
 
