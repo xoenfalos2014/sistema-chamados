@@ -504,20 +504,36 @@
             
             try {
                 const result = await Tesseract.recognize(canvas, 'eng');
-                let text = result.data.text.toUpperCase().replace(/[^A-Z0-9]/g, '');
                 
-                const regexPlaca = /([A-Z]{3})([0-9])([A-Z0-9])([0-9]{2})/;
-                const match = text.match(regexPlaca);
+                // Filtro mais rigoroso: Analisa cada bloco de palavra identificado
+                const palavras = result.data.words;
+                let placaEncontrada = null;
 
-                if (match) {
-                    let placaLida = match[0];
-                    if (!isNaN(placaLida[4])) {
-                        placaLida = placaLida.substring(0,3) + '-' + placaLida.substring(3);
+                for (let palavra of palavras) {
+                    let textoLimpo = palavra.text.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    
+                    // Exige que o bloco tenha exatamente 7 caracteres e bata com o padrão (Mercosul ou Antiga)
+                    if (textoLimpo.length === 7) {
+                        const regexExato = /^([A-Z]{3})([0-9])([A-Z0-9])([0-9]{2})$/;
+                        const matchExato = textoLimpo.match(regexExato);
+                        
+                        if (matchExato && palavra.confidence > 50) {
+                            placaEncontrada = textoLimpo;
+                            break;
+                        }
+                    }
+                }
+
+                if (placaEncontrada) {
+                    let placaFormatada = placaEncontrada;
+                    // Se for placa antiga, adiciona o traço
+                    if (!isNaN(placaEncontrada[4])) {
+                        placaFormatada = placaEncontrada.substring(0,3) + '-' + placaEncontrada.substring(3);
                     }
                     
                     window.fecharCamera();
-                    document.getElementById('placa-busca').value = placaLida;
-                    window.mostrarNotificacao('✅ Placa identificada: ' + placaLida, 'success');
+                    document.getElementById('placa-busca').value = placaFormatada;
+                    window.mostrarNotificacao('✅ Placa identificada: ' + placaFormatada, 'success');
                 }
             } catch (error) {
                 console.error("Erro OCR:", error);
